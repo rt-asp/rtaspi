@@ -3,13 +3,13 @@ Device managers package initialization.
 """
 
 from .base import DeviceManager
-from .local_devices import LocalDeviceManager
+from .local_devices import LocalDevicesManager
 from .network_devices import NetworkDeviceManager
 from .utils.discovery import ONVIFDiscovery, UPnPDiscovery, MDNSDiscovery
 
 __all__ = [
     'DeviceManager',
-    'LocalDeviceManager',
+    'LocalDevicesManager',
     'NetworkDeviceManager',
     'ONVIFDiscovery',
     'UPnPDiscovery',
