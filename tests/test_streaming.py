@@ -16,7 +16,6 @@ from unittest.mock import patch, MagicMock
 
 import sys
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from rtaspi.streaming.rtsp import RTSPServer
 from rtaspi.streaming.rtmp import RTMPServer

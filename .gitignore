@@ -1,4 +1,5 @@
 .idea
+.env
 storage
 pyproject.toml.bak
 .bak
