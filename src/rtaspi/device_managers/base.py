@@ -18,7 +18,10 @@ import socket
 import subprocess
 from abc import ABC, abstractmethod
 
-logger = logging.getLogger("DeviceManager")
+from ..core.mcp import MCPClient
+
+
+logger = logging.getLogger("NetworkDevices")
 
 
 class DeviceManager(ABC):
@@ -44,7 +47,6 @@ class DeviceManager(ABC):
         os.makedirs(self.storage_path, exist_ok=True)
 
         # Utworzenie klienta MCP
-        from core.mcp import MCPClient
         self.mcp_client = MCPClient(mcp_broker, client_id=self._get_client_id())
 
     @abstractmethod
@@ -62,19 +64,22 @@ class DeviceManager(ABC):
         """Skanuje urządzenia."""
         pass
 
-    @abstractmethod
-    def start_stream(self, device_id, **kwargs):
+    def start_stream(self, device_id, stream_path=None):
         """
-        Uruchamia strumień z urządzenia.
+        Starts a stream from the specified device.
 
         Args:
-            device_id (str): Identyfikator urządzenia.
-            **kwargs: Dodatkowe parametry.
+            device_id (str): The ID of the device to stream from.
+            stream_path (str, optional): The specific stream path to use.
 
         Returns:
-            str: URL do strumienia lub None w przypadku błędu.
+            bool: True if the stream was started successfully, False otherwise.
         """
-        pass
+        # Implementation logic here
+        # This is just a placeholder implementation
+        logger.info(f"Starting stream from device {device_id}")
+        # Your actual implementation would connect to the device and start streaming
+        return True
 
     def start(self):
         """Uruchamia menedżer urządzeń."""

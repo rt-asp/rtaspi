@@ -26,9 +26,11 @@ PyYAML
 psutil
 # pip install pytest coverage
 # pip install pytest-cov
-
+pyaudio
+opencv-python
 pytest-cov
-onvif-zeep>=0.3.3; platform_system != "Windows"
+onvif-zeep
+#onvif-zeep>=0.3.3; platform_system != "Windows"
 
 # Opcjonalne zależności dla dodatkowych funkcjonalności
 # (zakomentowane domyślnie)

@@ -16,11 +16,11 @@ import json
 import time
 from pathlib import Path
 
-from rtaspi.device_managers.base import DeviceManager
-from rtaspi.device_managers.utils.device import LocalDevice
-from .streaming.rtsp import RTSPServer
-from .streaming.rtmp import RTMPServer
-from .streaming.webrtc import WebRTCServer
+from ..device_managers.base import DeviceManager
+from ..device_managers.utils.device import LocalDevice
+from ..streaming.rtsp import RTSPServer
+from ..streaming.rtmp import RTMPServer
+from ..streaming.webrtc import WebRTCServer
 
 logger = logging.getLogger("LocalDevices")
 

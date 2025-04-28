@@ -19,12 +19,12 @@ import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from core.mcp import MCPBroker
-from device_managers.network_devices import NetworkDevicesManager
-from device_managers.utils.device import NetworkDevice
+from rtaspi.core.mcp import MCPBroker
+from rtaspi.device_managers.network_devices import NetworkDevices
+from rtaspi.device_managers.utils.device import NetworkDevice
 
 
-class TestNetworkDevicesManager(unittest.TestCase):
+class TestNetworkDevices(unittest.TestCase):
     """Testy jednostkowe dla menedżera zdalnych urządzeń."""
 
     def setUp(self):
@@ -57,7 +57,7 @@ class TestNetworkDevicesManager(unittest.TestCase):
                 patch('device_managers.network_devices.RTSPServer'), \
                 patch('device_managers.network_devices.RTMPServer'), \
                 patch('device_managers.network_devices.WebRTCServer'):
-            self.manager = NetworkDevicesManager(self.config, self.mcp_broker)
+            self.manager = NetworkDevices(self.config, self.mcp_broker)
 
     def tearDown(self):
         """Czyszczenie po każdym teście."""
@@ -344,7 +344,7 @@ class TestNetworkDevicesManager(unittest.TestCase):
                 patch('device_managers.network_devices.RTSPServer'), \
                 patch('device_managers.network_devices.RTMPServer'), \
                 patch('device_managers.network_devices.WebRTCServer'):
-            new_manager = NetworkDevicesManager(self.config, self.mcp_broker)
+            new_manager = NetworkDevices(self.config, self.mcp_broker)
 
         # Sprawdzenie, czy urządzenie zostało załadowane
         self.assertIn('test_device', new_manager.devices)
