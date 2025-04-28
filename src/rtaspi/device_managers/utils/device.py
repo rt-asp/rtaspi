@@ -12,8 +12,16 @@ Klasy bazowe dla urządzeń audio/wideo
 import time
 import logging
 from abc import ABC, abstractmethod
+from enum import Enum, auto
 
 logger = logging.getLogger("Devices")
+
+
+class DeviceStatus(Enum):
+    """Status urządzenia."""
+    UNKNOWN = auto()
+    ONLINE = auto()
+    OFFLINE = auto()
 
 
 class Device(ABC):
@@ -31,7 +39,7 @@ class Device(ABC):
         self.device_id = device_id
         self.name = name
         self.type = type
-        self.status = "unknown"  # 'unknown', 'online', 'offline'
+        self.status = DeviceStatus.UNKNOWN
         self.last_check = 0  # timestamp ostatniego sprawdzenia
 
     @abstractmethod
@@ -46,7 +54,7 @@ class Device(ABC):
             "id": self.device_id,
             "name": self.name,
             "type": self.type,
-            "status": self.status
+            "status": self.status.name.lower()
         }
 
 
