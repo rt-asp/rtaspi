@@ -42,10 +42,6 @@ venv\Scripts\activate  # Windows
 pip install -e ".[dev]"
 ```
 
-4. Zainstaluj narzędzia dla programistów:
-```bash
-pip install black flake8 isort pytest pytest-cov
-```
 
 ## Standardy kodowania
 

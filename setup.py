@@ -57,13 +57,13 @@ setup(
         "Wiki": "https://github.com/rt-asp/python/wiki",
         "Issue Tracker": "https://github.com/rt-asp/python/issues/new",
     },
-    packages=find_packages(where="src"),
+    packages=find_packages(where="src", include=["rtaspi*"]),
+    package_dir={"": "src"},
     entry_points={
         'console_scripts': [
             'rtaspi=rtaspi.main:main',  # lub odpowiednia funkcja startowa
         ],
     },
-    package_dir={"": "src"},
     license="Apache-2.0",
     license_files=("LICENSE",),
     keywords=["python", "rtaspi", "markdown", "app", "python", "markdown", "app", "streaming", "real-time"],
