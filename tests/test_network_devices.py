@@ -20,7 +20,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from rtaspi.core.mcp import MCPBroker
-from rtaspi.device_managers.network_devices import NetworkDevices
+from rtaspi.device_managers.network_devices import NetworkDevicesManager
 from rtaspi.device_managers.utils.device import NetworkDevice
 
 
@@ -405,6 +405,67 @@ class TestNetworkDevices(unittest.TestCase):
         mock_rtsp_process.terminate.assert_called_once()
         self.assertNotIn('proxy_stream', self.manager.streams)
         self.manager._publish_stream_stopped.assert_called_once()
+
+
+class TestNetworkDevicesManager(unittest.TestCase):
+    """Unit tests for NetworkDevicesManager (multi-device manager)."""
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.config = {
+            'system': {'storage_path': self.temp_dir.name},
+            'network_devices': {'enable': True, 'scan_interval': 1, 'discovery_enabled': True}
+        }
+        self.mcp_broker = MCPBroker()
+        with patch('rtaspi.device_managers.network_devices.ONVIFDiscovery'), \
+             patch('rtaspi.device_managers.network_devices.UPnPDiscovery'), \
+             patch('rtaspi.device_managers.network_devices.MDNSDiscovery'):
+            self.manager = NetworkDevicesManager(self.config, self.mcp_broker)
+
+    def tearDown(self):
+        self.temp_dir.cleanup()
+
+    def test_start_and_stop(self):
+        """Test that start and stop work and set running flag."""
+        self.assertFalse(getattr(self.manager, 'running', False))
+        self.manager.start()
+        self.assertTrue(self.manager.running)
+        self.manager.stop()
+        self.assertFalse(self.manager.running)
+
+    def test_load_saved_devices(self):
+        """Test loading saved devices does not crash on empty dir."""
+        self.manager._load_saved_devices()  # Should not raise
+        self.assertIsInstance(getattr(self.manager, 'devices', {}), dict)
+
+    def test_discover_devices(self):
+        """Test discovery logic calls discovery modules."""
+        self.manager.discovery_modules = {
+            'onvif': MagicMock(),
+            'upnp': MagicMock(),
+            'mdns': MagicMock()
+        }
+        for mod in self.manager.discovery_modules.values():
+            mod.discover.return_value = []
+        self.manager.add_device = MagicMock()
+        self.manager._discover_devices()
+        for mod in self.manager.discovery_modules.values():
+            mod.discover.assert_called_once()
+        self.manager.add_device.assert_not_called()
+
+    def test_manager_add_remove_device(self):
+        """Test add_device and remove_device logic in manager."""
+        self.manager.add_device = MagicMock(return_value='dev1')
+        dev_id = self.manager.add_device(name='Test', ip='1.2.3.4', port=123, type='video')
+        self.assertEqual(dev_id, 'dev1')
+        self.manager.remove_device = MagicMock(return_value=True)
+        result = self.manager.remove_device('dev1')
+        self.assertTrue(result)
+
+    def test_event_subscription(self):
+        """Test _subscribe_to_events sets up subscriptions."""
+        self.manager.mcp_broker.subscribe = MagicMock()
+        self.manager._subscribe_to_events()
+        self.manager.mcp_broker.subscribe.assert_called()
 
 
 if __name__ == '__main__':

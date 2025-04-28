@@ -17,7 +17,7 @@ import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from device_managers.utils.discovery import ONVIFDiscovery, UPnPDiscovery, MDNSDiscovery
+from rtaspi.device_managers.utils.discovery import ONVIFDiscovery, UPnPDiscovery, MDNSDiscovery
 
 
 class TestONVIFDiscovery(unittest.TestCase):

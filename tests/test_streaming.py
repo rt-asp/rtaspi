@@ -18,10 +18,10 @@ import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from streaming.rtsp import RTSPServer
-from streaming.rtmp import RTMPServer
-from streaming.webrtc import WebRTCServer
-from device_managers.utils.device import LocalDevice, NetworkDevice
+from rtaspi.streaming.rtsp import RTSPServer
+from rtaspi.streaming.rtmp import RTMPServer
+from rtaspi.streaming.webrtc import WebRTCServer
+from rtaspi.device_managers.utils.device import LocalDevice, NetworkDevice
 
 
 class TestRTSPServer(unittest.TestCase):
