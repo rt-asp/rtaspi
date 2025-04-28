@@ -1,0 +1,3 @@
+docs/README.md
+docs/TREE.md
+docs/INSTALL.md
