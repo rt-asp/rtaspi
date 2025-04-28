@@ -2,376 +2,319 @@
 test_streaming.py
 """
 
-# !/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-rtaspi - Real-Time Annotation and Stream Processing
-Testy jednostkowe dla modułów streamingu
-"""
-
 import os
-import unittest
-import tempfile
+import pytest
 from unittest.mock import patch, MagicMock
-
-import sys
-
 
 from rtaspi.streaming.rtsp import RTSPServer
 from rtaspi.streaming.rtmp import RTMPServer
 from rtaspi.streaming.webrtc import WebRTCServer
 from rtaspi.device_managers.utils.device import LocalDevice, NetworkDevice
 
-
-class TestRTSPServer(unittest.TestCase):
-    """Testy jednostkowe dla serwera RTSP."""
-
-    def setUp(self):
-        """Konfiguracja przed każdym testem."""
-        self.temp_dir = tempfile.TemporaryDirectory()
-
-        # Konfiguracja testowa
-        self.config = {
-            'system': {
-                'storage_path': self.temp_dir.name
+# Common fixtures
+@pytest.fixture
+def config(tmp_path):
+    """Test configuration with temporary directory."""
+    return {
+        'system': {
+            'storage_path': str(tmp_path)
+        },
+        'streaming': {
+            'rtsp': {
+                'port_start': 8554
             },
-            'streaming': {
-                'rtsp': {
-                    'port_start': 8554
-                }
+            'rtmp': {
+                'port_start': 1935
+            },
+            'webrtc': {
+                'port_start': 8080,
+                'stun_server': 'stun://stun.l.google.com:19302',
+                'turn_server': '',
+                'turn_username': '',
+                'turn_password': ''
             }
         }
+    }
 
-        # Utwórz serwer RTSP
-        self.server = RTSPServer(self.config)
+@pytest.fixture
+def rtsp_server(config):
+    """RTSP server fixture."""
+    return RTSPServer(config)
 
-    def tearDown(self):
-        """Czyszczenie po każdym teście."""
-        self.temp_dir.cleanup()
+@pytest.fixture
+def rtmp_server(config):
+    """RTMP server fixture."""
+    return RTMPServer(config)
 
-    @patch('subprocess.Popen')
-    @patch('time.sleep')
-    @patch('socket.socket')
-    def test_start_stream_local_device(self, mock_socket, mock_sleep, mock_popen):
-        """Test uruchamiania strumienia RTSP z lokalnego urządzenia."""
-        # Symulacja wolnego portu
-        mock_socket_instance = MagicMock()
-        mock_socket.return_value = mock_socket_instance
-        mock_socket_instance.connect_ex.return_value = 1  # Port wolny
+@pytest.fixture
+def webrtc_server(config):
+    """WebRTC server fixture."""
+    return WebRTCServer(config)
 
-        # Symulacja procesu FFmpeg
-        mock_process = MagicMock()
-        mock_popen.return_value = mock_process
-        mock_process.poll.return_value = None  # Proces działa
+# RTSP Tests
+@patch('subprocess.Popen')
+@patch('time.sleep')
+@patch('socket.socket')
+def test_rtsp_start_stream_local_device(mock_socket, mock_sleep, mock_popen, rtsp_server, tmp_path):
+    """Test starting RTSP stream from local device."""
+    # Simulate free port
+    mock_socket_instance = MagicMock()
+    mock_socket.return_value = mock_socket_instance
+    mock_socket_instance.connect_ex.return_value = 1  # Port is free
 
-        # Utwórz przykładowe urządzenie
-        device = LocalDevice(
-            device_id='video:test',
-            name='Test Camera',
-            type='video',
-            system_path='/dev/video0',
-            driver='v4l2'
-        )
+    # Simulate FFmpeg process
+    mock_process = MagicMock()
+    mock_popen.return_value = mock_process
+    mock_process.poll.return_value = None  # Process is running
 
-        # Mock metod
-        with patch('platform.system', return_value='Linux'):
-            # Uruchomienie strumienia
-            url = self.server.start_stream(device, 'test_stream', self.temp_dir.name)
+    # Create sample device
+    device = LocalDevice(
+        device_id='video:test',
+        name='Test Camera',
+        type='video',
+        system_path='/dev/video0',
+        driver='v4l2'
+    )
 
-            # Sprawdzenie, czy strumień został uruchomiony
-            self.assertIsNotNone(url)
-            self.assertTrue(url.startswith('rtsp://localhost:'))
-            mock_popen.assert_called_once()
+    # Mock methods
+    with patch('platform.system', return_value='Linux'):
+        # Start stream
+        url = rtsp_server.start_stream(device, 'test_stream', str(tmp_path))
 
-    @patch('subprocess.Popen')
-    @patch('time.sleep')
-    @patch('socket.socket')
-    def test_proxy_stream_network_device(self, mock_socket, mock_sleep, mock_popen):
-        """Test uruchamiania proxy RTSP dla zdalnego urządzenia."""
-        # Symulacja wolnego portu
-        mock_socket_instance = MagicMock()
-        mock_socket.return_value = mock_socket_instance
-        mock_socket_instance.connect_ex.return_value = 1  # Port wolny
-
-        # Symulacja procesu FFmpeg
-        mock_process = MagicMock()
-        mock_popen.return_value = mock_process
-        mock_process.poll.return_value = None  # Proces działa
-
-        # Utwórz przykładowe urządzenie
-        device = NetworkDevice(
-            device_id='network:test',
-            name='Test IP Camera',
-            type='video',
-            ip='192.168.1.100',
-            port=554,
-            protocol='rtsp'
-        )
-
-        # Utwórz źródłowy URL
-        source_url = 'rtsp://192.168.1.100:554/stream1'
-
-        # Uruchomienie proxy strumienia
-        url = self.server.proxy_stream(device, 'test_stream', source_url, self.temp_dir.name, transcode=True)
-
-        # Sprawdzenie, czy proxy został uruchomiony
-        self.assertIsNotNone(url)
-        self.assertTrue(url.startswith('rtsp://localhost:'))
+        # Check if stream was started
+        assert url is not None
+        assert url.startswith('rtsp://localhost:')
         mock_popen.assert_called_once()
 
-    def test_prepare_input_args(self):
-        """Test przygotowania argumentów wejściowych dla FFmpeg."""
-        # Testowe urządzenia
-        video_device = LocalDevice(
-            device_id='video:test',
-            name='Test Camera',
-            type='video',
-            system_path='/dev/video0',
-            driver='v4l2'
-        )
+@patch('subprocess.Popen')
+@patch('time.sleep')
+@patch('socket.socket')
+def test_rtsp_proxy_stream_network_device(mock_socket, mock_sleep, mock_popen, rtsp_server, tmp_path):
+    """Test starting RTSP proxy for remote device."""
+    # Simulate free port
+    mock_socket_instance = MagicMock()
+    mock_socket.return_value = mock_socket_instance
+    mock_socket_instance.connect_ex.return_value = 1  # Port is free
 
-        audio_device = LocalDevice(
-            device_id='audio:test',
-            name='Test Microphone',
-            type='audio',
-            system_path='hw:0,0',
-            driver='alsa'
-        )
+    # Simulate FFmpeg process
+    mock_process = MagicMock()
+    mock_popen.return_value = mock_process
+    mock_process.poll.return_value = None  # Process is running
 
-        # Testowanie dla różnych platform
-        with patch('platform.system', return_value='Linux'):
-            # Wideo - Linux
-            args = self.server._prepare_input_args(video_device)
-            self.assertEqual(args, ['-f', 'v4l2', '-i', '/dev/video0'])
+    # Create sample device
+    device = NetworkDevice(
+        device_id='network:test',
+        name='Test IP Camera',
+        type='video',
+        ip='192.168.1.100',
+        port=554,
+        protocol='rtsp'
+    )
 
-            # Audio - Linux
-            args = self.server._prepare_input_args(audio_device)
-            self.assertEqual(args, ['-f', 'alsa', '-i', 'hw:0,0'])
+    # Create source URL
+    source_url = 'rtsp://192.168.1.100:554/stream1'
 
-        with patch('platform.system', return_value='Darwin'):
-            # Wideo - macOS
-            video_device.driver = 'avfoundation'
-            args = self.server._prepare_input_args(video_device)
-            self.assertEqual(args, ['-f', 'avfoundation', '-framerate', '30', '-i', '/dev/video0:none'])
+    # Start proxy stream
+    url = rtsp_server.proxy_stream(device, 'test_stream', source_url, str(tmp_path), transcode=True)
 
-        with patch('platform.system', return_value='Windows'):
-            # Wideo - Windows
-            video_device.driver = 'dshow'
-            args = self.server._prepare_input_args(video_device)
-            self.assertEqual(args, ['-f', 'dshow', '-i', 'video=/dev/video0'])
+    # Check if proxy was started
+    assert url is not None
+    assert url.startswith('rtsp://localhost:')
+    mock_popen.assert_called_once()
 
-    def test_prepare_output_args(self):
-        """Test przygotowania argumentów wyjściowych dla FFmpeg."""
-        # Testowe urządzenia
-        video_device = LocalDevice(
-            device_id='video:test',
-            name='Test Camera',
-            type='video',
-            system_path='/dev/video0',
-            driver='v4l2'
-        )
+def test_rtsp_prepare_input_args(rtsp_server):
+    """Test preparing input arguments for FFmpeg."""
+    # Test devices
+    video_device = LocalDevice(
+        device_id='video:test',
+        name='Test Camera',
+        type='video',
+        system_path='/dev/video0',
+        driver='v4l2'
+    )
 
-        audio_device = LocalDevice(
-            device_id='audio:test',
-            name='Test Microphone',
-            type='audio',
-            system_path='hw:0,0',
-            driver='alsa'
-        )
+    audio_device = LocalDevice(
+        device_id='audio:test',
+        name='Test Microphone',
+        type='audio',
+        system_path='hw:0,0',
+        driver='alsa'
+    )
 
-        # Testowanie dla różnych typów urządzeń
-        # Wideo
-        args = self.server._prepare_output_args(video_device, 8554, 'test_stream')
-        self.assertEqual(args, [
-            '-c:v', 'libx264', '-preset', 'ultrafast', '-tune', 'zerolatency',
-            '-f', 'rtsp', 'rtsp://localhost:8554/test_stream'
-        ])
+    # Test for different platforms
+    with patch('platform.system', return_value='Linux'):
+        # Video - Linux
+        args = rtsp_server._prepare_input_args(video_device)
+        assert args == ['-f', 'v4l2', '-i', '/dev/video0']
 
-        # Audio
-        args = self.server._prepare_output_args(audio_device, 8554, 'test_stream')
-        self.assertEqual(args, [
-            '-c:a', 'aac', '-b:a', '128k',
-            '-f', 'rtsp', 'rtsp://localhost:8554/test_stream'
-        ])
+        # Audio - Linux
+        args = rtsp_server._prepare_input_args(audio_device)
+        assert args == ['-f', 'alsa', '-i', 'hw:0,0']
 
+    with patch('platform.system', return_value='Darwin'):
+        # Video - macOS
+        video_device.driver = 'avfoundation'
+        args = rtsp_server._prepare_input_args(video_device)
+        assert args == ['-f', 'avfoundation', '-framerate', '30', '-i', '/dev/video0:none']
 
-class TestRTMPServer(unittest.TestCase):
-    """Testy jednostkowe dla serwera RTMP."""
+    with patch('platform.system', return_value='Windows'):
+        # Video - Windows
+        video_device.driver = 'dshow'
+        args = rtsp_server._prepare_input_args(video_device)
+        assert args == ['-f', 'dshow', '-i', 'video=/dev/video0']
 
-    def setUp(self):
-        """Konfiguracja przed każdym testem."""
-        self.temp_dir = tempfile.TemporaryDirectory()
+def test_rtsp_prepare_output_args(rtsp_server):
+    """Test preparing output arguments for FFmpeg."""
+    # Test devices
+    video_device = LocalDevice(
+        device_id='video:test',
+        name='Test Camera',
+        type='video',
+        system_path='/dev/video0',
+        driver='v4l2'
+    )
 
-        # Konfiguracja testowa
-        self.config = {
-            'system': {
-                'storage_path': self.temp_dir.name
-            },
-            'streaming': {
-                'rtmp': {
-                    'port_start': 1935
-                }
-            }
-        }
+    audio_device = LocalDevice(
+        device_id='audio:test',
+        name='Test Microphone',
+        type='audio',
+        system_path='hw:0,0',
+        driver='alsa'
+    )
 
-        # Utwórz serwer RTMP
-        self.server = RTMPServer(self.config)
+    # Test for different device types
+    # Video
+    args = rtsp_server._prepare_output_args(video_device, 8554, 'test_stream')
+    assert args == [
+        '-c:v', 'libx264', '-preset', 'ultrafast', '-tune', 'zerolatency',
+        '-f', 'rtsp', 'rtsp://localhost:8554/test_stream'
+    ]
 
-    def tearDown(self):
-        """Czyszczenie po każdym teście."""
-        self.temp_dir.cleanup()
+    # Audio
+    args = rtsp_server._prepare_output_args(audio_device, 8554, 'test_stream')
+    assert args == [
+        '-c:a', 'aac', '-b:a', '128k',
+        '-f', 'rtsp', 'rtsp://localhost:8554/test_stream'
+    ]
 
-    @patch('subprocess.Popen')
-    @patch('time.sleep')
-    @patch('socket.socket')
-    def test_start_stream_local_device(self, mock_socket, mock_sleep, mock_popen):
-        """Test uruchamiania strumienia RTMP z lokalnego urządzenia."""
-        # Symulacja wolnego portu
-        mock_socket_instance = MagicMock()
-        mock_socket.return_value = mock_socket_instance
-        mock_socket_instance.connect_ex.return_value = 1  # Port wolny
+# RTMP Tests
+@patch('subprocess.Popen')
+@patch('time.sleep')
+@patch('socket.socket')
+def test_rtmp_start_stream_local_device(mock_socket, mock_sleep, mock_popen, rtmp_server, tmp_path):
+    """Test starting RTMP stream from local device."""
+    # Simulate free port
+    mock_socket_instance = MagicMock()
+    mock_socket.return_value = mock_socket_instance
+    mock_socket_instance.connect_ex.return_value = 1  # Port is free
 
-        # Symulacja procesów
-        mock_popen.side_effect = [MagicMock(), MagicMock()]  # nginx, ffmpeg
+    # Simulate processes
+    mock_popen.side_effect = [MagicMock(), MagicMock()]  # nginx, ffmpeg
 
-        # Utwórz przykładowe urządzenie
-        device = LocalDevice(
-            device_id='video:test',
-            name='Test Camera',
-            type='video',
-            system_path='/dev/video0',
-            driver='v4l2'
-        )
+    # Create sample device
+    device = LocalDevice(
+        device_id='video:test',
+        name='Test Camera',
+        type='video',
+        system_path='/dev/video0',
+        driver='v4l2'
+    )
 
-        # Mock metod
-        with patch('platform.system', return_value='Linux'), \
-                patch('builtins.open', MagicMock()):
-            # Uruchomienie strumienia
-            url = self.server.start_stream(device, 'test_stream', self.temp_dir.name)
+    # Mock methods
+    with patch('platform.system', return_value='Linux'), \
+            patch('builtins.open', MagicMock()):
+        # Start stream
+        url = rtmp_server.start_stream(device, 'test_stream', str(tmp_path))
 
-            # Sprawdzenie, czy strumień został uruchomiony
-            self.assertIsNotNone(url)
-            self.assertTrue(url.startswith('rtmp://localhost:'))
-            self.assertEqual(mock_popen.call_count, 2)
+        # Check if stream was started
+        assert url is not None
+        assert url.startswith('rtmp://localhost:')
+        assert mock_popen.call_count == 2
 
-    def test_generate_nginx_config(self):
-        """Test generowania konfiguracji NGINX."""
-        # Generowanie konfiguracji
-        config = self.server._generate_nginx_config(1935)
+def test_rtmp_generate_nginx_config(rtmp_server):
+    """Test generating NGINX configuration."""
+    # Generate configuration
+    config = rtmp_server._generate_nginx_config(1935)
 
-        # Sprawdzenie, czy konfiguracja zawiera wymagane elementy
-        self.assertIn('worker_processes 1;', config)
-        self.assertIn('listen 1935;', config)
-        self.assertIn('application live', config)
-        self.assertIn('live on;', config)
+    # Check if configuration contains required elements
+    assert 'worker_processes 1;' in config
+    assert 'listen 1935;' in config
+    assert 'application live' in config
+    assert 'live on;' in config
 
+# WebRTC Tests
+@patch('subprocess.Popen')
+@patch('time.sleep')
+@patch('socket.socket')
+def test_webrtc_start_stream_local_device(mock_socket, mock_sleep, mock_popen, webrtc_server, tmp_path):
+    """Test starting WebRTC stream from local device."""
+    # Simulate free port
+    mock_socket_instance = MagicMock()
+    mock_socket.return_value = mock_socket_instance
+    mock_socket_instance.connect_ex.return_value = 1  # Port is free
 
-class TestWebRTCServer(unittest.TestCase):
-    """Testy jednostkowe dla serwera WebRTC."""
+    # Simulate processes
+    mock_popen.side_effect = [MagicMock(), MagicMock()]  # http server, gstreamer
 
-    def setUp(self):
-        """Konfiguracja przed każdym testem."""
-        self.temp_dir = tempfile.TemporaryDirectory()
+    # Create sample device
+    device = LocalDevice(
+        device_id='video:test',
+        name='Test Camera',
+        type='video',
+        system_path='/dev/video0',
+        driver='v4l2'
+    )
 
-        # Konfiguracja testowa
-        self.config = {
-            'system': {
-                'storage_path': self.temp_dir.name
-            },
-            'streaming': {
-                'webrtc': {
-                    'port_start': 8080,
-                    'stun_server': 'stun://stun.l.google.com:19302',
-                    'turn_server': '',
-                    'turn_username': '',
-                    'turn_password': ''
-                }
-            }
-        }
+    # Mock methods
+    with patch('platform.system', return_value='Linux'), \
+            patch('builtins.open', MagicMock()), \
+            patch('json.dump', MagicMock()):
+        # Start stream
+        url = webrtc_server.start_stream(device, 'test_stream', str(tmp_path))
 
-        # Utwórz serwer WebRTC
-        self.server = WebRTCServer(self.config)
+        # Check if stream was started
+        assert url is not None
+        assert url.startswith('http://localhost:')
+        assert mock_popen.call_count == 2
 
-    def tearDown(self):
-        """Czyszczenie po każdym teście."""
-        self.temp_dir.cleanup()
+def test_webrtc_prepare_input_pipeline(webrtc_server):
+    """Test preparing input pipeline for GStreamer."""
+    # Test devices
+    video_device = LocalDevice(
+        device_id='video:test',
+        name='Test Camera',
+        type='video',
+        system_path='/dev/video0',
+        driver='v4l2'
+    )
 
-    @patch('subprocess.Popen')
-    @patch('time.sleep')
-    @patch('socket.socket')
-    def test_start_stream_local_device(self, mock_socket, mock_sleep, mock_popen):
-        """Test uruchamiania strumienia WebRTC z lokalnego urządzenia."""
-        # Symulacja wolnego portu
-        mock_socket_instance = MagicMock()
-        mock_socket.return_value = mock_socket_instance
-        mock_socket_instance.connect_ex.return_value = 1  # Port wolny
+    audio_device = LocalDevice(
+        device_id='audio:test',
+        name='Test Microphone',
+        type='audio',
+        system_path='hw:0,0',
+        driver='alsa'
+    )
 
-        # Symulacja procesów
-        mock_popen.side_effect = [MagicMock(), MagicMock()]  # http server, gstreamer
+    # Test for different platforms
+    with patch('platform.system', return_value='Linux'):
+        # Video - Linux
+        pipeline = webrtc_server._prepare_input_pipeline(video_device)
+        assert 'v4l2src device=/dev/video0' in pipeline
 
-        # Utwórz przykładowe urządzenie
-        device = LocalDevice(
-            device_id='video:test',
-            name='Test Camera',
-            type='video',
-            system_path='/dev/video0',
-            driver='v4l2'
-        )
+        # Audio - Linux
+        pipeline = webrtc_server._prepare_input_pipeline(audio_device)
+        assert 'alsasrc device=hw:0,0' in pipeline
 
-        # Mock metod
-        with patch('platform.system', return_value='Linux'), \
-                patch('builtins.open', MagicMock()), \
-                patch('json.dump', MagicMock()):
-            # Uruchomienie strumienia
-            url = self.server.start_stream(device, 'test_stream', self.temp_dir.name)
+def test_webrtc_generate_webrtc_html(webrtc_server):
+    """Test generating HTML code for WebRTC."""
+    # Generate HTML
+    html = webrtc_server._generate_webrtc_html('test_stream', 8080)
 
-            # Sprawdzenie, czy strumień został uruchomiony
-            self.assertIsNotNone(url)
-            self.assertTrue(url.startswith('http://localhost:'))
-            self.assertEqual(mock_popen.call_count, 2)
-
-    def test_prepare_input_pipeline(self):
-        """Test przygotowania potoku wejściowego dla GStreamer."""
-        # Testowe urządzenia
-        video_device = LocalDevice(
-            device_id='video:test',
-            name='Test Camera',
-            type='video',
-            system_path='/dev/video0',
-            driver='v4l2'
-        )
-
-        audio_device = LocalDevice(
-            device_id='audio:test',
-            name='Test Microphone',
-            type='audio',
-            system_path='hw:0,0',
-            driver='alsa'
-        )
-
-        # Testowanie dla różnych platform
-        with patch('platform.system', return_value='Linux'):
-            # Wideo - Linux
-            pipeline = self.server._prepare_input_pipeline(video_device)
-            self.assertIn('v4l2src device=/dev/video0', pipeline)
-
-            # Audio - Linux
-            pipeline = self.server._prepare_input_pipeline(audio_device)
-            self.assertIn('alsasrc device=hw:0,0', pipeline)
-
-    def test_generate_webrtc_html(self):
-        """Test generowania kodu HTML dla WebRTC."""
-        # Generowanie HTML
-        html = self.server._generate_webrtc_html('test_stream', 8080)
-
-        # Sprawdzenie, czy HTML zawiera wymagane elementy
-        self.assertIn('<!DOCTYPE html>', html)
-        self.assertIn('test_stream', html)
-        self.assertIn('8080', html)
-        self.assertIn('stun.l.google.com:19302', html)
-        self.assertIn('RTCPeerConnection', html)
-        self.assertIn('createOffer', html)
-
-
-if __name__ == '__main__':
-    unittest.main()
+    # Check if HTML contains required elements
+    assert '<!DOCTYPE html>' in html
+    assert 'test_stream' in html
+    assert '8080' in html
+    assert 'stun.l.google.com:19302' in html
+    assert 'RTCPeerConnection' in html
+    assert 'createOffer' in html

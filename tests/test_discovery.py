@@ -2,269 +2,246 @@
 test_discovery.py
 """
 
-# !/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-rtaspi - Real-Time Annotation and Stream Processing
-Testy jednostkowe dla modułów wykrywania urządzeń
-"""
-
-import os
-import unittest
+import pytest
 from unittest.mock import patch, MagicMock
-
-import sys
-
 
 from rtaspi.device_managers.utils.discovery import ONVIFDiscovery, UPnPDiscovery, MDNSDiscovery
 
+# Fixtures
+@pytest.fixture
+def onvif_discovery():
+    return ONVIFDiscovery()
 
-class TestONVIFDiscovery(unittest.TestCase):
-    """Testy jednostkowe dla modułu wykrywania ONVIF."""
+@pytest.fixture
+def upnp_discovery():
+    return UPnPDiscovery()
 
-    def setUp(self):
-        """Konfiguracja przed każdym testem."""
-        self.discovery = ONVIFDiscovery()
+@pytest.fixture
+def mdns_discovery():
+    return MDNSDiscovery()
 
-    @patch('device_managers.utils.discovery.ONVIFDiscovery._discover_with_library')
-    @patch('device_managers.utils.discovery.ONVIFDiscovery._discover_alternative')
-    def test_discover(self, mock_alternative, mock_library):
-        """Test wykrywania urządzeń ONVIF."""
-        # Symulacja znalezionych urządzeń
-        mock_library.return_value = [{
-            'name': 'ONVIF Camera 1',
-            'ip': '192.168.1.101',
-            'port': 80,
-            'type': 'video',
-            'protocol': 'rtsp',
-            'paths': ['onvif1']
-        }]
+# ONVIF Tests
+@patch('rtaspi.device_managers.utils.discovery.ONVIFDiscovery._discover_with_library')
+@patch('rtaspi.device_managers.utils.discovery.ONVIFDiscovery._discover_alternative')
+def test_onvif_discover(mock_alternative, mock_library, onvif_discovery):
+    """Test ONVIF device discovery."""
+    # Simulate found devices
+    mock_library.return_value = [{
+        'name': 'ONVIF Camera 1',
+        'ip': '192.168.1.101',
+        'port': 80,
+        'type': 'video',
+        'protocol': 'rtsp',
+        'paths': ['onvif1']
+    }]
 
-        mock_alternative.return_value = [{
-            'name': 'ONVIF Camera 2',
-            'ip': '192.168.1.102',
-            'port': 80,
-            'type': 'video',
-            'protocol': 'rtsp',
-            'paths': ['onvif1']
-        }]
+    mock_alternative.return_value = [{
+        'name': 'ONVIF Camera 2',
+        'ip': '192.168.1.102',
+        'port': 80,
+        'type': 'video',
+        'protocol': 'rtsp',
+        'paths': ['onvif1']
+    }]
 
-        # Test z działającą biblioteką
-        with patch('importlib.import_module', return_value=MagicMock()):
-            devices = self.discovery.discover()
+    # Test with working library
+    with patch('importlib.import_module', return_value=MagicMock()):
+        devices = onvif_discovery.discover()
 
-            # Sprawdzenie, czy wykryto urządzenia
-            self.assertEqual(len(devices), 1)
-            self.assertEqual(devices[0]['name'], 'ONVIF Camera 1')
-            mock_library.assert_called_once()
-            mock_alternative.assert_not_called()
+        # Check if devices were discovered
+        assert len(devices) == 1
+        assert devices[0]['name'] == 'ONVIF Camera 1'
+        mock_library.assert_called_once()
+        mock_alternative.assert_not_called()
 
-        # Reset mocków
-        mock_library.reset_mock()
-        mock_alternative.reset_mock()
+    # Reset mocks
+    mock_library.reset_mock()
+    mock_alternative.reset_mock()
 
-        # Test bez biblioteki
-        with patch('importlib.import_module', side_effect=ImportError):
-            devices = self.discovery.discover()
+    # Test without library
+    with patch('importlib.import_module', side_effect=ImportError):
+        devices = onvif_discovery.discover()
 
-            # Sprawdzenie, czy wykryto urządzenia
-            self.assertEqual(len(devices), 1)
-            self.assertEqual(devices[0]['name'], 'ONVIF Camera 2')
-            mock_library.assert_not_called()
-            mock_alternative.assert_called_once()
+        # Check if devices were discovered
+        assert len(devices) == 1
+        assert devices[0]['name'] == 'ONVIF Camera 2'
+        mock_library.assert_not_called()
+        mock_alternative.assert_called_once()
 
-    @patch('socket.socket')
-    def test_discover_alternative(self, mock_socket):
-        """Test alternatywnego wykrywania urządzeń ONVIF."""
-        # Symulacja odpowiedzi socketa
-        mock_socket_instance = MagicMock()
-        mock_socket.return_value = mock_socket_instance
+@patch('socket.socket')
+def test_onvif_discover_alternative(mock_socket, onvif_discovery):
+    """Test alternative ONVIF device discovery."""
+    # Simulate socket response
+    mock_socket_instance = MagicMock()
+    mock_socket.return_value = mock_socket_instance
 
-        # Symulacja odbierania danych
-        response = """
-        <?xml version="1.0" encoding="UTF-8"?>
-        <SOAP-ENV:Envelope xmlns:SOAP-ENV="http://www.w3.org/2003/05/soap-envelope">
-          <SOAP-ENV:Header>
-            <wsa:MessageID>uuid:1</wsa:MessageID>
-            <wsa:RelatesTo>uuid:2</wsa:RelatesTo>
-          </SOAP-ENV:Header>
-          <SOAP-ENV:Body>
-            <d:ProbeMatches xmlns:d="http://schemas.xmlsoap.org/ws/2005/04/discovery">
-              <d:ProbeMatch>
-                <d:XAddrs>http://192.168.1.103:80/onvif/device_service</d:XAddrs>
-                <d:Types>dn:NetworkVideoTransmitter</d:Types>
-              </d:ProbeMatch>
-            </d:ProbeMatches>
-          </SOAP-ENV:Body>
-        </SOAP-ENV:Envelope>
-        """
+    # Simulate receiving data
+    response = """
+    <?xml version="1.0" encoding="UTF-8"?>
+    <SOAP-ENV:Envelope xmlns:SOAP-ENV="http://www.w3.org/2003/05/soap-envelope">
+      <SOAP-ENV:Header>
+        <wsa:MessageID>uuid:1</wsa:MessageID>
+        <wsa:RelatesTo>uuid:2</wsa:RelatesTo>
+      </SOAP-ENV:Header>
+      <SOAP-ENV:Body>
+        <d:ProbeMatches xmlns:d="http://schemas.xmlsoap.org/ws/2005/04/discovery">
+          <d:ProbeMatch>
+            <d:XAddrs>http://192.168.1.103:80/onvif/device_service</d:XAddrs>
+            <d:Types>dn:NetworkVideoTransmitter</d:Types>
+          </d:ProbeMatch>
+        </d:ProbeMatches>
+      </SOAP-ENV:Body>
+    </SOAP-ENV:Envelope>
+    """
 
-        mock_socket_instance.recvfrom.side_effect = [(response.encode(), ('192.168.1.103', 80)), socket.timeout()]
+    mock_socket_instance.recvfrom.side_effect = [(response.encode(), ('192.168.1.103', 80)), socket.timeout()]
 
-        # Wywołanie metody
-        devices = self.discovery._discover_alternative()
+    # Call method
+    devices = onvif_discovery._discover_alternative()
 
-        # Sprawdzenie, czy wykryto urządzenia
-        self.assertEqual(len(devices), 1)
-        self.assertEqual(devices[0]['ip'], '192.168.1.103')
-        self.assertEqual(devices[0]['port'], 80)
-        self.assertEqual(devices[0]['protocol'], 'rtsp')
+    # Check if devices were discovered
+    assert len(devices) == 1
+    assert devices[0]['ip'] == '192.168.1.103'
+    assert devices[0]['port'] == 80
+    assert devices[0]['protocol'] == 'rtsp'
 
+# UPnP Tests
+@patch('rtaspi.device_managers.utils.discovery.UPnPDiscovery._discover_with_library')
+@patch('rtaspi.device_managers.utils.discovery.UPnPDiscovery._discover_alternative')
+def test_upnp_discover(mock_alternative, mock_library, upnp_discovery):
+    """Test UPnP device discovery."""
+    # Simulate found devices
+    mock_library.return_value = [{
+        'name': 'UPnP Camera 1',
+        'ip': '192.168.1.104',
+        'port': 80,
+        'type': 'video',
+        'protocol': 'http'
+    }]
 
-class TestUPnPDiscovery(unittest.TestCase):
-    """Testy jednostkowe dla modułu wykrywania UPnP."""
+    mock_alternative.return_value = [{
+        'name': 'UPnP Camera 2',
+        'ip': '192.168.1.105',
+        'port': 80,
+        'type': 'video',
+        'protocol': 'http'
+    }]
 
-    def setUp(self):
-        """Konfiguracja przed każdym testem."""
-        self.discovery = UPnPDiscovery()
+    # Test with working library
+    with patch('importlib.import_module', return_value=MagicMock()):
+        devices = upnp_discovery.discover()
 
-    @patch('device_managers.utils.discovery.UPnPDiscovery._discover_with_library')
-    @patch('device_managers.utils.discovery.UPnPDiscovery._discover_alternative')
-    def test_discover(self, mock_alternative, mock_library):
-        """Test wykrywania urządzeń UPnP."""
-        # Symulacja znalezionych urządzeń
-        mock_library.return_value = [{
-            'name': 'UPnP Camera 1',
-            'ip': '192.168.1.104',
-            'port': 80,
-            'type': 'video',
-            'protocol': 'http'
-        }]
+        # Check if devices were discovered
+        assert len(devices) == 1
+        assert devices[0]['name'] == 'UPnP Camera 1'
+        mock_library.assert_called_once()
+        mock_alternative.assert_not_called()
 
-        mock_alternative.return_value = [{
-            'name': 'UPnP Camera 2',
-            'ip': '192.168.1.105',
-            'port': 80,
-            'type': 'video',
-            'protocol': 'http'
-        }]
+    # Reset mocks
+    mock_library.reset_mock()
+    mock_alternative.reset_mock()
 
-        # Test z działającą biblioteką
-        with patch('importlib.import_module', return_value=MagicMock()):
-            devices = self.discovery.discover()
+    # Test without library
+    with patch('importlib.import_module', side_effect=ImportError):
+        devices = upnp_discovery.discover()
 
-            # Sprawdzenie, czy wykryto urządzenia
-            self.assertEqual(len(devices), 1)
-            self.assertEqual(devices[0]['name'], 'UPnP Camera 1')
-            mock_library.assert_called_once()
-            mock_alternative.assert_not_called()
+        # Check if devices were discovered
+        assert len(devices) == 1
+        assert devices[0]['name'] == 'UPnP Camera 2'
+        mock_library.assert_not_called()
+        mock_alternative.assert_called_once()
 
-        # Reset mocków
-        mock_library.reset_mock()
-        mock_alternative.reset_mock()
+@patch('socket.socket')
+def test_upnp_discover_alternative(mock_socket, upnp_discovery):
+    """Test alternative UPnP device discovery."""
+    # Simulate socket response
+    mock_socket_instance = MagicMock()
+    mock_socket.return_value = mock_socket_instance
 
-        # Test bez biblioteki
-        with patch('importlib.import_module', side_effect=ImportError):
-            devices = self.discovery.discover()
+    # Simulate receiving data
+    response = """
+    HTTP/1.1 200 OK
+    CACHE-CONTROL: max-age=1800
+    LOCATION: http://192.168.1.106:80/description.xml
+    NT: upnp:rootdevice
+    NTS: ssdp:alive
+    SERVER: Linux/3.10.33 UPnP/1.0 MiniUPnPd/1.8
+    USN: uuid:abcdef-1234::upnp:rootdevice
 
-            # Sprawdzenie, czy wykryto urządzenia
-            self.assertEqual(len(devices), 1)
-            self.assertEqual(devices[0]['name'], 'UPnP Camera 2')
-            mock_library.assert_not_called()
-            mock_alternative.assert_called_once()
+    """
 
-    @patch('socket.socket')
-    def test_discover_alternative(self, mock_socket):
-        """Test alternatywnego wykrywania urządzeń UPnP."""
-        # Symulacja odpowiedzi socketa
-        mock_socket_instance = MagicMock()
-        mock_socket.return_value = mock_socket_instance
+    mock_socket_instance.recvfrom.side_effect = [(response.encode(), ('192.168.1.106', 1900)), socket.timeout()]
 
-        # Symulacja odbierania danych
-        response = """
-        HTTP/1.1 200 OK
-        CACHE-CONTROL: max-age=1800
-        LOCATION: http://192.168.1.106:80/description.xml
-        NT: upnp:rootdevice
-        NTS: ssdp:alive
-        SERVER: Linux/3.10.33 UPnP/1.0 MiniUPnPd/1.8
-        USN: uuid:abcdef-1234::upnp:rootdevice
+    # Call method
+    devices = upnp_discovery._discover_alternative()
 
-        """
+    # Check if devices were discovered
+    assert len(devices) == 1
+    assert devices[0]['ip'] == '192.168.1.106'
+    assert devices[0]['port'] == 80
+    assert devices[0]['protocol'] == 'http'
 
-        mock_socket_instance.recvfrom.side_effect = [(response.encode(), ('192.168.1.106', 1900)), socket.timeout()]
+# mDNS Tests
+@patch('rtaspi.device_managers.utils.discovery.MDNSDiscovery._discover_with_library')
+@patch('rtaspi.device_managers.utils.discovery.MDNSDiscovery._discover_alternative')
+def test_mdns_discover(mock_alternative, mock_library, mdns_discovery):
+    """Test mDNS device discovery."""
+    # Simulate found devices
+    mock_library.return_value = [{
+        'name': 'mDNS Camera 1',
+        'ip': '192.168.1.107',
+        'port': 80,
+        'type': 'video',
+        'protocol': 'rtsp'
+    }]
 
-        # Wywołanie metody
-        devices = self.discovery._discover_alternative()
+    mock_alternative.return_value = [{
+        'name': 'mDNS Camera 2',
+        'ip': '192.168.1.108',
+        'port': 80,
+        'type': 'video',
+        'protocol': 'rtsp'
+    }]
 
-        # Sprawdzenie, czy wykryto urządzenia
-        self.assertEqual(len(devices), 1)
-        self.assertEqual(devices[0]['ip'], '192.168.1.106')
-        self.assertEqual(devices[0]['port'], 80)
-        self.assertEqual(devices[0]['protocol'], 'http')
+    # Test with working library
+    with patch('importlib.import_module', return_value=MagicMock()):
+        devices = mdns_discovery.discover()
 
+        # Check if devices were discovered
+        assert len(devices) == 1
+        assert devices[0]['name'] == 'mDNS Camera 1'
+        mock_library.assert_called_once()
+        mock_alternative.assert_not_called()
 
-class TestMDNSDiscovery(unittest.TestCase):
-    """Testy jednostkowe dla modułu wykrywania mDNS."""
+    # Reset mocks
+    mock_library.reset_mock()
+    mock_alternative.reset_mock()
 
-    def setUp(self):
-        """Konfiguracja przed każdym testem."""
-        self.discovery = MDNSDiscovery()
+    # Test without library
+    with patch('importlib.import_module', side_effect=ImportError):
+        devices = mdns_discovery.discover()
 
-    @patch('device_managers.utils.discovery.MDNSDiscovery._discover_with_library')
-    @patch('device_managers.utils.discovery.MDNSDiscovery._discover_alternative')
-    def test_discover(self, mock_alternative, mock_library):
-        """Test wykrywania urządzeń mDNS."""
-        # Symulacja znalezionych urządzeń
-        mock_library.return_value = [{
-            'name': 'mDNS Camera 1',
-            'ip': '192.168.1.107',
-            'port': 80,
-            'type': 'video',
-            'protocol': 'rtsp'
-        }]
+        # Check if devices were discovered
+        assert len(devices) == 1
+        assert devices[0]['name'] == 'mDNS Camera 2'
+        mock_library.assert_not_called()
+        mock_alternative.assert_called_once()
 
-        mock_alternative.return_value = [{
-            'name': 'mDNS Camera 2',
-            'ip': '192.168.1.108',
-            'port': 80,
-            'type': 'video',
-            'protocol': 'rtsp'
-        }]
+@patch('socket.socket')
+def test_mdns_discover_alternative(mock_socket, mdns_discovery):
+    """Test alternative mDNS device discovery."""
+    # Simulate socket response
+    mock_socket_instance = MagicMock()
+    mock_socket.return_value = mock_socket_instance
 
-        # Test z działającą biblioteką
-        with patch('importlib.import_module', return_value=MagicMock()):
-            devices = self.discovery.discover()
+    # Simulate receiving data
+    mock_socket_instance.recvfrom.side_effect = [(b'dummy_data', ('192.168.1.109', 5353)), socket.timeout()]
 
-            # Sprawdzenie, czy wykryto urządzenia
-            self.assertEqual(len(devices), 1)
-            self.assertEqual(devices[0]['name'], 'mDNS Camera 1')
-            mock_library.assert_called_once()
-            mock_alternative.assert_not_called()
+    # Call method
+    devices = mdns_discovery._discover_alternative()
 
-        # Reset mocków
-        mock_library.reset_mock()
-        mock_alternative.reset_mock()
-
-        # Test bez biblioteki
-        with patch('importlib.import_module', side_effect=ImportError):
-            devices = self.discovery.discover()
-
-            # Sprawdzenie, czy wykryto urządzenia
-            self.assertEqual(len(devices), 1)
-            self.assertEqual(devices[0]['name'], 'mDNS Camera 2')
-            mock_library.assert_not_called()
-            mock_alternative.assert_called_once()
-
-    @patch('socket.socket')
-    def test_discover_alternative(self, mock_socket):
-        """Test alternatywnego wykrywania urządzeń mDNS."""
-        # Symulacja odpowiedzi socketa
-        mock_socket_instance = MagicMock()
-        mock_socket.return_value = mock_socket_instance
-
-        # Symulacja odbierania danych
-        mock_socket_instance.recvfrom.side_effect = [(b'dummy_data', ('192.168.1.109', 5353)), socket.timeout()]
-
-        # Wywołanie metody
-        devices = self.discovery._discover_alternative()
-
-        # Sprawdzenie, czy wykryto urządzenia
-        self.assertEqual(len(devices), 1)
-        self.assertEqual(devices[0]['ip'], '192.168.1.109')
-        self.assertEqual(devices[0]['port'], 80)  # Domyślny port
-        self.assertEqual(devices[0]['protocol'], 'http')  # Domyślny protokół
-
-
-if __name__ == '__main__':
-    unittest.main()
+    # Check if devices were discovered
+    assert len(devices) == 1
+    assert devices[0]['ip'] == '192.168.1.109'
+    assert devices[0]['port'] == 80  # Default port
+    assert devices[0]['protocol'] == 'http'  # Default protocol
