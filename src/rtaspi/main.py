@@ -12,13 +12,13 @@ import signal
 import argparse
 import logging
 
-from core.config import ConfigManager
-from core.logging import LoggingManager
-from core.mcp import MCPBroker, MCPClient
-from core.utils import check_dependencies, get_system_info, ensure_dir
+from .core.config import ConfigManager
+from .core.logging import LoggingManager
+from .core.mcp import MCPBroker, MCPClient
+from .core.utils import check_dependencies, get_system_info, ensure_dir
 
-from device_managers.local_devices import LocalDevicesManager
-from device_managers.network_devices import NetworkDevicesManager
+from .device_managers.local_devices import LocalDevicesManager
+from .device_managers.network_devices import NetworkDevicesManager
 
 logger = logging.getLogger("rtaspi")
 

@@ -40,6 +40,11 @@ setup(
         "Issue Tracker": "https://github.com/rt-asp/python/issues/new",
     },
     packages=find_packages(where="src"),
+    entry_points={
+        'console_scripts': [
+            'rtaspi=rtaspi.main:main',  # lub odpowiednia funkcja startowa
+        ],
+    },
     package_dir={"": "src"},
     license="Apache-2.0",
     license_files=("LICENSE",),

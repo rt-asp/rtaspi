@@ -16,11 +16,11 @@ import json
 import time
 from pathlib import Path
 
-from device_managers.base import DeviceManager
-from device_managers.utils.device import LocalDevice
-from streaming.rtsp import RTSPServer
-from streaming.rtmp import RTMPServer
-from streaming.webrtc import WebRTCServer
+from rtaspi.device_managers.base import DeviceManager
+from rtaspi.device_managers.utils.device import LocalDevice
+from .streaming.rtsp import RTSPServer
+from .streaming.rtmp import RTMPServer
+from .streaming.webrtc import WebRTCServer
 
 logger = logging.getLogger("LocalDevices")
 
@@ -281,7 +281,35 @@ class LocalDevicesManager(DeviceManager):
                                 name=current_device.get('description', current_device['name']),
                                 type='audio',
                                 system_path=current_device['name'],
-                                driver='pulse')
+                                driver='pulse'
+                            )
+                            device.status = 'online'
+
+                            # Dodanie urządzenia do listy
+                            audio_devices[device_id] = device
+
+                        # Reset dla nowego urządzenia
+                        current_device = {}
+                    elif ':' in line:
+                        key, value = line.split(':', 1)
+                        key = key.strip().lower()
+                        value = value.strip()
+
+                        if key == 'name' or key == 'description':
+                            current_device[key] = value
+
+                # Dodanie ostatniego urządzenia
+                if current_device and 'name' in current_device:
+                    device_id = f"pulse:{current_device['name']}"
+
+                    # Utworzenie obiektu urządzenia
+                    device = LocalDevice(
+                        device_id=device_id,
+                        name=current_device.get('description', current_device['name']),
+                        type='audio',
+                        system_path=current_device['name'],
+                        driver='pulse'
+                    )
                     device.status = 'online'
 
                     # Dodanie urządzenia do listy
@@ -661,31 +689,3 @@ class LocalDevicesManager(DeviceManager):
 
         except Exception as e:
             logger.error(f"Błąd podczas obsługi komendy MCP: {e}")
-
-            )
-            device.status = 'online'
-
-            # Dodanie urządzenia do listy
-            audio_devices[device_id] = device
-
-            current_device = {}
-
-            elif ':' in line:
-            key, value = line.split(':', 1)
-            key = key.strip().lower()
-            value = value.strip()
-
-            if key == 'name' or key == 'description':
-                current_device[key] = value
-
-            # Dodanie ostatniego urządzenia
-            if current_device and 'name' in current_device:
-                device_id = f"pulse:{current_device['name']}"
-
-            # Utworzenie obiektu urządzenia
-            device = LocalDevice(
-        device_id = device_id,
-        name = current_device.get('description', current_device['name']),
-        type = 'audio',
-        system_path = current_device['name'],
-        driver = 'pulse'

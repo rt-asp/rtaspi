@@ -41,7 +41,7 @@ Pobierz i zainstaluj:
 
 1. Sklonuj repozytorium:
 ```bash
-git clone https://github.com/twoja-organizacja/rtaspi.git
+git clone https://github.com/rt-asp/rtaspi.git
 cd rtaspi
 ```
 
