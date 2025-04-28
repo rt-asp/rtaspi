@@ -297,3 +297,20 @@ def read_json(path):
     except Exception as e:
         logger.error(f"Błąd podczas wczytywania pliku JSON {path}: {e}")
         return None
+
+def get_version():
+    """
+    Get the package version from _version.py.
+    
+    Returns:
+        str: The package version.
+    """
+    try:
+        version_file = Path(__file__).parent.parent / "_version.py"
+        with open(version_file, 'r') as f:
+            version_content = {}
+            exec(f.read(), version_content)
+            return version_content.get('__version__', 'unknown')
+    except Exception as e:
+        logger.error(f"Error reading version: {e}")
+        return 'unknown'

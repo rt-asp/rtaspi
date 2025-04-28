@@ -1,5 +1,7 @@
 """
 logging.py
+
+This module provides logging configuration for the rtaspi package.
 """
 
 # !/usr/bin/env python3
@@ -13,6 +15,17 @@ import os
 import logging
 import logging.handlers
 from datetime import datetime
+
+
+def setup_logging(config):
+    """
+    Set up logging configuration for the rtaspi package.
+
+    Args:
+        config (dict): Configuration dictionary containing logging settings.
+    """
+    manager = LoggingManager(config)
+    return manager
 
 
 class LoggingManager:
