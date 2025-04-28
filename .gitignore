@@ -1,3 +1,9 @@
+.idea
+pyproject.toml.bak
+.bak
+.log
+requirements.txt.backup
+testfile.txt
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
