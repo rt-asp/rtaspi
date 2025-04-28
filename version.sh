@@ -23,6 +23,7 @@ pip install -r requirements.txt
 pip install -e .
 python version/src.py -f src/rtaspi/__init__.py
 python version/src.py -f src/rtaspi/_version.py
+python version/project.py
 
 python changelog.py
 #python increment.py
