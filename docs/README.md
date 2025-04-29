@@ -1,67 +1,79 @@
 # [RTASPI - Real-Time Annotation and Stream Processing Interface](http://rt-asp.github.io/rtaspi/)
 
-rtaspi to system do wykrywania, zarządzania i streamowania z lokalnych oraz zdalnych urządzeń audio i wideo. Umożliwia łatwe udostępnianie strumieni z kamer i mikrofonów w różnych protokołach (RTSP, RTMP, WebRTC).
+RTASPI is a powerful system for detecting, managing, and streaming from local and remote audio/video devices. It enables easy sharing of camera and microphone streams through various protocols (RTSP, RTMP, WebRTC) while providing real-time processing capabilities.
 
-## Główne funkcje
+## Features
 
-- Automatyczne wykrywanie lokalnych urządzeń wideo (kamery) i audio (mikrofony)
-- Wykrywanie zdalnych urządzeń sieciowych (kamery IP, mikrofony IP) poprzez protokoły ONVIF, UPnP i mDNS
-- Streamowanie z urządzeń lokalnych poprzez RTSP, RTMP i WebRTC
-- Proxy strumieni z urządzeń zdalnych
-- Transkodowanie strumieni w czasie rzeczywistym
-- Centralny system komunikacji między modułami (MCP - Module Communication Protocol)
+- **Device Management**
+  - Automatic detection of local video (cameras) and audio (microphones) devices
+  - Network device discovery (IP cameras, IP microphones) via ONVIF, UPnP, and mDNS
+  - Unified device management interface
 
-## Wymagania systemowe
+- **Streaming Capabilities**
+  - Stream local devices via RTSP, RTMP, and WebRTC
+  - Proxy streams from remote devices
+  - Real-time stream transcoding
+  - Multi-protocol support
 
-- Python 3.8 lub nowszy
-- FFmpeg 4.0 lub nowszy
-- GStreamer 1.14 lub nowszy (dla WebRTC)
-- NGINX z modułem RTMP (dla RTMP)
+- **Processing Features**
+  - Real-time video filtering and effects
+  - Audio processing and filters
+  - Speech recognition capabilities
+  - Object detection and tracking
 
-### Zależności systemowe
+- **Integration & Control**
+  - RESTful API for remote control
+  - Command-line interface (CLI)
+  - Web interface for management
+  - Module Communication Protocol (MCP) for inter-module communication
+
+## Documentation
+
+- [Installation Guide](INSTALL.md) - Detailed installation instructions
+- [Core Concepts](CONCEPTS.md) - Understanding RTASPI's architecture and key concepts
+- [Configuration Guide](CONFIGURATION.md) - How to configure RTASPI
+- [API Reference](API.md) - REST API documentation
+- [CLI Guide](CLI.md) - Command-line interface usage
+- [Development Guide](DEVELOPMENT.md) - Contributing to RTASPI
+- [Examples](EXAMPLES.md) - Usage examples and tutorials
+
+## System Requirements
+
+- Python 3.8 or newer
+- FFmpeg 4.0 or newer
+- GStreamer 1.14 or newer (for WebRTC)
+- NGINX with RTMP module (for RTMP)
+
+### System Dependencies
 
 #### Ubuntu/Debian:
 ```bash
 sudo apt update
-sudo apt install ffmpeg gstreamer1.0-tools gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly nginx libnginx-mod-rtmp v4l-utils
+sudo apt install ffmpeg gstreamer1.0-tools gstreamer1.0-plugins-base \
+    gstreamer1.0-plugins-good gstreamer1.0-plugins-bad \
+    gstreamer1.0-plugins-ugly nginx libnginx-mod-rtmp v4l-utils
 ```
 
 #### macOS:
 ```bash
-brew install ffmpeg gstreamer gst-plugins-base gst-plugins-good gst-plugins-bad gst-plugins-ugly nginx
+brew install ffmpeg gstreamer gst-plugins-base gst-plugins-good \
+    gst-plugins-bad gst-plugins-ugly nginx
 ```
 
 #### Windows:
-Pobierz i zainstaluj:
+Download and install:
 - [FFmpeg](https://ffmpeg.org/download.html)
 - [GStreamer](https://gstreamer.freedesktop.org/download/)
-- [NGINX z modułem RTMP](https://github.com/illuspas/nginx-rtmp-win32)
+- [NGINX with RTMP module](https://github.com/illuspas/nginx-rtmp-win32)
 
-## Instalacja
+## Quick Start
 
-1. Sklonuj repozytorium:
+1. Install RTASPI:
 ```bash
-git clone https://github.com/rt-asp/rtaspi.git
-cd rtaspi
+pip install rtaspi
 ```
 
-2. Utwórz i aktywuj wirtualne środowisko:
-```bash
-python -m venv venv
-source venv/bin/activate  # Linux/macOS
-venv\Scripts\activate     # Windows
-```
-
-3. Zainstaluj zależności:
-```bash
-pip install -r requirements.txt
-```
-
-## Konfiguracja
-
-Konfiguracja systemu znajduje się w pliku `config.yaml`. Domyślna konfiguracja zostanie utworzona automatycznie przy pierwszym uruchomieniu, możesz ją później dostosować do swoich potrzeb.
-
-Przykładowa konfiguracja:
+2. Create a configuration file (rtaspi.config.yaml):
 ```yaml
 system:
   storage_path: 'storage'
@@ -71,32 +83,17 @@ local_devices:
   enable_video: true
   enable_audio: true
   auto_start: false
-  scan_interval: 60
-  rtsp_port_start: 8554
-  rtmp_port_start: 1935
-  webrtc_port_start: 8080
-
-network_devices:
-  enable: true
-  scan_interval: 60
-  discovery_enabled: true
-  discovery_methods:
-    - 'onvif'
-    - 'upnp'
-    - 'mdns'
-  rtsp_port_start: 8654
-  rtmp_port_start: 2935
-  webrtc_port_start: 9080
-
-streaming:
-  rtsp:
-    port_start: 8554
-  rtmp:
-    port_start: 1935
-  webrtc:
-    port_start: 8080
-    stun_server: 'stun://stun.l.google.com:19302'
-    turn_server: ''
-    turn_username: ''
-    turn_password: ''
 ```
+
+3. Start RTASPI:
+```bash
+rtaspi start
+```
+
+## License
+
+This project is licensed under the Apache License 2.0 - see the [LICENSE](../LICENSE) file for details.
+
+## Contributing
+
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.

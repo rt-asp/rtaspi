@@ -20,6 +20,7 @@ from cryptography.x509.oid import NameOID
 from rtaspi.api import ServerAPI
 from .api import APIServer
 from .interface import WebInterface
+from .acme import ACMEClient, challenge_handler
 
 
 class WebServer:
@@ -89,14 +90,24 @@ class WebServer:
         ssl_context = None
         if ssl:
             if domain and email:
-                # Generate certificate using Let's Encrypt
-                cert_info = await self._generate_certificate(
-                    domain=domain,
-                    email=email,
-                    staging=staging
-                )
-                cert_file = cert_info["cert_file"]
-                key_file = cert_info["key_file"]
+                # Check if certificate needs renewal
+                acme_client = ACMEClient(domain, email, staging)
+                await acme_client.initialize()
+                needs_renewal = await acme_client.check_certificate()
+
+                if needs_renewal:
+                    # Generate new certificate using Let's Encrypt
+                    cert_info = await self._generate_certificate(
+                        domain=domain,
+                        email=email,
+                        staging=staging
+                    )
+                    cert_file = cert_info["cert_file"]
+                    key_file = cert_info["key_file"]
+                else:
+                    # Use existing certificate
+                    cert_file = str(Path("certs") / "server.crt")
+                    key_file = str(Path("certs") / "server.key")
             elif not (cert_file and key_file):
                 # Generate self-signed certificate
                 cert_info = self._generate_self_signed_certificate()
@@ -166,9 +177,29 @@ class WebServer:
         Returns:
             Dictionary containing paths to generated files
         """
-        # TODO: Implement actual Let's Encrypt certificate generation
-        # For now, generate self-signed certificate
-        return self._generate_self_signed_certificate(domain)
+        # Initialize ACME client
+        acme_client = ACMEClient(domain, email, staging)
+        await acme_client.initialize()
+
+        # Add challenge handler route
+        self.app["acme_client"] = acme_client
+        self.app.router.add_get(
+            "/.well-known/acme-challenge/{token}",
+            challenge_handler
+        )
+
+        try:
+            # Obtain certificate
+            cert_info = await acme_client.obtain_certificate()
+            self.logger.info(f"Generated Let's Encrypt certificate for {domain}")
+            return cert_info
+        except Exception as e:
+            self.logger.error(f"Failed to obtain Let's Encrypt certificate: {e}")
+            self.logger.info("Falling back to self-signed certificate")
+            return self._generate_self_signed_certificate(domain)
+        finally:
+            # Cleanup
+            self.app["acme_client"] = None
 
     def _generate_self_signed_certificate(
         self,

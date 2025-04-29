@@ -46,6 +46,12 @@ setup(
         "fastapi>=0.110.0",
         "uvicorn>=0.27.0",
         
+        # HTTPS/Certificate management
+        "python-acme>=2.7.0",
+        "cryptography>=42.0.0",
+        "certbot>=2.7.0",
+        "dnspython>=2.4.0",
+        
         # Device discovery
         "upnpclient>=1.0.3",
         "zeroconf>=0.38.1",

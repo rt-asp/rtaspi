@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.17] - 2025-04-29
+
+### Added
+- Changes in docs/API.md
+- Changes in docs/CONCEPTS.md
+- Changes in docs/CONFIGURATION.md
+- Changes in src/rtaspi/web/acme.py
+
+### Changed
+- Changes in docs/README.md
+- Changes in src/rtaspi/web/server.py
+
 ## [0.1.16] - 2025-04-29
 
 ### Added

@@ -1,0 +1,1 @@
+do tasks from TODO.md and check if done, set [x] if DONE
