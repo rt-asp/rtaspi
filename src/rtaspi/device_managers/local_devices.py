@@ -358,11 +358,9 @@ class LocalDevicesManager(DeviceManager):
                         )
                         device.status = 'online'
 
-                        # Dodanie urządzenia do listy
-                        video_devices[device_id] = device
-
-            # Aktualizacja listy urządzeń
-            self.devices['video'] = video_devices
+                    # Dodanie urządzenia do listy
+                    video_devices[device_id] = device
+                    self.devices['video'][device_id] = device
 
         except Exception as e:
             logger.error(f"Błąd podczas skanowania urządzeń wideo w systemie macOS: {e}")

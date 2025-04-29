@@ -25,7 +25,8 @@ def pytest_configure(config):
     sys.path.extend([
         str(src_dir),
         str(project_root / 'venv/lib/python3.12/site-packages'),
-        '/home/tom/miniconda3/lib/python3.12'
+        '/home/tom/miniconda3/lib/python3.12',
+        '/home/tom/miniconda3/lib/python3.12/lib-dynload'
     ])
     
     # Print Python path
@@ -33,14 +34,6 @@ def pytest_configure(config):
     for path in sys.path:
         print(f"  {path}")
     
-    # Verify we can import rtaspi
-    try:
-        import rtaspi
-        print(f"\nrtaspi found at: {rtaspi.__file__}")
-        print(f"rtaspi.__path__: {rtaspi.__path__}")
-    except ImportError as e:
-        print(f"\nFailed to import rtaspi: {e}")
-        raise
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_env():

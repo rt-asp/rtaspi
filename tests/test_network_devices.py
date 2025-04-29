@@ -2,113 +2,132 @@ import pytest
 from unittest.mock import MagicMock, patch
 
 from rtaspi.core.mcp import MCPBroker
-from rtaspi.device_managers.network_devices import NetworkDeviceManager
-from rtaspi.device_managers.utils.device import Device
-from rtaspi.device_managers.utils.protocols import NetworkProtocol
+from rtaspi.device_managers.network_devices import NetworkDevicesManager
+from rtaspi.device_managers.utils.device import NetworkDevice
 
 @pytest.fixture
 def mcp_broker():
     return MagicMock(spec=MCPBroker)
 
 @pytest.fixture
-def network_manager(mcp_broker):
-    return NetworkDeviceManager(mcp_broker)
+def config():
+    return {
+        'network_devices': {
+            'scan_interval': 60,
+            'discovery_enabled': True,
+            'discovery_methods': ['onvif', 'upnp', 'mdns']
+        },
+        'system': {
+            'storage_path': '/tmp'
+        }
+    }
 
-def test_network_manager_initialization(network_manager):
-    assert isinstance(network_manager, NetworkDeviceManager)
+@pytest.fixture
+def network_manager(config, mcp_broker):
+    return NetworkDevicesManager(config, mcp_broker)
+
+def test_network_manager_initialization(network_manager, config):
+    assert isinstance(network_manager, NetworkDevicesManager)
     assert hasattr(network_manager, 'mcp_broker')
-    assert hasattr(network_manager, 'connected_devices')
-    assert isinstance(network_manager.connected_devices, dict)
+    assert hasattr(network_manager, 'devices')
+    assert isinstance(network_manager.devices, dict)
+    assert network_manager.scan_interval == config['network_devices']['scan_interval']
+    assert set(network_manager.discovery_methods) == set(['onvif', 'upnp', 'mdns'])
 
-@pytest.mark.asyncio
-async def test_discover_devices(network_manager):
-    # Mock device discovery
-    mock_device = Device(
-        id="test_network_device",
-        name="Test Network Device",
-        type="ip_camera",
-        status="online",
-        capabilities=["video", "audio", "ptz"],
-        network_info={
-            "ip": "192.168.1.100",
-            "port": 554,
-            "protocol": NetworkProtocol.RTSP
-        }
+def test_add_device(network_manager):
+    device_id = network_manager.add_device(
+        name="Test Camera",
+        ip="192.168.1.100",
+        port=554,
+        username="admin",
+        password="admin",
+        type="video",
+        protocol="rtsp",
+        paths=["/stream1", "/stream2"]
     )
     
-    with patch('rtaspi.device_managers.network_devices.DeviceDiscovery') as mock_discovery:
-        mock_discovery_instance = mock_discovery.return_value
-        mock_discovery_instance.discover_devices.return_value = [mock_device]
-        
-        devices = await network_manager.discover_devices()
-        
-        assert len(devices) == 1
-        assert devices[0].id == "test_network_device"
-        assert devices[0].name == "Test Network Device"
-        assert devices[0].type == "ip_camera"
-        assert devices[0].status == "online"
-        assert devices[0].capabilities == ["video", "audio", "ptz"]
-        assert devices[0].network_info["ip"] == "192.168.1.100"
-        assert devices[0].network_info["port"] == 554
-        assert devices[0].network_info["protocol"] == NetworkProtocol.RTSP
+    assert device_id is not None
+    assert device_id in network_manager.devices
+    device = network_manager.devices[device_id]
+    assert isinstance(device, NetworkDevice)
+    assert device.name == "Test Camera"
+    assert device.ip == "192.168.1.100"
+    assert device.port == 554
+    assert device.type == "video"
+    assert device.protocol == "rtsp"
+    assert len(device.streams) == 2
 
-@pytest.mark.asyncio
-async def test_connect_device(network_manager):
-    device = Device(
-        id="test_network_device",
-        name="Test Network Device",
-        type="ip_camera",
-        status="offline",
-        capabilities=["video", "audio", "ptz"],
-        network_info={
-            "ip": "192.168.1.100",
-            "port": 554,
-            "protocol": NetworkProtocol.RTSP
-        }
+def test_remove_device(network_manager):
+    # First add a device
+    device_id = network_manager.add_device(
+        name="Test Camera",
+        ip="192.168.1.100",
+        port=554,
+        type="video",
+        protocol="rtsp"
     )
     
-    # Test successful connection
-    with patch.object(network_manager, '_establish_connection') as mock_connect:
-        mock_connect.return_value = True
-        
-        success = await network_manager.connect_device(device)
-        
-        assert success
-        assert device.status == "online"
-        assert device.id in network_manager.connected_devices
-        mock_connect.assert_called_once_with(device)
-
-    # Test failed connection
-    with patch.object(network_manager, '_establish_connection') as mock_connect:
-        mock_connect.return_value = False
-        
-        success = await network_manager.connect_device(device)
-        
-        assert not success
-        assert device.status == "offline"
-        assert device.id not in network_manager.connected_devices
-        mock_connect.assert_called_once_with(device)
-
-@pytest.mark.asyncio
-async def test_disconnect_device(network_manager):
-    device = Device(
-        id="test_network_device",
-        name="Test Network Device",
-        type="ip_camera",
-        status="online",
-        capabilities=["video", "audio", "ptz"],
-        network_info={
-            "ip": "192.168.1.100",
-            "port": 554,
-            "protocol": NetworkProtocol.RTSP
-        }
-    )
-    
-    # Add device to connected devices
-    network_manager.connected_devices[device.id] = device
-    
-    success = await network_manager.disconnect_device(device)
+    # Then remove it
+    success = network_manager.remove_device(device_id)
     
     assert success
-    assert device.status == "offline"
-    assert device.id not in network_manager.connected_devices
+    assert device_id not in network_manager.devices
+
+def test_discover_devices(network_manager):
+    # Mock discovery modules
+    mock_onvif_devices = [{
+        'name': 'ONVIF Camera',
+        'ip': '192.168.1.101',
+        'port': 80,
+        'type': 'video',
+        'protocol': 'rtsp',
+        'paths': ['/onvif-media/media.amp']
+    }]
+    
+    mock_upnp_devices = [{
+        'name': 'UPnP Camera',
+        'ip': '192.168.1.102',
+        'port': 80,
+        'type': 'video',
+        'protocol': 'rtsp'
+    }]
+    
+    mock_mdns_devices = [{
+        'name': 'mDNS Camera',
+        'ip': '192.168.1.103',
+        'port': 5353,
+        'type': 'video',
+        'protocol': 'rtsp'
+    }]
+    
+    network_manager.discovery_modules['onvif'].discover = MagicMock(return_value=mock_onvif_devices)
+    network_manager.discovery_modules['upnp'].discover = MagicMock(return_value=mock_upnp_devices)
+    network_manager.discovery_modules['mdns'].discover = MagicMock(return_value=mock_mdns_devices)
+    
+    # Run discovery
+    network_manager._discover_devices()
+    
+    # Verify all discovery methods were called
+    network_manager.discovery_modules['onvif'].discover.assert_called_once()
+    network_manager.discovery_modules['upnp'].discover.assert_called_once()
+    network_manager.discovery_modules['mdns'].discover.assert_called_once()
+    
+    # Verify devices were added
+    assert len(network_manager.devices) == 3
+
+def test_handle_command(network_manager):
+    # Test scan command
+    with patch.object(network_manager, '_scan_devices') as mock_scan:
+        network_manager._handle_command("command/network_devices/scan", {})
+        mock_scan.assert_called_once()
+    
+    # Test add command
+    device_data = {
+        'name': 'Test Camera',
+        'ip': '192.168.1.100',
+        'port': 554,
+        'type': 'video',
+        'protocol': 'rtsp'
+    }
+    network_manager._handle_command("command/network_devices/add", device_data)
+    assert len(network_manager.devices) == 1
