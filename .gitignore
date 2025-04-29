@@ -9,7 +9,8 @@ testfile.txt
 .flatedit.logs.txt
 .logs.txt
 .logs
-
+.py.bak
+*.py.bak
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
