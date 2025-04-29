@@ -38,7 +38,9 @@ class NetworkDevicesManager:
         self.running = False
         self.devices = {}  # device_id -> NetworkDevice
         self.streams = {}  # stream_id -> stream_info
-        self.discovery_methods = ['onvif', 'upnp', 'mdns']
+        network_devices_config = config.get('network_devices', {})
+        self.discovery_enabled = network_devices_config.get('discovery_enabled', True)
+        self.discovery_methods = network_devices_config.get('discovery_methods', ['onvif', 'upnp', 'mdns'])
         self.discovery_modules = {
             'onvif': ONVIFDiscovery(),
             'upnp': UPnPDiscovery(),
