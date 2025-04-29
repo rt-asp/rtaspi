@@ -9,6 +9,7 @@ from ..core.logging import get_logger
 
 logger = get_logger(__name__)
 
+
 class VirtualKeyboard:
     """Virtual keyboard device for sending keystrokes."""
 
@@ -21,44 +22,49 @@ class VirtualKeyboard:
     def _get_backend(self):
         """Get appropriate keyboard backend for current platform."""
         system = platform.system().lower()
-        
-        if system == 'linux':
+
+        if system == "linux":
             try:
                 import uinput
+
                 return LinuxKeyboard()
             except ImportError:
                 logger.error("Failed to import uinput. Install python-uinput package.")
                 return None
-                
-        elif system == 'windows':
+
+        elif system == "windows":
             try:
                 import win32api
                 import win32con
+
                 return WindowsKeyboard()
             except ImportError:
                 logger.error("Failed to import win32api. Install pywin32 package.")
                 return None
-                
-        elif system == 'darwin':
+
+        elif system == "darwin":
             try:
                 from Quartz import (
                     CGEventCreateKeyboardEvent,
                     CGEventPost,
                     kCGHIDEventTap,
-                    kCGEventSourceStatePrivate
+                    kCGEventSourceStatePrivate,
                 )
+
                 return MacOSKeyboard()
             except ImportError:
-                logger.error("Failed to import Quartz. Install pyobjc-framework-Quartz package.")
+                logger.error(
+                    "Failed to import Quartz. Install pyobjc-framework-Quartz package."
+                )
                 return None
-                
+
         else:
             logger.error(f"Unsupported platform: {system}")
             return None
 
     def initialize(self) -> bool:
         """Initialize virtual keyboard device.
-        
+
         Returns:
             bool: True if initialization successful
         """
@@ -91,7 +97,7 @@ class VirtualKeyboard:
 
     def type_text(self, text: str, delay: float = 0.0) -> None:
         """Type text string.
-        
+
         Args:
             text: Text to type
             delay: Delay between keystrokes in seconds
@@ -110,7 +116,7 @@ class VirtualKeyboard:
 
     def press_key(self, key: str) -> None:
         """Press and hold key.
-        
+
         Args:
             key: Key to press (e.g., 'a', 'shift', 'ctrl')
         """
@@ -119,7 +125,7 @@ class VirtualKeyboard:
             return
 
         try:
-            if key.lower() in ['shift', 'ctrl', 'alt', 'meta']:
+            if key.lower() in ["shift", "ctrl", "alt", "meta"]:
                 self._modifiers.add(key.lower())
             self._backend.press_key(key)
         except Exception as e:
@@ -127,7 +133,7 @@ class VirtualKeyboard:
 
     def release_key(self, key: str) -> None:
         """Release held key.
-        
+
         Args:
             key: Key to release
         """
@@ -144,7 +150,7 @@ class VirtualKeyboard:
 
     def tap_key(self, key: str) -> None:
         """Tap key (press and release).
-        
+
         Args:
             key: Key to tap
         """
@@ -153,7 +159,7 @@ class VirtualKeyboard:
 
     def get_active_modifiers(self) -> List[str]:
         """Get list of currently held modifier keys.
-        
+
         Returns:
             List[str]: List of modifier keys
         """
@@ -170,12 +176,13 @@ class LinuxKeyboard:
 
     def initialize(self) -> bool:
         """Initialize uinput device.
-        
+
         Returns:
             bool: True if initialization successful
         """
         try:
             import uinput
+
             events = []
             for code in self._key_mapping.values():
                 if isinstance(code, int):
@@ -194,7 +201,7 @@ class LinuxKeyboard:
 
     def type_char(self, char: str) -> None:
         """Type single character.
-        
+
         Args:
             char: Character to type
         """
@@ -204,15 +211,15 @@ class LinuxKeyboard:
         key_code = self._key_mapping.get(char.lower())
         if key_code:
             if char.isupper():
-                self._device.emit(self._key_mapping['shift'], 1)
+                self._device.emit(self._key_mapping["shift"], 1)
             self._device.emit(key_code, 1)
             self._device.emit(key_code, 0)
             if char.isupper():
-                self._device.emit(self._key_mapping['shift'], 0)
+                self._device.emit(self._key_mapping["shift"], 0)
 
     def press_key(self, key: str) -> None:
         """Press key.
-        
+
         Args:
             key: Key to press
         """
@@ -225,7 +232,7 @@ class LinuxKeyboard:
 
     def release_key(self, key: str) -> None:
         """Release key.
-        
+
         Args:
             key: Key to release
         """
@@ -238,20 +245,21 @@ class LinuxKeyboard:
 
     def _create_key_mapping(self) -> Dict[str, int]:
         """Create mapping of characters to uinput key codes.
-        
+
         Returns:
             Dict[str, int]: Character to key code mapping
         """
         try:
             import uinput
+
             return {
-                'a': uinput.KEY_A,
-                'b': uinput.KEY_B,
+                "a": uinput.KEY_A,
+                "b": uinput.KEY_B,
                 # ... add all keys
-                'shift': uinput.KEY_LEFTSHIFT,
-                'ctrl': uinput.KEY_LEFTCTRL,
-                'alt': uinput.KEY_LEFTALT,
-                'meta': uinput.KEY_LEFTMETA
+                "shift": uinput.KEY_LEFTSHIFT,
+                "ctrl": uinput.KEY_LEFTCTRL,
+                "alt": uinput.KEY_LEFTALT,
+                "meta": uinput.KEY_LEFTMETA,
             }
         except ImportError:
             return {}
@@ -266,12 +274,13 @@ class WindowsKeyboard:
 
     def initialize(self) -> bool:
         """Initialize Windows keyboard.
-        
+
         Returns:
             bool: True if initialization successful
         """
         try:
             import win32api
+
             return True
         except ImportError:
             return False
@@ -282,13 +291,14 @@ class WindowsKeyboard:
 
     def type_char(self, char: str) -> None:
         """Type single character.
-        
+
         Args:
             char: Character to type
         """
         try:
             import win32api
             import win32con
+
             vk, is_shift = self._key_mapping.get(char.lower(), (None, False))
             if vk:
                 if char.isupper() or is_shift:
@@ -296,18 +306,21 @@ class WindowsKeyboard:
                 win32api.keybd_event(vk, 0, 0, 0)
                 win32api.keybd_event(vk, 0, win32con.KEYEVENTF_KEYUP, 0)
                 if char.isupper() or is_shift:
-                    win32api.keybd_event(win32con.VK_SHIFT, 0, win32con.KEYEVENTF_KEYUP, 0)
+                    win32api.keybd_event(
+                        win32con.VK_SHIFT, 0, win32con.KEYEVENTF_KEYUP, 0
+                    )
         except Exception as e:
             logger.error(f"Error typing character: {e}")
 
     def press_key(self, key: str) -> None:
         """Press key.
-        
+
         Args:
             key: Key to press
         """
         try:
             import win32api
+
             vk, _ = self._key_mapping.get(key.lower(), (None, False))
             if vk:
                 win32api.keybd_event(vk, 0, 0, 0)
@@ -316,13 +329,14 @@ class WindowsKeyboard:
 
     def release_key(self, key: str) -> None:
         """Release key.
-        
+
         Args:
             key: Key to release
         """
         try:
             import win32api
             import win32con
+
             vk, _ = self._key_mapping.get(key.lower(), (None, False))
             if vk:
                 win32api.keybd_event(vk, 0, win32con.KEYEVENTF_KEYUP, 0)
@@ -331,20 +345,21 @@ class WindowsKeyboard:
 
     def _create_key_mapping(self) -> Dict[str, tuple]:
         """Create mapping of characters to virtual key codes.
-        
+
         Returns:
             Dict[str, tuple]: Character to (key code, shift required) mapping
         """
         try:
             import win32con
+
             return {
-                'a': (win32con.VK_A, False),
-                'b': (win32con.VK_B, False),
+                "a": (win32con.VK_A, False),
+                "b": (win32con.VK_B, False),
                 # ... add all keys
-                'shift': (win32con.VK_SHIFT, False),
-                'ctrl': (win32con.VK_CONTROL, False),
-                'alt': (win32con.VK_MENU, False),
-                'meta': (win32con.VK_LWIN, False)
+                "shift": (win32con.VK_SHIFT, False),
+                "ctrl": (win32con.VK_CONTROL, False),
+                "alt": (win32con.VK_MENU, False),
+                "meta": (win32con.VK_LWIN, False),
             }
         except ImportError:
             return {}
@@ -359,12 +374,13 @@ class MacOSKeyboard:
 
     def initialize(self) -> bool:
         """Initialize macOS keyboard.
-        
+
         Returns:
             bool: True if initialization successful
         """
         try:
             from Quartz import kCGEventSourceStatePrivate
+
             return True
         except ImportError:
             return False
@@ -375,12 +391,13 @@ class MacOSKeyboard:
 
     def type_char(self, char: str) -> None:
         """Type single character.
-        
+
         Args:
             char: Character to type
         """
         try:
             from Quartz import CGEventCreateKeyboardEvent, CGEventPost, kCGHIDEventTap
+
             key_code = self._key_mapping.get(char.lower())
             if key_code:
                 event = CGEventCreateKeyboardEvent(None, key_code, True)
@@ -392,12 +409,13 @@ class MacOSKeyboard:
 
     def press_key(self, key: str) -> None:
         """Press key.
-        
+
         Args:
             key: Key to press
         """
         try:
             from Quartz import CGEventCreateKeyboardEvent, CGEventPost, kCGHIDEventTap
+
             key_code = self._key_mapping.get(key.lower())
             if key_code:
                 event = CGEventCreateKeyboardEvent(None, key_code, True)
@@ -407,12 +425,13 @@ class MacOSKeyboard:
 
     def release_key(self, key: str) -> None:
         """Release key.
-        
+
         Args:
             key: Key to release
         """
         try:
             from Quartz import CGEventCreateKeyboardEvent, CGEventPost, kCGHIDEventTap
+
             key_code = self._key_mapping.get(key.lower())
             if key_code:
                 event = CGEventCreateKeyboardEvent(None, key_code, False)
@@ -422,17 +441,17 @@ class MacOSKeyboard:
 
     def _create_key_mapping(self) -> Dict[str, int]:
         """Create mapping of characters to macOS key codes.
-        
+
         Returns:
             Dict[str, int]: Character to key code mapping
         """
         # macOS key codes
         return {
-            'a': 0x00,
-            'b': 0x0B,
+            "a": 0x00,
+            "b": 0x0B,
             # ... add all keys
-            'shift': 0x38,
-            'ctrl': 0x3B,
-            'alt': 0x3A,
-            'meta': 0x37
+            "shift": 0x38,
+            "ctrl": 0x3B,
+            "alt": 0x3A,
+            "meta": 0x37,
         }

@@ -13,12 +13,13 @@ from ..base import DeviceManager
 
 logger = get_logger(__name__)
 
+
 class ModbusDevice:
     """Modbus device implementation."""
 
     def __init__(self, device_id: str, config: Dict[str, Any]):
         """Initialize Modbus device.
-        
+
         Args:
             device_id: Device identifier
             config: Device configuration
@@ -27,20 +28,20 @@ class ModbusDevice:
         self.config = config
 
         # Connection settings
-        self.mode = config.get('mode', 'tcp')  # tcp or rtu
-        self.host = config.get('host', 'localhost')
-        self.port = config.get('port', 502)
-        self.unit = config.get('unit', 1)
-        
+        self.mode = config.get("mode", "tcp")  # tcp or rtu
+        self.host = config.get("host", "localhost")
+        self.port = config.get("port", 502)
+        self.unit = config.get("unit", 1)
+
         # Serial settings (for RTU mode)
-        self.serial_port = config.get('serial_port')
-        self.baudrate = config.get('baudrate', 9600)
-        self.parity = config.get('parity', 'N')
-        self.stopbits = config.get('stopbits', 1)
-        self.bytesize = config.get('bytesize', 8)
+        self.serial_port = config.get("serial_port")
+        self.baudrate = config.get("baudrate", 9600)
+        self.parity = config.get("parity", "N")
+        self.stopbits = config.get("stopbits", 1)
+        self.bytesize = config.get("bytesize", 8)
 
         # Register mapping
-        self.registers = config.get('registers', {})
+        self.registers = config.get("registers", {})
 
         # Client
         self._client = None
@@ -48,24 +49,21 @@ class ModbusDevice:
 
     def connect(self) -> bool:
         """Connect to Modbus device.
-        
+
         Returns:
             bool: True if connection successful
         """
         try:
-            if self.mode == 'tcp':
-                self._client = ModbusTcpClient(
-                    host=self.host,
-                    port=self.port
-                )
+            if self.mode == "tcp":
+                self._client = ModbusTcpClient(host=self.host, port=self.port)
             else:  # rtu
                 self._client = ModbusSerialClient(
-                    method='rtu',
+                    method="rtu",
                     port=self.serial_port,
                     baudrate=self.baudrate,
                     parity=self.parity,
                     stopbits=self.stopbits,
-                    bytesize=self.bytesize
+                    bytesize=self.bytesize,
                 )
 
             self._connected = self._client.connect()
@@ -94,10 +92,10 @@ class ModbusDevice:
 
     def read_register(self, name: str) -> Optional[Any]:
         """Read register by name.
-        
+
         Args:
             name: Register name from configuration
-            
+
         Returns:
             Optional[Any]: Register value if successful
         """
@@ -113,22 +111,28 @@ class ModbusDevice:
                 return None
 
             # Get register parameters
-            reg_type = reg_config.get('type', 'holding')
-            address = reg_config.get('address')
-            data_type = reg_config.get('data_type', 'uint16')
-            count = reg_config.get('count', 1)
-            scale = reg_config.get('scale', 1)
-            offset = reg_config.get('offset', 0)
+            reg_type = reg_config.get("type", "holding")
+            address = reg_config.get("address")
+            data_type = reg_config.get("data_type", "uint16")
+            count = reg_config.get("count", 1)
+            scale = reg_config.get("scale", 1)
+            offset = reg_config.get("offset", 0)
 
             # Read register
-            if reg_type == 'holding':
-                result = self._client.read_holding_registers(address, count, unit=self.unit)
-            elif reg_type == 'input':
-                result = self._client.read_input_registers(address, count, unit=self.unit)
-            elif reg_type == 'coil':
+            if reg_type == "holding":
+                result = self._client.read_holding_registers(
+                    address, count, unit=self.unit
+                )
+            elif reg_type == "input":
+                result = self._client.read_input_registers(
+                    address, count, unit=self.unit
+                )
+            elif reg_type == "coil":
                 result = self._client.read_coils(address, count, unit=self.unit)
-            elif reg_type == 'discrete':
-                result = self._client.read_discrete_inputs(address, count, unit=self.unit)
+            elif reg_type == "discrete":
+                result = self._client.read_discrete_inputs(
+                    address, count, unit=self.unit
+                )
             else:
                 logger.error(f"Invalid register type: {reg_type}")
                 return None
@@ -138,30 +142,28 @@ class ModbusDevice:
                 return None
 
             # Decode value based on data type
-            if reg_type in ['coil', 'discrete']:
+            if reg_type in ["coil", "discrete"]:
                 return result.bits[0] if count == 1 else result.bits[:count]
 
             decoder = BinaryPayloadDecoder.fromRegisters(
-                result.registers,
-                byteorder=Endian.Big,
-                wordorder=Endian.Big
+                result.registers, byteorder=Endian.Big, wordorder=Endian.Big
             )
 
             value = None
-            if data_type == 'uint16':
+            if data_type == "uint16":
                 value = decoder.decode_16bit_uint()
-            elif data_type == 'int16':
+            elif data_type == "int16":
                 value = decoder.decode_16bit_int()
-            elif data_type == 'uint32':
+            elif data_type == "uint32":
                 value = decoder.decode_32bit_uint()
-            elif data_type == 'int32':
+            elif data_type == "int32":
                 value = decoder.decode_32bit_int()
-            elif data_type == 'float32':
+            elif data_type == "float32":
                 value = decoder.decode_32bit_float()
-            elif data_type == 'float64':
+            elif data_type == "float64":
                 value = decoder.decode_64bit_float()
-            elif data_type == 'string':
-                value = decoder.decode_string(count * 2).decode().strip('\x00')
+            elif data_type == "string":
+                value = decoder.decode_string(count * 2).decode().strip("\x00")
             else:
                 logger.error(f"Invalid data type: {data_type}")
                 return None
@@ -178,11 +180,11 @@ class ModbusDevice:
 
     def write_register(self, name: str, value: Any) -> bool:
         """Write register by name.
-        
+
         Args:
             name: Register name from configuration
             value: Value to write
-            
+
         Returns:
             bool: True if write successful
         """
@@ -198,45 +200,46 @@ class ModbusDevice:
                 return False
 
             # Get register parameters
-            reg_type = reg_config.get('type', 'holding')
-            address = reg_config.get('address')
-            data_type = reg_config.get('data_type', 'uint16')
-            scale = reg_config.get('scale', 1)
-            offset = reg_config.get('offset', 0)
+            reg_type = reg_config.get("type", "holding")
+            address = reg_config.get("address")
+            data_type = reg_config.get("data_type", "uint16")
+            scale = reg_config.get("scale", 1)
+            offset = reg_config.get("offset", 0)
 
             # Apply reverse scaling and offset
             if isinstance(value, (int, float)):
                 value = (value - offset) / scale
 
             # Encode value based on data type
-            if reg_type in ['coil']:
+            if reg_type in ["coil"]:
                 result = self._client.write_coil(address, bool(value), unit=self.unit)
             else:
                 builder = BinaryPayloadBuilder(
-                    byteorder=Endian.Big,
-                    wordorder=Endian.Big
+                    byteorder=Endian.Big, wordorder=Endian.Big
                 )
 
-                if data_type == 'uint16':
+                if data_type == "uint16":
                     builder.add_16bit_uint(int(value))
-                elif data_type == 'int16':
+                elif data_type == "int16":
                     builder.add_16bit_int(int(value))
-                elif data_type == 'uint32':
+                elif data_type == "uint32":
                     builder.add_32bit_uint(int(value))
-                elif data_type == 'int32':
+                elif data_type == "int32":
                     builder.add_32bit_int(int(value))
-                elif data_type == 'float32':
+                elif data_type == "float32":
                     builder.add_32bit_float(float(value))
-                elif data_type == 'float64':
+                elif data_type == "float64":
                     builder.add_64bit_float(float(value))
-                elif data_type == 'string':
+                elif data_type == "string":
                     builder.add_string(str(value).encode())
                 else:
                     logger.error(f"Invalid data type: {data_type}")
                     return False
 
                 registers = builder.to_registers()
-                result = self._client.write_registers(address, registers, unit=self.unit)
+                result = self._client.write_registers(
+                    address, registers, unit=self.unit
+                )
 
             if result.isError():
                 logger.error(f"Error writing register {name}: {result}")
@@ -250,7 +253,7 @@ class ModbusDevice:
 
     def read_all_registers(self) -> Dict[str, Any]:
         """Read all configured registers.
-        
+
         Returns:
             Dict[str, Any]: Register values by name
         """
@@ -263,17 +266,17 @@ class ModbusDevice:
 
     def get_status(self) -> Dict[str, Any]:
         """Get device status.
-        
+
         Returns:
             Dict[str, Any]: Status information
         """
         return {
-            'id': self.device_id,
-            'connected': self._connected,
-            'mode': self.mode,
-            'host': self.host if self.mode == 'tcp' else self.serial_port,
-            'unit': self.unit,
-            'registers': list(self.registers.keys())
+            "id": self.device_id,
+            "connected": self._connected,
+            "mode": self.mode,
+            "host": self.host if self.mode == "tcp" else self.serial_port,
+            "unit": self.unit,
+            "registers": list(self.registers.keys()),
         }
 
 
@@ -287,11 +290,11 @@ class ModbusManager(DeviceManager):
 
     def add_device(self, device_id: str, config: Dict[str, Any]) -> bool:
         """Add Modbus device.
-        
+
         Args:
             device_id: Device identifier
             config: Device configuration
-            
+
         Returns:
             bool: True if device added successfully
         """
@@ -309,10 +312,10 @@ class ModbusManager(DeviceManager):
 
     def remove_device(self, device_id: str) -> bool:
         """Remove Modbus device.
-        
+
         Args:
             device_id: Device identifier
-            
+
         Returns:
             bool: True if device removed
         """
@@ -330,10 +333,10 @@ class ModbusManager(DeviceManager):
 
     def get_device(self, device_id: str) -> Optional[ModbusDevice]:
         """Get Modbus device by ID.
-        
+
         Args:
             device_id: Device identifier
-            
+
         Returns:
             Optional[ModbusDevice]: Device if found
         """
@@ -341,7 +344,7 @@ class ModbusManager(DeviceManager):
 
     def get_devices(self) -> List[ModbusDevice]:
         """Get all Modbus devices.
-        
+
         Returns:
             List[ModbusDevice]: List of devices
         """

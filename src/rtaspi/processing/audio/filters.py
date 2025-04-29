@@ -9,6 +9,7 @@ from ...core.logging import get_logger
 
 logger = get_logger(__name__)
 
+
 class AudioFilter:
     """Base class for audio filters."""
 
@@ -20,11 +21,11 @@ class AudioFilter:
 
     def initialize(self, sample_rate: int, channels: int) -> bool:
         """Initialize filter.
-        
+
         Args:
             sample_rate: Audio sample rate in Hz
             channels: Number of audio channels
-            
+
         Returns:
             bool: True if initialization successful
         """
@@ -33,13 +34,15 @@ class AudioFilter:
         self._initialized = True
         return True
 
-    def process(self, audio_data: np.ndarray, sample_rate: Optional[int] = None) -> np.ndarray:
+    def process(
+        self, audio_data: np.ndarray, sample_rate: Optional[int] = None
+    ) -> np.ndarray:
         """Process audio data.
-        
+
         Args:
             audio_data: Audio samples as numpy array
             sample_rate: Sample rate (optional, for verification)
-            
+
         Returns:
             np.ndarray: Processed audio samples
         """
@@ -48,7 +51,9 @@ class AudioFilter:
             return audio_data
 
         if sample_rate is not None and sample_rate != self._sample_rate:
-            logger.warning(f"Sample rate mismatch: {sample_rate} != {self._sample_rate}")
+            logger.warning(
+                f"Sample rate mismatch: {sample_rate} != {self._sample_rate}"
+            )
             return audio_data
 
         return audio_data
@@ -63,7 +68,7 @@ class NoiseReductionFilter(AudioFilter):
 
     def __init__(self, frame_size: int = 2048, overlap: float = 0.75):
         """Initialize noise reduction filter.
-        
+
         Args:
             frame_size: FFT frame size
             overlap: Frame overlap ratio
@@ -76,11 +81,11 @@ class NoiseReductionFilter(AudioFilter):
 
     def initialize(self, sample_rate: int, channels: int) -> bool:
         """Initialize filter.
-        
+
         Args:
             sample_rate: Audio sample rate in Hz
             channels: Number of audio channels
-            
+
         Returns:
             bool: True if initialization successful
         """
@@ -91,13 +96,15 @@ class NoiseReductionFilter(AudioFilter):
         self._noise_estimate = np.zeros(self.frame_size // 2 + 1)
         return True
 
-    def process(self, audio_data: np.ndarray, sample_rate: Optional[int] = None) -> np.ndarray:
+    def process(
+        self, audio_data: np.ndarray, sample_rate: Optional[int] = None
+    ) -> np.ndarray:
         """Process audio data.
-        
+
         Args:
             audio_data: Audio samples as numpy array
             sample_rate: Sample rate (optional, for verification)
-            
+
         Returns:
             np.ndarray: Processed audio samples
         """
@@ -150,7 +157,7 @@ class EchoCancellationFilter(AudioFilter):
 
     def __init__(self, filter_length: int = 1024, step_size: float = 0.1):
         """Initialize echo cancellation filter.
-        
+
         Args:
             filter_length: Length of adaptive filter
             step_size: LMS adaptation step size
@@ -163,11 +170,11 @@ class EchoCancellationFilter(AudioFilter):
 
     def initialize(self, sample_rate: int, channels: int) -> bool:
         """Initialize filter.
-        
+
         Args:
             sample_rate: Audio sample rate in Hz
             channels: Number of audio channels
-            
+
         Returns:
             bool: True if initialization successful
         """
@@ -178,13 +185,15 @@ class EchoCancellationFilter(AudioFilter):
         self._buffer = np.zeros(self.filter_length)
         return True
 
-    def process(self, audio_data: np.ndarray, sample_rate: Optional[int] = None) -> np.ndarray:
+    def process(
+        self, audio_data: np.ndarray, sample_rate: Optional[int] = None
+    ) -> np.ndarray:
         """Process audio data.
-        
+
         Args:
             audio_data: Audio samples as numpy array
             sample_rate: Sample rate (optional, for verification)
-            
+
         Returns:
             np.ndarray: Processed audio samples
         """
@@ -220,7 +229,7 @@ class FeedbackSuppressionFilter(AudioFilter):
 
     def __init__(self, shift_hz: float = 5.0):
         """Initialize feedback suppression filter.
-        
+
         Args:
             shift_hz: Frequency shift in Hz
         """
@@ -231,11 +240,11 @@ class FeedbackSuppressionFilter(AudioFilter):
 
     def initialize(self, sample_rate: int, channels: int) -> bool:
         """Initialize filter.
-        
+
         Args:
             sample_rate: Audio sample rate in Hz
             channels: Number of audio channels
-            
+
         Returns:
             bool: True if initialization successful
         """
@@ -245,13 +254,15 @@ class FeedbackSuppressionFilter(AudioFilter):
         self._phase_increment = 2 * np.pi * self.shift_hz / sample_rate
         return True
 
-    def process(self, audio_data: np.ndarray, sample_rate: Optional[int] = None) -> np.ndarray:
+    def process(
+        self, audio_data: np.ndarray, sample_rate: Optional[int] = None
+    ) -> np.ndarray:
         """Process audio data.
-        
+
         Args:
             audio_data: Audio samples as numpy array
             sample_rate: Sample rate (optional, for verification)
-            
+
         Returns:
             np.ndarray: Processed audio samples
         """
@@ -268,7 +279,9 @@ class FeedbackSuppressionFilter(AudioFilter):
         output = audio_data * np.cos(phase)
 
         # Update phase
-        self._phase = (self._phase + len(audio_data) * self._phase_increment) % (2 * np.pi)
+        self._phase = (self._phase + len(audio_data) * self._phase_increment) % (
+            2 * np.pi
+        )
 
         return output
 
@@ -278,20 +291,22 @@ class NormalizationFilter(AudioFilter):
 
     def __init__(self, target_peak: float = 0.9):
         """Initialize normalization filter.
-        
+
         Args:
             target_peak: Target peak amplitude (0.0 to 1.0)
         """
         super().__init__()
         self.target_peak = target_peak
 
-    def process(self, audio_data: np.ndarray, sample_rate: Optional[int] = None) -> np.ndarray:
+    def process(
+        self, audio_data: np.ndarray, sample_rate: Optional[int] = None
+    ) -> np.ndarray:
         """Process audio data.
-        
+
         Args:
             audio_data: Audio samples as numpy array
             sample_rate: Sample rate (optional, for verification)
-            
+
         Returns:
             np.ndarray: Processed audio samples
         """
@@ -315,9 +330,14 @@ class NormalizationFilter(AudioFilter):
 class GainControlFilter(AudioFilter):
     """Automatic gain control."""
 
-    def __init__(self, target_rms: float = 0.1, attack_time: float = 0.01, release_time: float = 0.1):
+    def __init__(
+        self,
+        target_rms: float = 0.1,
+        attack_time: float = 0.01,
+        release_time: float = 0.1,
+    ):
         """Initialize gain control filter.
-        
+
         Args:
             target_rms: Target RMS level
             attack_time: Attack time in seconds
@@ -333,11 +353,11 @@ class GainControlFilter(AudioFilter):
 
     def initialize(self, sample_rate: int, channels: int) -> bool:
         """Initialize filter.
-        
+
         Args:
             sample_rate: Audio sample rate in Hz
             channels: Number of audio channels
-            
+
         Returns:
             bool: True if initialization successful
         """
@@ -348,13 +368,15 @@ class GainControlFilter(AudioFilter):
         self._release_coef = np.exp(-1 / (self.release_time * sample_rate))
         return True
 
-    def process(self, audio_data: np.ndarray, sample_rate: Optional[int] = None) -> np.ndarray:
+    def process(
+        self, audio_data: np.ndarray, sample_rate: Optional[int] = None
+    ) -> np.ndarray:
         """Process audio data.
-        
+
         Args:
             audio_data: Audio samples as numpy array
             sample_rate: Sample rate (optional, for verification)
-            
+
         Returns:
             np.ndarray: Processed audio samples
         """
@@ -366,7 +388,7 @@ class GainControlFilter(AudioFilter):
             audio_data = audio_data.astype(np.float32)
 
         # Calculate RMS level
-        rms = np.sqrt(np.mean(audio_data ** 2))
+        rms = np.sqrt(np.mean(audio_data**2))
         if rms < 1e-10:
             return audio_data
 
@@ -375,9 +397,15 @@ class GainControlFilter(AudioFilter):
 
         # Apply smoothing
         if target_gain > self._current_gain:
-            self._current_gain = self._attack_coef * self._current_gain + (1 - self._attack_coef) * target_gain
+            self._current_gain = (
+                self._attack_coef * self._current_gain
+                + (1 - self._attack_coef) * target_gain
+            )
         else:
-            self._current_gain = self._release_coef * self._current_gain + (1 - self._release_coef) * target_gain
+            self._current_gain = (
+                self._release_coef * self._current_gain
+                + (1 - self._release_coef) * target_gain
+            )
 
         # Apply gain
         return audio_data * self._current_gain

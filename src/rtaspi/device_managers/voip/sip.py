@@ -11,12 +11,13 @@ from ...core.logging import get_logger
 
 logger = get_logger(__name__)
 
+
 class SIPAccount(pj.Account):
     """SIP account implementation."""
 
     def __init__(self, callback: Optional[Callable] = None):
         """Initialize SIP account.
-        
+
         Args:
             callback: Callback for account events
         """
@@ -25,23 +26,23 @@ class SIPAccount(pj.Account):
 
     def onRegState(self, info: pj.OnRegStateParam) -> None:
         """Handle registration state change.
-        
+
         Args:
             info: Registration state info
         """
         logger.info(f"Registration state: {info.code}/{info.reason}")
         if self.callback:
-            self.callback('reg_state', info)
+            self.callback("reg_state", info)
 
     def onIncomingCall(self, prm: pj.OnIncomingCallParam) -> None:
         """Handle incoming call.
-        
+
         Args:
             prm: Call parameters
         """
         logger.info("Incoming call from " + prm.callId)
         if self.callback:
-            self.callback('incoming_call', prm)
+            self.callback("incoming_call", prm)
 
 
 class SIPCall(pj.Call):
@@ -49,7 +50,7 @@ class SIPCall(pj.Call):
 
     def __init__(self, acc: SIPAccount, call_id: Optional[int] = pj.PJSUA_INVALID_ID):
         """Initialize SIP call.
-        
+
         Args:
             acc: SIP account
             call_id: Call ID
@@ -61,7 +62,7 @@ class SIPCall(pj.Call):
 
     def onCallState(self, prm: pj.OnCallStateParam) -> None:
         """Handle call state change.
-        
+
         Args:
             prm: Call state parameters
         """
@@ -71,13 +72,16 @@ class SIPCall(pj.Call):
 
     def onCallMediaState(self, prm: pj.OnCallMediaStateParam) -> None:
         """Handle call media state change.
-        
+
         Args:
             prm: Media state parameters
         """
         ci = self.getInfo()
         for mi in ci.media:
-            if mi.type == pj.PJMEDIA_TYPE_AUDIO and mi.status == pj.PJSUA_CALL_MEDIA_ACTIVE:
+            if (
+                mi.type == pj.PJMEDIA_TYPE_AUDIO
+                and mi.status == pj.PJSUA_CALL_MEDIA_ACTIVE
+            ):
                 self._setupAudio()
 
     def _setupAudio(self) -> None:
@@ -99,7 +103,7 @@ class SIPCall(pj.Call):
 
     def sendAudio(self, audio_data: bytes) -> None:
         """Send audio data.
-        
+
         Args:
             audio_data: Audio samples as bytes
         """
@@ -117,7 +121,7 @@ class SIPDevice:
 
     def __init__(self, device_id: str, config: Dict[str, Any]):
         """Initialize SIP device.
-        
+
         Args:
             device_id: Device identifier
             config: Device configuration
@@ -126,11 +130,11 @@ class SIPDevice:
         self.config = config
 
         # SIP settings
-        self.sip_domain = config.get('sip_domain', '')
-        self.username = config.get('username', '')
-        self.password = config.get('password', '')
-        self.proxy = config.get('proxy', '')
-        self.port = config.get('port', 5060)
+        self.sip_domain = config.get("sip_domain", "")
+        self.username = config.get("username", "")
+        self.password = config.get("password", "")
+        self.proxy = config.get("proxy", "")
+        self.port = config.get("port", 5060)
 
         # PJSIP objects
         self._ep: Optional[pj.Endpoint] = None
@@ -143,7 +147,7 @@ class SIPDevice:
 
     def initialize(self) -> bool:
         """Initialize SIP device.
-        
+
         Returns:
             bool: True if initialization successful
         """
@@ -215,10 +219,10 @@ class SIPDevice:
 
     def make_call(self, destination: str) -> bool:
         """Make outgoing call.
-        
+
         Args:
             destination: SIP URI to call
-            
+
         Returns:
             bool: True if call initiated
         """
@@ -250,7 +254,7 @@ class SIPDevice:
 
     def send_audio(self, audio_data: bytes) -> None:
         """Send audio data.
-        
+
         Args:
             audio_data: Audio samples as bytes
         """
@@ -259,14 +263,14 @@ class SIPDevice:
 
     def _handle_account_event(self, event: str, data: Any) -> None:
         """Handle account events.
-        
+
         Args:
             event: Event type
             data: Event data
         """
-        if event == 'reg_state':
+        if event == "reg_state":
             self._registered = data.code == 200
-        elif event == 'incoming_call':
+        elif event == "incoming_call":
             # Auto-answer incoming calls
             try:
                 self._current_call = SIPCall(self._account, data.callId)
@@ -278,17 +282,17 @@ class SIPDevice:
 
     def get_status(self) -> Dict[str, Any]:
         """Get device status.
-        
+
         Returns:
             Dict[str, Any]: Status information
         """
         return {
-            'id': self.device_id,
-            'initialized': self._initialized,
-            'registered': self._registered,
-            'in_call': self._current_call is not None,
-            'sip_domain': self.sip_domain,
-            'username': self.username,
-            'proxy': self.proxy,
-            'port': self.port
+            "id": self.device_id,
+            "initialized": self._initialized,
+            "registered": self._registered,
+            "in_call": self._current_call is not None,
+            "sip_domain": self.sip_domain,
+            "username": self.username,
+            "proxy": self.proxy,
+            "port": self.port,
         }

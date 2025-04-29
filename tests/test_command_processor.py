@@ -12,7 +12,7 @@ from rtaspi.input.keyboard import VirtualKeyboard
 @pytest.fixture
 def processor():
     """Create test command processor."""
-    with patch('rtaspi.input.keyboard.VirtualKeyboard') as mock_keyboard:
+    with patch("rtaspi.input.keyboard.VirtualKeyboard") as mock_keyboard:
         # Mock keyboard initialization
         mock_keyboard.return_value.initialize.return_value = True
         processor = CommandProcessor()
@@ -27,11 +27,11 @@ def test_processor_init():
     mock_keyboard = Mock()
     mock_keyboard.initialize.return_value = True
     processor = CommandProcessor(keyboard=mock_keyboard)
-    
+
     assert processor.initialize()
     assert processor._initialized
     mock_keyboard.initialize.assert_called_once()
-    
+
     # Test initialization failure
     mock_keyboard.initialize.return_value = False
     processor._initialized = False
@@ -50,9 +50,9 @@ def test_default_commands(processor):
     """Test default command loading."""
     commands = processor.get_commands()
     assert len(commands) >= 6  # At least 6 default commands
-    
+
     # Verify command patterns
-    patterns = [cmd['pattern'] for cmd in commands]
+    patterns = [cmd["pattern"] for cmd in commands]
     assert "type {text}" in patterns
     assert "press {key}" in patterns
     assert "release {key}" in patterns
@@ -122,17 +122,17 @@ def test_load_commands_from_file(processor):
         {
             "pattern": "custom {param}",
             "description": "Custom command",
-            "action": "self.keyboard.type_text(m['param'])"
+            "action": "self.keyboard.type_text(m['param'])",
         }
     ]
-    
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.json') as f:
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json") as f:
         json.dump(commands, f)
         f.flush()
-        
+
         # Load commands
         assert processor.load_commands_from_file(f.name)
-        
+
         # Test custom command
         processor.keyboard.reset_mock()
         assert processor.process_command("custom test")
@@ -144,9 +144,7 @@ def test_add_command(processor):
     # Add custom command
     action = Mock()
     processor.add_command(
-        "custom {param}",
-        lambda m: action(m['param']),
-        "Custom command"
+        "custom {param}", lambda m: action(m["param"]), "Custom command"
     )
 
     # Test command
@@ -155,7 +153,7 @@ def test_add_command(processor):
 
     # Verify command was added
     commands = processor.get_commands()
-    assert any(cmd['pattern'] == "custom {param}" for cmd in commands)
+    assert any(cmd["pattern"] == "custom {param}" for cmd in commands)
 
 
 def test_clear_commands(processor):
@@ -173,7 +171,9 @@ def test_error_handling(processor):
     """Test error handling."""
     # Test keyboard error
     processor.keyboard.type_text.side_effect = Exception("Test error")
-    assert not processor.process_command("type test")  # Should return False but not raise
+    assert not processor.process_command(
+        "type test"
+    )  # Should return False but not raise
 
     # Test invalid command pattern
     with pytest.raises(Exception):
@@ -190,8 +190,8 @@ def test_regex_matching(processor):
     action = Mock()
     processor.add_command(
         "do {action} {count} times",
-        lambda m: action(m['action'], int(m['count'])),
-        "Do action multiple times"
+        lambda m: action(m["action"], int(m["count"])),
+        "Do action multiple times",
     )
 
     # Test matching
@@ -229,7 +229,7 @@ def test_command_descriptions(processor):
 
     # Get commands
     commands = processor.get_commands()
-    descriptions = {cmd['pattern']: cmd['description'] for cmd in commands}
+    descriptions = {cmd["pattern"]: cmd["description"] for cmd in commands}
 
     # Verify descriptions
     assert descriptions["cmd1"] == "First command"

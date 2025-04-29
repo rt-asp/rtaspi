@@ -11,12 +11,13 @@ from .keyboard import VirtualKeyboard
 
 logger = get_logger(__name__)
 
+
 class CommandProcessor:
     """Process speech commands and convert to input actions."""
 
     def __init__(self, keyboard: Optional[VirtualKeyboard] = None):
         """Initialize command processor.
-        
+
         Args:
             keyboard: Virtual keyboard instance or None to create new one
         """
@@ -28,7 +29,7 @@ class CommandProcessor:
 
     def initialize(self) -> bool:
         """Initialize command processor.
-        
+
         Returns:
             bool: True if initialization successful
         """
@@ -66,57 +67,53 @@ class CommandProcessor:
         """Load default command definitions."""
         self.add_command(
             "type {text}",
-            lambda m: self.keyboard.type_text(m['text']),
-            "Type the specified text"
+            lambda m: self.keyboard.type_text(m["text"]),
+            "Type the specified text",
         )
 
         self.add_command(
             "press {key}",
-            lambda m: self.keyboard.press_key(m['key']),
-            "Press and hold a key"
+            lambda m: self.keyboard.press_key(m["key"]),
+            "Press and hold a key",
         )
 
         self.add_command(
             "release {key}",
-            lambda m: self.keyboard.release_key(m['key']),
-            "Release a held key"
+            lambda m: self.keyboard.release_key(m["key"]),
+            "Release a held key",
         )
 
         self.add_command(
-            "tap {key}",
-            lambda m: self.keyboard.tap_key(m['key']),
-            "Tap a key once"
+            "tap {key}", lambda m: self.keyboard.tap_key(m["key"]), "Tap a key once"
         )
 
         self.add_command(
-            "repeat",
-            lambda _: self.repeat_last_command(),
-            "Repeat the last command"
+            "repeat", lambda _: self.repeat_last_command(), "Repeat the last command"
         )
 
         self.add_command(
             "set {name} to {value}",
-            lambda m: self.set_variable(m['name'], m['value']),
-            "Set a variable value"
+            lambda m: self.set_variable(m["name"], m["value"]),
+            "Set a variable value",
         )
 
     def load_commands_from_file(self, path: str) -> bool:
         """Load commands from JSON file.
-        
+
         Args:
             path: Path to JSON command file
-            
+
         Returns:
             bool: True if commands loaded successfully
         """
         try:
-            with open(path, 'r') as f:
+            with open(path, "r") as f:
                 commands = json.load(f)
 
             for cmd in commands:
-                pattern = cmd['pattern']
-                description = cmd.get('description', '')
-                action_code = cmd['action']
+                pattern = cmd["pattern"]
+                description = cmd.get("description", "")
+                action_code = cmd["action"]
                 # Create lambda from action code string
                 action = eval(f"lambda m: {action_code}")
                 self.add_command(pattern, action, description)
@@ -128,9 +125,14 @@ class CommandProcessor:
             logger.error(f"Failed to load commands from {path}: {e}")
             return False
 
-    def add_command(self, pattern: str, action: Callable[[Dict[str, str]], None], description: str = "") -> None:
+    def add_command(
+        self,
+        pattern: str,
+        action: Callable[[Dict[str, str]], None],
+        description: str = "",
+    ) -> None:
         """Add command pattern and action.
-        
+
         Args:
             pattern: Command pattern with {param} placeholders
             action: Function to call with matched parameters
@@ -138,23 +140,23 @@ class CommandProcessor:
         """
         # Convert pattern to regex
         regex = pattern
-        for param in re.findall(r'\{(\w+)\}', pattern):
-            regex = regex.replace(f'{{{param}}}', f'(?P<{param}>[^\\s]+)')
-        regex = f'^{regex}$'
+        for param in re.findall(r"\{(\w+)\}", pattern):
+            regex = regex.replace(f"{{{param}}}", f"(?P<{param}>[^\\s]+)")
+        regex = f"^{regex}$"
 
         self._commands[pattern] = {
-            'regex': re.compile(regex),
-            'action': action,
-            'description': description
+            "regex": re.compile(regex),
+            "action": action,
+            "description": description,
         }
         logger.debug(f"Added command: {pattern}")
 
     def process_command(self, text: str) -> bool:
         """Process command text.
-        
+
         Args:
             text: Command text to process
-            
+
         Returns:
             bool: True if command was processed
         """
@@ -165,16 +167,16 @@ class CommandProcessor:
         try:
             # Replace variables
             for name, value in self._variables.items():
-                text = text.replace(f'${name}', value)
+                text = text.replace(f"${name}", value)
 
             # Try each command pattern
             for pattern, cmd in self._commands.items():
-                match = cmd['regex'].match(text)
+                match = cmd["regex"].match(text)
                 if match:
                     # Store for repeat
                     self._last_command = text
                     # Execute action with matched params
-                    cmd['action'](match.groupdict())
+                    cmd["action"](match.groupdict())
                     return True
 
             logger.warning(f"No matching command: {text}")
@@ -186,7 +188,7 @@ class CommandProcessor:
 
     def repeat_last_command(self) -> bool:
         """Repeat last executed command.
-        
+
         Returns:
             bool: True if command was repeated
         """
@@ -197,7 +199,7 @@ class CommandProcessor:
 
     def set_variable(self, name: str, value: str) -> None:
         """Set variable value.
-        
+
         Args:
             name: Variable name
             value: Variable value
@@ -207,10 +209,10 @@ class CommandProcessor:
 
     def get_variable(self, name: str) -> Optional[str]:
         """Get variable value.
-        
+
         Args:
             name: Variable name
-            
+
         Returns:
             Optional[str]: Variable value if set
         """
@@ -218,15 +220,12 @@ class CommandProcessor:
 
     def get_commands(self) -> List[Dict[str, str]]:
         """Get list of available commands.
-        
+
         Returns:
             List[Dict[str, str]]: List of command patterns and descriptions
         """
         return [
-            {
-                'pattern': pattern,
-                'description': cmd['description']
-            }
+            {"pattern": pattern, "description": cmd["description"]}
             for pattern, cmd in self._commands.items()
         ]
 

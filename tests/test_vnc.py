@@ -7,8 +7,11 @@ from unittest.mock import Mock, patch, MagicMock
 
 from rtaspi.device_managers.remote_desktop import VNCDevice
 from rtaspi.device_managers.remote_desktop.vnc import (
-    ENCODING_TIGHT, ENCODING_RAW, ENCODING_ZLIB,
-    AUTH_VNC, AUTH_NONE
+    ENCODING_TIGHT,
+    ENCODING_RAW,
+    ENCODING_ZLIB,
+    AUTH_VNC,
+    AUTH_NONE,
 )
 from rtaspi.device_managers.remote_desktop.capture import WindowCapture
 from rtaspi.constants.devices import (
@@ -17,7 +20,7 @@ from rtaspi.constants.devices import (
     DEVICE_PROTOCOL_VNC,
     CAPABILITY_VIDEO,
     CAPABILITY_KEYBOARD,
-    CAPABILITY_MOUSE
+    CAPABILITY_MOUSE,
 )
 
 
@@ -25,50 +28,50 @@ from rtaspi.constants.devices import (
 def vnc_config():
     """Create test VNC device configuration."""
     return {
-        'id': 'test-vnc',
-        'name': 'Test VNC Device',
-        'type': DEVICE_TYPE_REMOTE_DESKTOP,
-        'subtype': DEVICE_SUBTYPE_VNC,
-        'protocol': DEVICE_PROTOCOL_VNC,
-        'host': 'test-server',
-        'port': 5900,
-        'username': 'test-user',
-        'password': 'test-pass',
-        'width': 1920,
-        'height': 1080,
-        'refresh_rate': 30,
-        'encoding': ENCODING_TIGHT,
-        'quality': 8,
-        'compression': 6,
-        'capabilities': [CAPABILITY_VIDEO, CAPABILITY_KEYBOARD, CAPABILITY_MOUSE]
+        "id": "test-vnc",
+        "name": "Test VNC Device",
+        "type": DEVICE_TYPE_REMOTE_DESKTOP,
+        "subtype": DEVICE_SUBTYPE_VNC,
+        "protocol": DEVICE_PROTOCOL_VNC,
+        "host": "test-server",
+        "port": 5900,
+        "username": "test-user",
+        "password": "test-pass",
+        "width": 1920,
+        "height": 1080,
+        "refresh_rate": 30,
+        "encoding": ENCODING_TIGHT,
+        "quality": 8,
+        "compression": 6,
+        "capabilities": [CAPABILITY_VIDEO, CAPABILITY_KEYBOARD, CAPABILITY_MOUSE],
     }
 
 
 @pytest.fixture
 def vnc_device(vnc_config):
     """Create test VNC device instance."""
-    return VNCDevice('test-vnc', vnc_config)
+    return VNCDevice("test-vnc", vnc_config)
 
 
 def test_vnc_device_init(vnc_device, vnc_config):
     """Test VNC device initialization."""
-    assert vnc_device.device_id == vnc_config['id']
-    assert vnc_device.host == vnc_config['host']
-    assert vnc_device.port == vnc_config['port']
-    assert vnc_device.username == vnc_config['username']
-    assert vnc_device.password == vnc_config['password']
-    assert vnc_device.width == vnc_config['width']
-    assert vnc_device.height == vnc_config['height']
-    assert vnc_device.refresh_rate == vnc_config['refresh_rate']
-    assert vnc_device.encoding == vnc_config['encoding']
-    assert vnc_device.quality == vnc_config['quality']
-    assert vnc_device.compression == vnc_config['compression']
+    assert vnc_device.device_id == vnc_config["id"]
+    assert vnc_device.host == vnc_config["host"]
+    assert vnc_device.port == vnc_config["port"]
+    assert vnc_device.username == vnc_config["username"]
+    assert vnc_device.password == vnc_config["password"]
+    assert vnc_device.width == vnc_config["width"]
+    assert vnc_device.height == vnc_config["height"]
+    assert vnc_device.refresh_rate == vnc_config["refresh_rate"]
+    assert vnc_device.encoding == vnc_config["encoding"]
+    assert vnc_device.quality == vnc_config["quality"]
+    assert vnc_device.compression == vnc_config["compression"]
     assert not vnc_device.is_connected
 
 
-@patch('subprocess.Popen')
-@patch.object(WindowCapture, 'initialize')
-@patch.object(WindowCapture, 'find_window_by_name')
+@patch("subprocess.Popen")
+@patch.object(WindowCapture, "initialize")
+@patch.object(WindowCapture, "find_window_by_name")
 def test_vnc_device_connect(mock_find_window, mock_init, mock_popen, vnc_device):
     """Test VNC device connection."""
     # Mock successful process start and window capture
@@ -86,27 +89,27 @@ def test_vnc_device_connect(mock_find_window, mock_init, mock_popen, vnc_device)
     # Verify vncviewer command
     mock_popen.assert_called_once()
     cmd_args = mock_popen.call_args[0][0]
-    assert 'vncviewer' in cmd_args
-    assert f'{vnc_device.host}:{vnc_device.port}' in cmd_args
-    assert f'-passwd={vnc_device.password}' in cmd_args
-    assert f'-encodings={vnc_device.encoding}' in cmd_args
-    assert f'-quality={vnc_device.quality}' in cmd_args
-    assert f'-compresslevel={vnc_device.compression}' in cmd_args
-    assert f'-geometry={vnc_device.width}x{vnc_device.height}' in cmd_args
+    assert "vncviewer" in cmd_args
+    assert f"{vnc_device.host}:{vnc_device.port}" in cmd_args
+    assert f"-passwd={vnc_device.password}" in cmd_args
+    assert f"-encodings={vnc_device.encoding}" in cmd_args
+    assert f"-quality={vnc_device.quality}" in cmd_args
+    assert f"-compresslevel={vnc_device.compression}" in cmd_args
+    assert f"-geometry={vnc_device.width}x{vnc_device.height}" in cmd_args
 
     # Verify window capture initialization
     mock_init.assert_called_once()
-    mock_find_window.assert_called_with('TightVNC')
+    mock_find_window.assert_called_with("TightVNC")
 
 
-@patch('subprocess.Popen')
-@patch.object(WindowCapture, 'initialize')
+@patch("subprocess.Popen")
+@patch.object(WindowCapture, "initialize")
 def test_vnc_device_connect_failure(mock_init, mock_popen, vnc_device):
     """Test VNC device connection failure."""
     # Mock failed process start
     mock_process = Mock()
     mock_process.poll.return_value = 1
-    mock_process.stderr.read.return_value = b'Connection failed'
+    mock_process.stderr.read.return_value = b"Connection failed"
     mock_popen.return_value = mock_process
 
     # Test connection
@@ -114,7 +117,7 @@ def test_vnc_device_connect_failure(mock_init, mock_popen, vnc_device):
     assert not vnc_device.is_connected
 
 
-@patch.object(WindowCapture, 'cleanup')
+@patch.object(WindowCapture, "cleanup")
 def test_vnc_device_disconnect(mock_cleanup, vnc_device):
     """Test VNC device disconnection."""
     # Mock connected state
@@ -131,29 +134,29 @@ def test_vnc_device_disconnect(mock_cleanup, vnc_device):
     mock_cleanup.assert_called_once()
 
 
-@patch.object(WindowCapture, 'capture_window')
+@patch.object(WindowCapture, "capture_window")
 def test_vnc_device_get_frame(mock_capture, vnc_device):
     """Test VNC device frame capture."""
-    test_frame = b'test frame data'
+    test_frame = b"test frame data"
     mock_capture.return_value = test_frame
-    
+
     # Mock window capture initialization
     vnc_device._window_capture = MagicMock()
     vnc_device._window_capture.initialize.return_value = True
     vnc_device._window_capture.find_window_by_name.return_value = True
     vnc_device._window_capture.capture_window.return_value = test_frame
-    
+
     # Start capture thread
     vnc_device._stop_capture.clear()
     vnc_device._capture_thread = threading.Thread(target=vnc_device._capture_frames)
     vnc_device._capture_thread.daemon = True
     vnc_device._capture_thread.start()
-    
+
     # Give thread time to capture frame
     time.sleep(0.1)
-    
+
     assert vnc_device.get_frame() == test_frame
-    
+
     # Cleanup
     vnc_device._stop_capture.set()
     vnc_device._capture_thread.join()

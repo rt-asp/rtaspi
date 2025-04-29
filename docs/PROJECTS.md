@@ -1,5 +1,5 @@
 + [github.com](http://github.com)
-+ [docs # [RTASPI - Real-Time Annotation and Stream Processing Interface](http://rt-asp.github.io/rtaspi/)](http://github.com/docs)
++ [docs # RTASPI Documentation](http://github.com/docs)
 + [docs # Usage Examples and Tutorials](http://github.com/docs)
 + [docs # Installation Guide](http://github.com/docs)
 + [docs # Core Concepts](http://github.com/docs)

@@ -14,17 +14,18 @@ from ...processing.audio.filters import (
     NoiseReductionFilter,
     EchoCancellationFilter,
     FeedbackSuppressionFilter,
-    GainControlFilter
+    GainControlFilter,
 )
 
 logger = get_logger(__name__)
+
 
 class IntercomDevice:
     """Two-way audio communication device."""
 
     def __init__(self, device_id: str, config: Dict[str, Any]):
         """Initialize intercom device.
-        
+
         Args:
             device_id: Device identifier
             config: Device configuration
@@ -33,21 +34,18 @@ class IntercomDevice:
         self.config = config
 
         # Audio settings
-        self.sample_rate = config.get('sample_rate', 16000)
-        self.channels = config.get('channels', 1)
-        self.chunk_size = config.get('chunk_size', 1024)
+        self.sample_rate = config.get("sample_rate", 16000)
+        self.channels = config.get("channels", 1)
+        self.chunk_size = config.get("chunk_size", 1024)
 
         # Audio processing
         self._input_filters = [
             NoiseReductionFilter(),
             GainControlFilter(),
             EchoCancellationFilter(),
-            FeedbackSuppressionFilter()
+            FeedbackSuppressionFilter(),
         ]
-        self._output_filters = [
-            NoiseReductionFilter(),
-            GainControlFilter()
-        ]
+        self._output_filters = [NoiseReductionFilter(), GainControlFilter()]
 
         # Audio buffers
         self._input_queue = queue.Queue()
@@ -65,7 +63,7 @@ class IntercomDevice:
 
     def initialize(self) -> bool:
         """Initialize device.
-        
+
         Returns:
             bool: True if initialization successful
         """
@@ -76,7 +74,9 @@ class IntercomDevice:
             # Initialize audio filters
             for filter in self._input_filters + self._output_filters:
                 if not filter.initialize(self.sample_rate, self.channels):
-                    logger.error(f"Failed to initialize filter: {filter.__class__.__name__}")
+                    logger.error(
+                        f"Failed to initialize filter: {filter.__class__.__name__}"
+                    )
                     return False
 
             self._initialized = True
@@ -106,7 +106,7 @@ class IntercomDevice:
 
     def start_input(self) -> bool:
         """Start audio input processing.
-        
+
         Returns:
             bool: True if started successfully
         """
@@ -143,7 +143,7 @@ class IntercomDevice:
 
     def start_output(self) -> bool:
         """Start audio output processing.
-        
+
         Returns:
             bool: True if started successfully
         """
@@ -180,7 +180,7 @@ class IntercomDevice:
 
     def process_input(self, audio_data: np.ndarray) -> None:
         """Process input audio data.
-        
+
         Args:
             audio_data: Audio samples as numpy array
         """
@@ -195,7 +195,7 @@ class IntercomDevice:
 
     def get_output(self) -> Optional[np.ndarray]:
         """Get processed output audio data.
-        
+
         Returns:
             Optional[np.ndarray]: Audio samples if available
         """
@@ -256,25 +256,25 @@ class IntercomDevice:
 
     def get_status(self) -> Dict[str, Any]:
         """Get device status.
-        
+
         Returns:
             Dict[str, Any]: Status information
         """
         return {
-            'id': self.device_id,
-            'initialized': self._initialized,
-            'input_enabled': self._input_enabled,
-            'output_enabled': self._output_enabled,
-            'sample_rate': self.sample_rate,
-            'channels': self.channels,
-            'chunk_size': self.chunk_size,
-            'input_filters': [f.__class__.__name__ for f in self._input_filters],
-            'output_filters': [f.__class__.__name__ for f in self._output_filters]
+            "id": self.device_id,
+            "initialized": self._initialized,
+            "input_enabled": self._input_enabled,
+            "output_enabled": self._output_enabled,
+            "sample_rate": self.sample_rate,
+            "channels": self.channels,
+            "chunk_size": self.chunk_size,
+            "input_filters": [f.__class__.__name__ for f in self._input_filters],
+            "output_filters": [f.__class__.__name__ for f in self._output_filters],
         }
 
     def set_input_filters(self, filters: List[AudioFilter]) -> None:
         """Set input audio filters.
-        
+
         Args:
             filters: List of audio filters
         """
@@ -285,7 +285,7 @@ class IntercomDevice:
 
     def set_output_filters(self, filters: List[AudioFilter]) -> None:
         """Set output audio filters.
-        
+
         Args:
             filters: List of audio filters
         """
@@ -296,7 +296,7 @@ class IntercomDevice:
 
     def is_input_enabled(self) -> bool:
         """Check if input is enabled.
-        
+
         Returns:
             bool: True if input enabled
         """
@@ -304,7 +304,7 @@ class IntercomDevice:
 
     def is_output_enabled(self) -> bool:
         """Check if output is enabled.
-        
+
         Returns:
             bool: True if output enabled
         """

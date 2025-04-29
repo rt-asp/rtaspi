@@ -168,9 +168,9 @@ class NetworkDevicesManager(DeviceManager):
         ip_pattern = r"^(\d{1,3}\.){3}\d{1,3}$"
         if not re.match(ip_pattern, ip):
             raise ValueError("Invalid IP address format")
-        
+
         # Validate each octet is between 0 and 255
-        octets = ip.split('.')
+        octets = ip.split(".")
         for octet in octets:
             value = int(octet)
             if value < 0 or value > 255:

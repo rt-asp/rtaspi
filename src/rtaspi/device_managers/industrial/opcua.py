@@ -13,12 +13,13 @@ from ..base import DeviceManager
 
 logger = get_logger(__name__)
 
+
 class OPCUADevice:
     """OPC UA device implementation."""
 
     def __init__(self, device_id: str, config: Dict[str, Any]):
         """Initialize OPC UA device.
-        
+
         Args:
             device_id: Device identifier
             config: Device configuration
@@ -27,16 +28,16 @@ class OPCUADevice:
         self.config = config
 
         # Connection settings
-        self.url = config.get('url', 'opc.tcp://localhost:4840')
-        self.username = config.get('username')
-        self.password = config.get('password')
-        self.security_policy = config.get('security_policy', 'Basic256Sha256')
-        self.security_mode = config.get('security_mode', 'SignAndEncrypt')
-        self.certificate = config.get('certificate')
-        self.private_key = config.get('private_key')
+        self.url = config.get("url", "opc.tcp://localhost:4840")
+        self.username = config.get("username")
+        self.password = config.get("password")
+        self.security_policy = config.get("security_policy", "Basic256Sha256")
+        self.security_mode = config.get("security_mode", "SignAndEncrypt")
+        self.certificate = config.get("certificate")
+        self.private_key = config.get("private_key")
 
         # Node mapping
-        self.nodes = config.get('nodes', {})
+        self.nodes = config.get("nodes", {})
 
         # Client
         self._client: Optional[Client] = None
@@ -47,7 +48,7 @@ class OPCUADevice:
 
     def connect(self) -> bool:
         """Connect to OPC UA server.
-        
+
         Returns:
             bool: True if connection successful
         """
@@ -66,13 +67,13 @@ class OPCUADevice:
             self._client = Client(url=self.url)
 
             # Set security
-            if self.security_policy != 'None':
+            if self.security_policy != "None":
                 if self.certificate and self.private_key:
                     await self._client.set_security(
                         certificate=self.certificate,
                         private_key=self.private_key,
                         policy=getattr(ua.SecurityPolicyType, self.security_policy),
-                        mode=getattr(ua.MessageSecurityMode, self.security_mode)
+                        mode=getattr(ua.MessageSecurityMode, self.security_mode),
                     )
 
             # Set authentication
@@ -87,7 +88,7 @@ class OPCUADevice:
 
             # Create subscriptions
             for node_id, node_config in self.nodes.items():
-                if node_config.get('subscribe', False):
+                if node_config.get("subscribe", False):
                     await self._create_subscription(node_id, node_config)
 
             return True
@@ -119,10 +120,10 @@ class OPCUADevice:
 
     def read_node(self, name: str) -> Optional[Any]:
         """Read node by name.
-        
+
         Args:
             name: Node name from configuration
-            
+
         Returns:
             Optional[Any]: Node value if successful
         """
@@ -148,7 +149,7 @@ class OPCUADevice:
                 return None
 
             # Get node
-            node_id = node_config.get('id')
+            node_id = node_config.get("id")
             if not node_id:
                 logger.error(f"Node {name} has no ID configured")
                 return None
@@ -158,8 +159,8 @@ class OPCUADevice:
             value = await node.read_value()
 
             # Apply scaling and offset
-            scale = node_config.get('scale', 1)
-            offset = node_config.get('offset', 0)
+            scale = node_config.get("scale", 1)
+            offset = node_config.get("offset", 0)
             if isinstance(value, (int, float)):
                 value = value * scale + offset
 
@@ -171,11 +172,11 @@ class OPCUADevice:
 
     def write_node(self, name: str, value: Any) -> bool:
         """Write node by name.
-        
+
         Args:
             name: Node name from configuration
             value: Value to write
-            
+
         Returns:
             bool: True if write successful
         """
@@ -201,14 +202,14 @@ class OPCUADevice:
                 return False
 
             # Get node
-            node_id = node_config.get('id')
+            node_id = node_config.get("id")
             if not node_id:
                 logger.error(f"Node {name} has no ID configured")
                 return False
 
             # Apply reverse scaling and offset
-            scale = node_config.get('scale', 1)
-            offset = node_config.get('offset', 0)
+            scale = node_config.get("scale", 1)
+            offset = node_config.get("offset", 0)
             if isinstance(value, (int, float)):
                 value = (value - offset) / scale
 
@@ -221,23 +222,25 @@ class OPCUADevice:
             logger.error(f"Error writing node {name}: {e}")
             return False
 
-    async def _create_subscription(self, node_id: str, node_config: Dict[str, Any]) -> None:
+    async def _create_subscription(
+        self, node_id: str, node_config: Dict[str, Any]
+    ) -> None:
         """Create subscription for node.
-        
+
         Args:
             node_id: Node identifier
             node_config: Node configuration
         """
         try:
             # Get subscription parameters
-            interval = node_config.get('interval', 1000)
-            handler = node_config.get('handler')
+            interval = node_config.get("interval", 1000)
+            handler = node_config.get("handler")
             if not handler:
                 return
 
             # Create subscription
             subscription = await self._client.create_subscription(interval, handler)
-            node = self._client.get_node(node_config['id'])
+            node = self._client.get_node(node_config["id"])
             await subscription.subscribe_data_change(node)
             self._subscriptions[node_id] = subscription
 
@@ -246,7 +249,7 @@ class OPCUADevice:
 
     def read_all_nodes(self) -> Dict[str, Any]:
         """Read all configured nodes.
-        
+
         Returns:
             Dict[str, Any]: Node values by name
         """
@@ -259,17 +262,17 @@ class OPCUADevice:
 
     def get_status(self) -> Dict[str, Any]:
         """Get device status.
-        
+
         Returns:
             Dict[str, Any]: Status information
         """
         return {
-            'id': self.device_id,
-            'connected': self._connected,
-            'url': self.url,
-            'security_policy': self.security_policy,
-            'security_mode': self.security_mode,
-            'nodes': list(self.nodes.keys())
+            "id": self.device_id,
+            "connected": self._connected,
+            "url": self.url,
+            "security_policy": self.security_policy,
+            "security_mode": self.security_mode,
+            "nodes": list(self.nodes.keys()),
         }
 
 
@@ -283,11 +286,11 @@ class OPCUAManager(DeviceManager):
 
     def add_device(self, device_id: str, config: Dict[str, Any]) -> bool:
         """Add OPC UA device.
-        
+
         Args:
             device_id: Device identifier
             config: Device configuration
-            
+
         Returns:
             bool: True if device added successfully
         """
@@ -305,10 +308,10 @@ class OPCUAManager(DeviceManager):
 
     def remove_device(self, device_id: str) -> bool:
         """Remove OPC UA device.
-        
+
         Args:
             device_id: Device identifier
-            
+
         Returns:
             bool: True if device removed
         """
@@ -326,10 +329,10 @@ class OPCUAManager(DeviceManager):
 
     def get_device(self, device_id: str) -> Optional[OPCUADevice]:
         """Get OPC UA device by ID.
-        
+
         Args:
             device_id: Device identifier
-            
+
         Returns:
             Optional[OPCUADevice]: Device if found
         """
@@ -337,7 +340,7 @@ class OPCUAManager(DeviceManager):
 
     def get_devices(self) -> List[OPCUADevice]:
         """Get all OPC UA devices.
-        
+
         Returns:
             List[OPCUADevice]: List of devices
         """

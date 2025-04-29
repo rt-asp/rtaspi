@@ -9,6 +9,7 @@ from enum import Enum
 
 class PipelineType(str, Enum):
     """Pipeline types supported by rtaspi."""
+
     VIDEO = "video"
     AUDIO = "audio"
     MIXED = "mixed"
@@ -18,6 +19,7 @@ class PipelineType(str, Enum):
 
 class FilterType(str, Enum):
     """Supported filter types."""
+
     # Video filters
     RESIZE = "resize"
     CROP = "crop"
@@ -30,20 +32,20 @@ class FilterType(str, Enum):
     DENOISE = "denoise"
     SHARPEN = "sharpen"
     BLUR = "blur"
-    
+
     # Audio filters
     VOLUME = "volume"
     EQUALIZER = "equalizer"
     NOISE_REDUCTION = "noise_reduction"
     COMPRESSOR = "compressor"
     NORMALIZER = "normalizer"
-    
+
     # Detection filters
     FACE_DETECTION = "face_detection"
     OBJECT_DETECTION = "object_detection"
     MOTION_DETECTION = "motion_detection"
     AUDIO_DETECTION = "audio_detection"
-    
+
     # Analysis filters
     SCENE_ANALYSIS = "scene_analysis"
     AUDIO_ANALYSIS = "audio_analysis"
@@ -52,6 +54,7 @@ class FilterType(str, Enum):
 
 class FilterConfig(BaseModel):
     """Filter configuration."""
+
     type: FilterType
     enabled: bool = True
     parameters: Dict[str, Any] = Field(default_factory=dict)
@@ -60,6 +63,7 @@ class FilterConfig(BaseModel):
 
 class PipelineStage(BaseModel):
     """Pipeline stage configuration."""
+
     name: str
     enabled: bool = True
     filters: List[FilterConfig] = Field(default_factory=list)
@@ -94,6 +98,7 @@ class PipelineStage(BaseModel):
 
 class ResourceLimits(BaseModel):
     """Resource limits configuration."""
+
     max_memory: Optional[int] = None  # in MB
     max_cpu: Optional[float] = None  # percentage (0-100)
     max_gpu: Optional[float] = None  # percentage (0-100)
@@ -124,30 +129,33 @@ class ResourceLimits(BaseModel):
 
 class PipelineConfig(BaseModel):
     """Pipeline configuration schema."""
+
     id: str = Field(..., description="Unique pipeline identifier")
     name: str = Field(..., description="Human-readable pipeline name")
     type: PipelineType = Field(..., description="Type of pipeline")
     enabled: bool = True
-    
+
     # Input configuration
     input_streams: List[str] = Field(..., description="List of input stream IDs")
-    
+
     # Processing configuration
     stages: List[PipelineStage] = Field(..., description="Pipeline processing stages")
-    
+
     # Output configuration
-    output_streams: List[str] = Field(default_factory=list, description="List of output stream IDs")
+    output_streams: List[str] = Field(
+        default_factory=list, description="List of output stream IDs"
+    )
     save_results: bool = False
     results_path: Optional[str] = None
-    
+
     # Resource management
     resource_limits: ResourceLimits = Field(default_factory=ResourceLimits)
-    
+
     # Error handling
     error_handling: str = "stop"  # stop, skip, retry
     max_retries: int = 3
     retry_delay: float = 1.0
-    
+
     # Additional settings
     buffer_size: Optional[int] = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
@@ -173,30 +181,56 @@ class PipelineConfig(BaseModel):
             raise ValueError("Buffer size must be positive")
         return v
 
-    @model_validator(mode='after')
-    def validate_pipeline(self) -> 'PipelineConfig':
+    @model_validator(mode="after")
+    def validate_pipeline(self) -> "PipelineConfig":
         """Validate pipeline configuration."""
         if self.type and self.stages:
             # Validate filter types match pipeline type
             for stage in self.stages:
                 for filter_config in stage.filters:
                     if self.type == PipelineType.VIDEO:
-                        if filter_config.type.value.endswith(("_detection", "_analysis")):
+                        if filter_config.type.value.endswith(
+                            ("_detection", "_analysis")
+                        ):
                             continue
-                        if not any(filter_config.type.value.startswith(prefix) 
-                                 for prefix in ["resize", "crop", "rotate", "flip", 
-                                              "brightness", "contrast", "saturation", 
-                                              "hue", "denoise", "sharpen", "blur"]):
-                            raise ValueError(f"Invalid filter type {filter_config.type} for video pipeline")
+                        if not any(
+                            filter_config.type.value.startswith(prefix)
+                            for prefix in [
+                                "resize",
+                                "crop",
+                                "rotate",
+                                "flip",
+                                "brightness",
+                                "contrast",
+                                "saturation",
+                                "hue",
+                                "denoise",
+                                "sharpen",
+                                "blur",
+                            ]
+                        ):
+                            raise ValueError(
+                                f"Invalid filter type {filter_config.type} for video pipeline"
+                            )
                     elif self.type == PipelineType.AUDIO:
-                        if not any(filter_config.type.value.startswith(prefix) 
-                                 for prefix in ["volume", "equalizer", "noise_reduction", 
-                                              "compressor", "normalizer"]):
-                            raise ValueError(f"Invalid filter type {filter_config.type} for audio pipeline")
-        
+                        if not any(
+                            filter_config.type.value.startswith(prefix)
+                            for prefix in [
+                                "volume",
+                                "equalizer",
+                                "noise_reduction",
+                                "compressor",
+                                "normalizer",
+                            ]
+                        ):
+                            raise ValueError(
+                                f"Invalid filter type {filter_config.type} for audio pipeline"
+                            )
+
         return self
 
 
 class PipelineList(BaseModel):
     """List of pipeline configurations."""
+
     pipelines: List[PipelineConfig] = Field(default_factory=list)

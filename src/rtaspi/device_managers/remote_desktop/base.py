@@ -12,23 +12,23 @@ class RemoteDesktopDevice(BaseDevice, ABC):
 
     def __init__(self, device_id: str, config: Dict[str, Any]):
         """Initialize remote desktop device.
-        
+
         Args:
             device_id: Unique device identifier
             config: Device configuration dictionary
         """
         super().__init__(device_id, config)
-        self.host = config.get('host', 'localhost')
-        self.port = config.get('port')
-        self.username = config.get('username')
-        self.password = config.get('password')
+        self.host = config.get("host", "localhost")
+        self.port = config.get("port")
+        self.username = config.get("username")
+        self.password = config.get("password")
         self._stream_output: Optional[StreamOutput] = None
         self._connected = False
 
     @abstractmethod
     def connect(self) -> bool:
         """Establish connection to the remote desktop server.
-        
+
         Returns:
             bool: True if connection successful, False otherwise
         """
@@ -42,16 +42,18 @@ class RemoteDesktopDevice(BaseDevice, ABC):
     @abstractmethod
     def get_frame(self) -> Optional[bytes]:
         """Get current frame from remote desktop.
-        
+
         Returns:
             Optional[bytes]: Frame data if available, None otherwise
         """
         pass
 
     @abstractmethod
-    def send_mouse_event(self, x: int, y: int, button: int = 0, pressed: bool = True) -> None:
+    def send_mouse_event(
+        self, x: int, y: int, button: int = 0, pressed: bool = True
+    ) -> None:
         """Send mouse event to remote desktop.
-        
+
         Args:
             x: Mouse X coordinate
             y: Mouse Y coordinate
@@ -63,7 +65,7 @@ class RemoteDesktopDevice(BaseDevice, ABC):
     @abstractmethod
     def send_key_event(self, key_code: int, pressed: bool = True) -> None:
         """Send keyboard event to remote desktop.
-        
+
         Args:
             key_code: Key code
             pressed: True if key pressed, False if released
@@ -73,7 +75,7 @@ class RemoteDesktopDevice(BaseDevice, ABC):
     @property
     def is_connected(self) -> bool:
         """Check if device is currently connected.
-        
+
         Returns:
             bool: True if connected, False otherwise
         """
@@ -81,7 +83,7 @@ class RemoteDesktopDevice(BaseDevice, ABC):
 
     def get_stream_output(self) -> Optional[StreamOutput]:
         """Get current stream output.
-        
+
         Returns:
             Optional[StreamOutput]: Current stream output if available
         """
@@ -89,7 +91,7 @@ class RemoteDesktopDevice(BaseDevice, ABC):
 
     def set_stream_output(self, output: StreamOutput) -> None:
         """Set stream output for device.
-        
+
         Args:
             output: Stream output to set
         """
@@ -98,7 +100,7 @@ class RemoteDesktopDevice(BaseDevice, ABC):
     @abstractmethod
     def get_resolution(self) -> Tuple[int, int]:
         """Get current screen resolution.
-        
+
         Returns:
             Tuple[int, int]: Width and height of remote desktop
         """
@@ -107,11 +109,11 @@ class RemoteDesktopDevice(BaseDevice, ABC):
     @abstractmethod
     def set_resolution(self, width: int, height: int) -> bool:
         """Set screen resolution.
-        
+
         Args:
             width: Desired screen width
             height: Desired screen height
-            
+
         Returns:
             bool: True if resolution was set successfully
         """
@@ -120,7 +122,7 @@ class RemoteDesktopDevice(BaseDevice, ABC):
     @abstractmethod
     def get_refresh_rate(self) -> int:
         """Get current refresh rate in Hz.
-        
+
         Returns:
             int: Current refresh rate
         """
@@ -129,10 +131,10 @@ class RemoteDesktopDevice(BaseDevice, ABC):
     @abstractmethod
     def set_refresh_rate(self, rate: int) -> bool:
         """Set refresh rate.
-        
+
         Args:
             rate: Desired refresh rate in Hz
-            
+
         Returns:
             bool: True if refresh rate was set successfully
         """

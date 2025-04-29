@@ -9,6 +9,7 @@ from enum import Enum
 
 class StreamType(str, Enum):
     """Stream types supported by rtaspi."""
+
     VIDEO = "video"
     AUDIO = "audio"
     MIXED = "mixed"
@@ -16,6 +17,7 @@ class StreamType(str, Enum):
 
 class StreamProtocol(str, Enum):
     """Supported streaming protocols."""
+
     RTSP = "rtsp"
     RTMP = "rtmp"
     WEBRTC = "webrtc"
@@ -27,6 +29,7 @@ class StreamProtocol(str, Enum):
 
 class StreamFormat(str, Enum):
     """Supported stream formats."""
+
     # Video formats
     H264 = "h264"
     H265 = "h265"
@@ -34,7 +37,7 @@ class StreamFormat(str, Enum):
     VP9 = "vp9"
     MJPEG = "mjpeg"
     RAW = "raw"
-    
+
     # Audio formats
     AAC = "aac"
     MP3 = "mp3"
@@ -45,6 +48,7 @@ class StreamFormat(str, Enum):
 
 class StreamQuality(BaseModel):
     """Stream quality configuration."""
+
     resolution: Optional[str] = None
     framerate: Optional[int] = None
     bitrate: Optional[int] = None
@@ -66,8 +70,14 @@ class StreamQuality(BaseModel):
                 raise ValueError("Resolution must be in format 'WIDTHxHEIGHT'")
         return v
 
-    @field_validator("framerate", "bitrate", "keyframe_interval", 
-              "audio_bitrate", "audio_channels", "audio_sample_rate")
+    @field_validator(
+        "framerate",
+        "bitrate",
+        "keyframe_interval",
+        "audio_bitrate",
+        "audio_channels",
+        "audio_sample_rate",
+    )
     def validate_positive(cls, v, info):
         """Validate numeric fields are positive."""
         if v is not None and v <= 0:
@@ -77,6 +87,7 @@ class StreamQuality(BaseModel):
 
 class StreamAuth(BaseModel):
     """Stream authentication configuration."""
+
     enabled: bool = False
     method: str = "basic"  # basic, digest, token
     username: Optional[str] = None
@@ -86,6 +97,7 @@ class StreamAuth(BaseModel):
 
 class StreamOutput(BaseModel):
     """Stream output configuration."""
+
     protocol: StreamProtocol
     path: str
     format: StreamFormat
@@ -96,24 +108,25 @@ class StreamOutput(BaseModel):
 
 class StreamConfig(BaseModel):
     """Stream configuration schema."""
+
     id: str = Field(..., description="Unique stream identifier")
     name: str = Field(..., description="Human-readable stream name")
     type: StreamType = Field(..., description="Type of stream")
     enabled: bool = True
-    
+
     # Source configuration
     source_device: str = Field(..., description="Source device identifier")
     source_format: Optional[StreamFormat] = None
-    
+
     # Processing settings
     enable_preprocessing: bool = False
     preprocessing_filters: List[dict] = Field(default_factory=list)
     enable_postprocessing: bool = False
     postprocessing_filters: List[dict] = Field(default_factory=list)
-    
+
     # Output configuration
     outputs: List[StreamOutput] = Field(default_factory=list)
-    
+
     # Additional settings
     buffer_size: Optional[int] = None
     reconnect_delay: int = 5
@@ -127,25 +140,35 @@ class StreamConfig(BaseModel):
             raise ValueError(f"{info.field_name} must be positive")
         return v
 
-    @model_validator(mode='after')
-    def validate_stream_type(self) -> 'StreamConfig':
+    @model_validator(mode="after")
+    def validate_stream_type(self) -> "StreamConfig":
         """Validate stream type matches source device and formats."""
         if self.type and self.source_format:
-            video_formats = {StreamFormat.H264, StreamFormat.H265, 
-                           StreamFormat.VP8, StreamFormat.VP9, 
-                           StreamFormat.MJPEG, StreamFormat.RAW}
-            audio_formats = {StreamFormat.AAC, StreamFormat.MP3, 
-                           StreamFormat.OPUS, StreamFormat.PCM, 
-                           StreamFormat.VORBIS}
-            
+            video_formats = {
+                StreamFormat.H264,
+                StreamFormat.H265,
+                StreamFormat.VP8,
+                StreamFormat.VP9,
+                StreamFormat.MJPEG,
+                StreamFormat.RAW,
+            }
+            audio_formats = {
+                StreamFormat.AAC,
+                StreamFormat.MP3,
+                StreamFormat.OPUS,
+                StreamFormat.PCM,
+                StreamFormat.VORBIS,
+            }
+
             if self.type == StreamType.VIDEO and self.source_format in audio_formats:
                 raise ValueError("Video stream cannot use audio format")
             elif self.type == StreamType.AUDIO and self.source_format in video_formats:
                 raise ValueError("Audio stream cannot use video format")
-        
+
         return self
 
 
 class StreamList(BaseModel):
     """List of stream configurations."""
+
     streams: List[StreamConfig] = Field(default_factory=list)

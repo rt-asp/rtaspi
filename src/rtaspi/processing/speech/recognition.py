@@ -14,16 +14,19 @@ from ..audio.filters import AudioFilter, NoiseReductionFilter, NormalizationFilt
 
 logger = get_logger(__name__)
 
+
 class SpeechRecognizer:
     """Speech recognition using Whisper."""
 
-    def __init__(self, 
-                 model_name: str = "base",
-                 language: Optional[str] = None,
-                 device: str = "cuda" if torch.cuda.is_available() else "cpu",
-                 filters: Optional[List[AudioFilter]] = None):
+    def __init__(
+        self,
+        model_name: str = "base",
+        language: Optional[str] = None,
+        device: str = "cuda" if torch.cuda.is_available() else "cpu",
+        filters: Optional[List[AudioFilter]] = None,
+    ):
         """Initialize speech recognizer.
-        
+
         Args:
             model_name: Whisper model name (tiny, base, small, medium, large)
             language: Language code (e.g., "en", "de", "pl") or None for auto-detect
@@ -33,22 +36,19 @@ class SpeechRecognizer:
         self.model_name = model_name
         self.language = language
         self.device = device
-        
+
         # Initialize Whisper model
         logger.info(f"Loading Whisper model '{model_name}' on {device}")
         self.model = whisper.load_model(model_name).to(device)
-        
+
         # Audio preprocessing
-        self.filters = filters or [
-            NoiseReductionFilter(),
-            NormalizationFilter()
-        ]
-        
+        self.filters = filters or [NoiseReductionFilter(), NormalizationFilter()]
+
         # Recognition thread
         self._recognition_thread: Optional[threading.Thread] = None
         self._stop_recognition = threading.Event()
         self._audio_queue = queue.Queue()
-        
+
         # Callbacks
         self._on_transcription: Optional[Callable[[str], None]] = None
         self._on_error: Optional[Callable[[Exception], None]] = None
@@ -75,7 +75,7 @@ class SpeechRecognizer:
 
     def process_audio(self, audio_data: np.ndarray, sample_rate: int) -> None:
         """Process audio data for recognition.
-        
+
         Args:
             audio_data: Audio samples as numpy array
             sample_rate: Audio sample rate in Hz
@@ -113,7 +113,7 @@ class SpeechRecognizer:
                     audio_data,
                     language=self.language,
                     task="transcribe",
-                    fp16=torch.cuda.is_available()
+                    fp16=torch.cuda.is_available(),
                 )
 
                 # Extract text
@@ -129,7 +129,7 @@ class SpeechRecognizer:
 
     def set_on_transcription(self, callback: Callable[[str], None]) -> None:
         """Set callback for transcription results.
-        
+
         Args:
             callback: Function to call with transcribed text
         """
@@ -137,7 +137,7 @@ class SpeechRecognizer:
 
     def set_on_error(self, callback: Callable[[Exception], None]) -> None:
         """Set callback for errors.
-        
+
         Args:
             callback: Function to call with error
         """
@@ -145,7 +145,7 @@ class SpeechRecognizer:
 
     def set_language(self, language: Optional[str]) -> None:
         """Set recognition language.
-        
+
         Args:
             language: Language code or None for auto-detect
         """
@@ -154,7 +154,7 @@ class SpeechRecognizer:
 
     def get_available_languages(self) -> List[str]:
         """Get list of available languages.
-        
+
         Returns:
             List[str]: List of language codes
         """
@@ -162,19 +162,19 @@ class SpeechRecognizer:
 
     def get_model_info(self) -> Dict[str, Any]:
         """Get information about current model.
-        
+
         Returns:
             Dict[str, Any]: Model information
         """
         return {
-            'name': self.model_name,
-            'language': self.language or 'auto',
-            'device': self.device,
-            'filters': [f.__class__.__name__ for f in self.filters]
+            "name": self.model_name,
+            "language": self.language or "auto",
+            "device": self.device,
+            "filters": [f.__class__.__name__ for f in self.filters],
         }
 
     def cleanup(self) -> None:
         """Clean up resources."""
         self.stop()
-        if hasattr(self.model, 'cleanup'):
+        if hasattr(self.model, "cleanup"):
             self.model.cleanup()

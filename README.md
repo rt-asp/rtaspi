@@ -1,103 +1,67 @@
 
-# [RTASPI - Real-Time Annotation and Stream Processing Interface](http://rt-asp.github.io/rtaspi/) [<span style='font-size:20px;'>&#x270D;</span>](git@github.com:rt-asp/rtaspi/edit/main/docs/README.md)
+# RTASPI Documentation [<span style='font-size:20px;'>&#x270D;</span>](git@github.com:rt-asp/rtaspi/edit/main/docs/README.md)
 
-RTASPI is a powerful system for detecting, managing, and streaming from local and remote audio/video devices. It enables easy sharing of camera and microphone streams through various protocols (RTSP, RTMP, WebRTC) while providing real-time processing capabilities.
+## Overview
 
-## Features
+RTASPI (Real-Time Audio and Stream Processing Interface) is a comprehensive Python library for managing and processing audio/video streams, device control, and automation. This documentation provides detailed information about all aspects of the library.
 
-- **Device Management**
-  - Automatic detection of local video (cameras) and audio (microphones) devices
-  - Network device discovery (IP cameras, IP microphones) via ONVIF, UPnP, and mDNS
-  - Unified device management interface
+## Table of Contents
 
-- **Streaming Capabilities**
-  - Stream local devices via RTSP, RTMP, and WebRTC
-  - Proxy streams from remote devices
-  - Real-time stream transcoding
-  - Multi-protocol support
+### Getting Started
+- [Installation Guide](INSTALL.md) - Complete installation instructions
+- [Quick Start](QUICKSTART.md) - Get up and running quickly
+- [Basic Concepts](CONCEPTS.md) - Core concepts and architecture
 
-- **Processing Features**
-  - Real-time video filtering and effects
-  - Audio processing and filters
-  - Speech recognition capabilities
-  - Object detection and tracking
+### Core Features
+- [Configuration](CONFIGURATION.md) - Configuration system and options
+- [Device Management](devices/README.md) - Working with devices
+- [Streaming](streaming/README.md) - Stream handling and processing
+- [Processing](processing/README.md) - Audio/video processing capabilities
+- [Security](security/README.md) - Security features and analysis
 
-- **Integration & Control**
-  - RESTful API for remote control
-  - Command-line interface (CLI)
-  - Web interface for management
-  - Module Communication Protocol (MCP) for inter-module communication
-
-## Documentation
-
-- [Installation Guide](INSTALL.md) - Detailed installation instructions
-- [Core Concepts](CONCEPTS.md) - Understanding RTASPI's architecture and key concepts
-- [Configuration Guide](CONFIGURATION.md) - How to configure RTASPI
-- [API Reference](API.md) - REST API documentation
+### Interfaces
+- [API Reference](API.md) - Complete API documentation
 - [CLI Guide](CLI.md) - Command-line interface usage
+- [Web Interface](web/README.md) - Web interface documentation
+
+### Advanced Topics
+- [DSL Guide](dsl/README.md) - Domain Specific Language for pipelines
+- [Automation](automation/README.md) - Rules and automation system
+- [Industrial Integration](industrial/README.md) - Industrial protocols support
+- [Speech Processing](SPEECH_AND_INPUT.md) - Speech recognition and processing
+
+### Development
 - [Development Guide](DEVELOPMENT.md) - Contributing to RTASPI
-- [Examples](EXAMPLES.md) - Usage examples and tutorials
+- [Project Structure](TREE.md) - Codebase organization
+- [Testing Guide](TEST.md) - Testing procedures and guidelines
 
-## System Requirements
+### Examples and Tutorials
+- [Example Projects](PROJECTS.md) - Complete project examples
+- [Local Development](PROJECTS_LOCAL.md) - Local development setup
+- [Examples Directory](../examples/README.md) - Code examples by category
 
-- Python 3.8 or newer
-- FFmpeg 4.0 or newer
-- GStreamer 1.14 or newer (for WebRTC)
-- NGINX with RTMP module (for RTMP)
+## Directory Structure
 
-### System Dependencies
-
-#### Ubuntu/Debian:
-```bash
-sudo apt update
-sudo apt install ffmpeg gstreamer1.0-tools gstreamer1.0-plugins-base \
-    gstreamer1.0-plugins-good gstreamer1.0-plugins-bad \
-    gstreamer1.0-plugins-ugly nginx libnginx-mod-rtmp v4l-utils
 ```
-
-#### macOS:
-```bash
-brew install ffmpeg gstreamer gst-plugins-base gst-plugins-good \
-    gst-plugins-bad gst-plugins-ugly nginx
+docs/
+├── README.md                 # This file
+├── automation/              # Automation documentation
+├── devices/                # Device management docs
+├── dsl/                    # DSL documentation
+├── industrial/            # Industrial protocols docs
+├── processing/            # Processing documentation
+├── security/              # Security features docs
+├── streaming/             # Streaming documentation
+└── web/                   # Web interface docs
 ```
-
-#### Windows:
-Download and install:
-- [FFmpeg](https://ffmpeg.org/download.html)
-- [GStreamer](https://gstreamer.freedesktop.org/download/)
-- [NGINX with RTMP module](https://github.com/illuspas/nginx-rtmp-win32)
-
-## Quick Start
-
-1. Install RTASPI:
-```bash
-pip install rtaspi
-```
-
-2. Create a configuration file (rtaspi.config.yaml):
-```yaml
-system:
-  storage_path: 'storage'
-  log_level: 'INFO'
-
-local_devices:
-  enable_video: true
-  enable_audio: true
-  auto_start: false
-```
-
-3. Start RTASPI:
-```bash
-rtaspi start
-```
-
-## License
-
-This project is licensed under the Apache License 2.0 - see the [LICENSE](../LICENSE) file for details.
 
 ## Contributing
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+See [CONTRIBUTING.md](../CONTRIBUTING.md) for guidelines on contributing to the documentation.
+
+## License
+
+This documentation is licensed under the same terms as the RTASPI project. See [LICENSE](../LICENSE) for details.
 
 # Usage Examples and Tutorials [<span style='font-size:20px;'>&#x270D;</span>](git@github.com:rt-asp/rtaspi/edit/main/docs/EXAMPLES.md)
 

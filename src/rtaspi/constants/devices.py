@@ -2,12 +2,15 @@
 
 from enum import Enum, auto
 
+
 class DeviceType(Enum):
     """Device type enumeration."""
+
     CAMERA = auto()
     MICROPHONE = auto()
     SCREEN = auto()
     REMOTE_DESKTOP = auto()
+
 
 # Device types (string constants)
 DEVICE_TYPE_CAMERA = "camera"

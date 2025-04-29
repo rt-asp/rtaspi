@@ -6,30 +6,32 @@ from ..rules import Trigger
 
 logger = get_logger(__name__)
 
+
 class Trigger(Trigger):
     """Device event trigger."""
 
     def __init__(self, trigger_type: str, config: Dict[str, Any]):
         """Initialize device trigger.
-        
+
         Args:
             trigger_type: Type of trigger
             config: Trigger configuration
         """
         super().__init__(trigger_type, config)
-        self.device_id = config.get('device_id')
-        self.event_type = config.get('event_type')
+        self.device_id = config.get("device_id")
+        self.event_type = config.get("event_type")
         self._device_manager = None
 
     def initialize(self) -> bool:
         """Initialize trigger.
-        
+
         Returns:
             bool: True if initialization successful
         """
         try:
             # Import device manager
             from ...device_managers import DeviceManager
+
             self._device_manager = DeviceManager()
 
             # Subscribe to device events
@@ -65,17 +67,17 @@ class Trigger(Trigger):
 
     def _handle_event(self, event: Dict[str, Any]) -> None:
         """Handle device event.
-        
+
         Args:
             event: Device event data
         """
         try:
             # Check event type
-            if self.event_type and event.get('type') != self.event_type:
+            if self.event_type and event.get("type") != self.event_type:
                 return
 
             # Check device ID
-            if self.device_id and event.get('device_id') != self.device_id:
+            if self.device_id and event.get("device_id") != self.device_id:
                 return
 
             # Fire trigger

@@ -13,29 +13,30 @@ from .capture import WindowCapture
 
 logger = logging.getLogger(__name__)
 
+
 class RDPDevice(RemoteDesktopDevice):
     """RDP device implementation using FreeRDP as backend."""
 
     def __init__(self, device_id: str, config: Dict[str, Any]):
         """Initialize RDP device.
-        
+
         Args:
             device_id: Unique device identifier
             config: Device configuration dictionary
         """
         super().__init__(device_id, config)
-        
+
         # RDP specific configuration
-        self.domain = config.get('domain', '')
-        self.width = config.get('width', 1920)
-        self.height = config.get('height', 1080)
-        self.refresh_rate = config.get('refresh_rate', 30)
-        
+        self.domain = config.get("domain", "")
+        self.width = config.get("width", 1920)
+        self.height = config.get("height", 1080)
+        self.refresh_rate = config.get("refresh_rate", 30)
+
         # FreeRDP process management
         self._process: Optional[subprocess.Popen] = None
         self._capture_thread: Optional[threading.Thread] = None
         self._stop_capture = threading.Event()
-        
+
         # Frame capture
         self._current_frame: Optional[bytes] = None
         self._frame_lock = threading.Lock()
@@ -44,37 +45,35 @@ class RDPDevice(RemoteDesktopDevice):
 
     def connect(self) -> bool:
         """Establish connection to RDP server using FreeRDP.
-        
+
         Returns:
             bool: True if connection successful, False otherwise
         """
         try:
             # Build FreeRDP command
             cmd = [
-                'xfreerdp',
-                f'/v:{self.host}',
-                f'/u:{self.username}',
-                f'/p:{self.password}',
-                f'/w:{self.width}',
-                f'/h:{self.height}',
-                '/cert-ignore',  # TODO: Proper certificate handling
-                '/clipboard',
-                '/jpeg',  # Enable JPEG compression
-                '/jpeg-quality:80',
-                '/gfx:RFX',  # Use RemoteFX codec
-                '/gfx-progressive',  # Enable progressive codec
-                '/smart-sizing',  # Enable smart sizing
-                '/dynamic-resolution'  # Enable dynamic resolution
+                "xfreerdp",
+                f"/v:{self.host}",
+                f"/u:{self.username}",
+                f"/p:{self.password}",
+                f"/w:{self.width}",
+                f"/h:{self.height}",
+                "/cert-ignore",  # TODO: Proper certificate handling
+                "/clipboard",
+                "/jpeg",  # Enable JPEG compression
+                "/jpeg-quality:80",
+                "/gfx:RFX",  # Use RemoteFX codec
+                "/gfx-progressive",  # Enable progressive codec
+                "/smart-sizing",  # Enable smart sizing
+                "/dynamic-resolution",  # Enable dynamic resolution
             ]
 
             if self.domain:
-                cmd.append(f'/d:{self.domain}')
+                cmd.append(f"/d:{self.domain}")
 
             # Start FreeRDP process
             self._process = subprocess.Popen(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
+                cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
             )
 
             # Start frame capture thread
@@ -139,7 +138,7 @@ class RDPDevice(RemoteDesktopDevice):
         # Wait for FreeRDP window to appear
         retries = 10
         while retries > 0 and not self._stop_capture.is_set():
-            if self._window_capture.find_window_by_name('FreeRDP'):
+            if self._window_capture.find_window_by_name("FreeRDP"):
                 break
             retries -= 1
             time.sleep(0.5)
@@ -157,23 +156,25 @@ class RDPDevice(RemoteDesktopDevice):
                         self._current_frame = frame
                     self._frame_ready.set()
                 time.sleep(1.0 / self.refresh_rate)
-                
+
             except Exception as e:
                 logger.error(f"Error capturing RDP frame: {e}")
                 time.sleep(1)  # Avoid tight loop on error
 
     def get_frame(self) -> Optional[bytes]:
         """Get current frame from RDP session.
-        
+
         Returns:
             Optional[bytes]: Frame data if available, None otherwise
         """
         with self._frame_lock:
             return self._current_frame
 
-    def send_mouse_event(self, x: int, y: int, button: int = 0, pressed: bool = True) -> None:
+    def send_mouse_event(
+        self, x: int, y: int, button: int = 0, pressed: bool = True
+    ) -> None:
         """Send mouse event to RDP session.
-        
+
         Args:
             x: Mouse X coordinate
             y: Mouse Y coordinate
@@ -192,7 +193,7 @@ class RDPDevice(RemoteDesktopDevice):
 
     def send_key_event(self, key_code: int, pressed: bool = True) -> None:
         """Send keyboard event to RDP session.
-        
+
         Args:
             key_code: Key code
             pressed: True if key pressed, False if released
@@ -209,7 +210,7 @@ class RDPDevice(RemoteDesktopDevice):
 
     def get_resolution(self) -> Tuple[int, int]:
         """Get current screen resolution.
-        
+
         Returns:
             Tuple[int, int]: Width and height of RDP session
         """
@@ -217,11 +218,11 @@ class RDPDevice(RemoteDesktopDevice):
 
     def set_resolution(self, width: int, height: int) -> bool:
         """Set screen resolution.
-        
+
         Args:
             width: Desired screen width
             height: Desired screen height
-            
+
         Returns:
             bool: True if resolution was set successfully
         """
@@ -239,7 +240,7 @@ class RDPDevice(RemoteDesktopDevice):
 
     def get_refresh_rate(self) -> int:
         """Get current refresh rate in Hz.
-        
+
         Returns:
             int: Current refresh rate
         """
@@ -247,16 +248,16 @@ class RDPDevice(RemoteDesktopDevice):
 
     def set_refresh_rate(self, rate: int) -> bool:
         """Set refresh rate.
-        
+
         Args:
             rate: Desired refresh rate in Hz
-            
+
         Returns:
             bool: True if refresh rate was set successfully
         """
         if rate <= 0:
             return False
-            
+
         try:
             self.refresh_rate = rate
             return True

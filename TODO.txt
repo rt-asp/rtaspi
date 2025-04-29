@@ -2,3 +2,5 @@ execute tasks from TODO.md and check if they are done, set [x] if it is DONE
 sprawdz, ktore zadania zostaly wykonane i wykonaj kolejne zadania do wykonania:
 zaktualizuj requirements.txt
 zaktualizuj requirements-dev.txt
+
+zaktualizuj pliki w fodlerze docs/ dodaj nowe, opisz cała funkcjonalnosć i zaktualizuj folder examples/ gdzie powinny znajdować się przykłady, w kazdym fodlerze w examples/*/ dodaj przykład w python z README.md i innymi plikami

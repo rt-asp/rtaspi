@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.25] - 2025-04-29
+
+### Added
+- Changes in docs/QUICKSTART.md
+- Changes in docs/devices/README.md
+- Changes in examples/README.md
+- Changes in examples/basic/README.md
+- Changes in examples/basic/camera_stream.py
+- Changes in examples/basic/device_discovery.py
+- Changes in examples/basic/microphone_recording.py
+- Changes in examples/industrial/README.md
+- Changes in examples/security/README.md
+
 ## [0.1.24] - 2025-04-29
 
 ## [0.1.23] - 2025-04-29

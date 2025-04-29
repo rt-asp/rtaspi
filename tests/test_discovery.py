@@ -51,6 +51,7 @@ def discovery_module(request):
     module_class, _ = request.param
     return module_class()
 
+
 @pytest.mark.unit
 @pytest.mark.discovery
 def test_discovery_initialization(discovery_module):
@@ -68,12 +69,13 @@ def test_discovery_with_library(discovery_class, module_type):
     with patch.object(discovery, "_discover_with_library") as mock_discover:
         mock_discover.return_value = [MOCK_DEVICES[module_type]]
         devices = discovery.discover()
-        
+
         assert isinstance(devices, list)
         assert len(devices) == 1
         assert devices[0]["name"] == MOCK_DEVICES[module_type]["name"]
         assert devices[0]["ip"] == MOCK_DEVICES[module_type]["ip"]
         mock_discover.assert_called_once()
+
 
 @pytest.mark.unit
 @pytest.mark.discovery
@@ -81,15 +83,17 @@ def test_discovery_with_library(discovery_class, module_type):
 def test_discovery_alternative(discovery_class, module_type):
     """Test discovery using alternative method when primary fails."""
     discovery = discovery_class()
-    with patch.object(discovery, "_discover_with_library", side_effect=ImportError), \
-         patch.object(discovery, "_discover_alternative") as mock_alternative:
+    with patch.object(
+        discovery, "_discover_with_library", side_effect=ImportError
+    ), patch.object(discovery, "_discover_alternative") as mock_alternative:
         mock_alternative.return_value = [MOCK_DEVICES[module_type]]
         devices = discovery.discover()
-        
+
         assert isinstance(devices, list)
         assert len(devices) == 1
         assert devices[0]["ip"] == MOCK_DEVICES[module_type]["ip"]
         mock_alternative.assert_called_once()
+
 
 @pytest.mark.unit
 @pytest.mark.discovery
@@ -97,10 +101,13 @@ def test_discovery_alternative(discovery_class, module_type):
 def test_discovery_error_handling(discovery_class, module_type):
     """Test error handling in discovery process."""
     discovery = discovery_class()
-    with patch.object(discovery, "_discover_with_library", side_effect=Exception("Test error")):
+    with patch.object(
+        discovery, "_discover_with_library", side_effect=Exception("Test error")
+    ):
         devices = discovery.discover()
         assert isinstance(devices, list)
         assert len(devices) == 0
+
 
 @pytest.mark.unit
 @pytest.mark.discovery
@@ -111,49 +118,43 @@ async def test_async_discovery(discovery_class, module_type):
     discovery = discovery_class()
     with patch.object(discovery, "_discover_with_library") as mock_discover:
         mock_discover.return_value = [MOCK_DEVICES[module_type]]
-        
+
         # Simulate async discovery
-        devices = await asyncio.gather(
-            asyncio.to_thread(discovery.discover)
-        )
-        
+        devices = await asyncio.gather(asyncio.to_thread(discovery.discover))
+
         assert isinstance(devices[0], list)
         assert len(devices[0]) == 1
         assert devices[0][0]["ip"] == MOCK_DEVICES[module_type]["ip"]
         mock_discover.assert_called_once()
+
 
 @pytest.mark.unit
 @pytest.mark.discovery
 def test_onvif_xaddr_parsing():
     """Test ONVIF-specific XAddr parsing."""
     discovery = ONVIFDiscovery()
-    
+
     test_cases = [
         {
             "xaddrs": ["http://192.168.1.100:8080/onvif/device_service"],
             "expected_ip": "192.168.1.100",
-            "expected_port": 8080
+            "expected_port": 8080,
         },
         {
             "xaddrs": ["http://192.168.1.100/onvif/device_service"],
             "expected_ip": "192.168.1.100",
-            "expected_port": 80
+            "expected_port": 80,
         },
-        {
-            "xaddrs": [],
-            "expected_ip": None,
-            "expected_port": 80
-        },
-        {
-            "xaddrs": ["invalid_url"],
-            "expected_ip": None,
-            "expected_port": 80
-        }
+        {"xaddrs": [], "expected_ip": None, "expected_port": 80},
+        {"xaddrs": ["invalid_url"], "expected_ip": None, "expected_port": 80},
     ]
-    
+
     for case in test_cases:
         assert discovery._extract_ip_from_xaddrs(case["xaddrs"]) == case["expected_ip"]
-        assert discovery._extract_port_from_xaddrs(case["xaddrs"]) == case["expected_port"]
+        assert (
+            discovery._extract_port_from_xaddrs(case["xaddrs"]) == case["expected_port"]
+        )
+
 
 @pytest.mark.unit
 @pytest.mark.discovery
@@ -165,6 +166,7 @@ def test_upnp_timeout_handling():
         devices = discovery.discover()
         assert isinstance(devices, list)
         assert len(devices) == 0
+
 
 @pytest.mark.unit
 @pytest.mark.discovery

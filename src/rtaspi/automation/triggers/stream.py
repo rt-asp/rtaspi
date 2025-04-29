@@ -6,30 +6,32 @@ from ..rules import Trigger
 
 logger = get_logger(__name__)
 
+
 class Trigger(Trigger):
     """Stream event trigger."""
 
     def __init__(self, trigger_type: str, config: Dict[str, Any]):
         """Initialize stream trigger.
-        
+
         Args:
             trigger_type: Type of trigger
             config: Trigger configuration
         """
         super().__init__(trigger_type, config)
-        self.stream_id = config.get('stream_id')
-        self.event_type = config.get('event_type')
+        self.stream_id = config.get("stream_id")
+        self.event_type = config.get("event_type")
         self._stream_manager = None
 
     def initialize(self) -> bool:
         """Initialize trigger.
-        
+
         Returns:
             bool: True if initialization successful
         """
         try:
             # Import stream manager
             from ...device_managers import StreamManager
+
             self._stream_manager = StreamManager()
 
             # Subscribe to stream events
@@ -65,24 +67,24 @@ class Trigger(Trigger):
 
     def _handle_event(self, event: Dict[str, Any]) -> None:
         """Handle stream event.
-        
+
         Args:
             event: Stream event data
         """
         try:
             # Check event type
-            if self.event_type and event.get('type') != self.event_type:
+            if self.event_type and event.get("type") != self.event_type:
                 return
 
             # Check stream ID
-            if self.stream_id and event.get('stream_id') != self.stream_id:
+            if self.stream_id and event.get("stream_id") != self.stream_id:
                 return
 
             # Add stream info to event
             if self.stream_id and self._stream_manager:
                 stream = self._stream_manager.get_stream(self.stream_id)
                 if stream:
-                    event['stream_info'] = stream.get_info()
+                    event["stream_info"] = stream.get_info()
 
             # Fire trigger
             self._fire(event)
@@ -92,25 +94,25 @@ class Trigger(Trigger):
 
     def get_supported_events(self) -> List[str]:
         """Get list of supported event types.
-        
+
         Returns:
             List[str]: List of event types
         """
         return [
-            'stream_started',
-            'stream_stopped',
-            'stream_error',
-            'stream_stats',
-            'stream_connected',
-            'stream_disconnected',
-            'stream_reconnecting',
-            'stream_quality_changed',
-            'stream_bitrate_changed',
-            'stream_resolution_changed',
-            'stream_framerate_changed',
-            'stream_keyframe',
-            'stream_buffer_full',
-            'stream_buffer_empty',
-            'stream_data_received',
-            'stream_data_sent'
+            "stream_started",
+            "stream_stopped",
+            "stream_error",
+            "stream_stats",
+            "stream_connected",
+            "stream_disconnected",
+            "stream_reconnecting",
+            "stream_quality_changed",
+            "stream_bitrate_changed",
+            "stream_resolution_changed",
+            "stream_framerate_changed",
+            "stream_keyframe",
+            "stream_buffer_full",
+            "stream_buffer_empty",
+            "stream_data_received",
+            "stream_data_sent",
         ]

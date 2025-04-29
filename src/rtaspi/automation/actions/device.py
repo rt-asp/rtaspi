@@ -6,31 +6,33 @@ from ..rules import Action
 
 logger = get_logger(__name__)
 
+
 class Action(Action):
     """Device control action."""
 
     def __init__(self, action_type: str, config: Dict[str, Any]):
         """Initialize device action.
-        
+
         Args:
             action_type: Type of action
             config: Action configuration
         """
         super().__init__(action_type, config)
-        self.device_id = config.get('device_id')
-        self.command = config.get('command')
-        self.parameters = config.get('parameters', {})
+        self.device_id = config.get("device_id")
+        self.command = config.get("command")
+        self.parameters = config.get("parameters", {})
         self._device_manager = None
 
     def initialize(self) -> bool:
         """Initialize action.
-        
+
         Returns:
             bool: True if initialization successful
         """
         try:
             # Import device manager
             from ...device_managers import DeviceManager
+
             self._device_manager = DeviceManager()
 
             # Verify device exists
@@ -52,10 +54,10 @@ class Action(Action):
 
     def execute(self, data: Dict[str, Any]) -> bool:
         """Execute device action.
-        
+
         Args:
             data: Action input data
-            
+
         Returns:
             bool: True if execution successful
         """
@@ -80,7 +82,7 @@ class Action(Action):
             for key, value in self.parameters.items():
                 if isinstance(value, str):
                     # Replace {data.key} with values from trigger data
-                    for match in re.finditer(r'\{data\.([^}]+)\}', value):
+                    for match in re.finditer(r"\{data\.([^}]+)\}", value):
                         data_key = match.group(1)
                         if data_key in data:
                             value = value.replace(match.group(0), str(data[data_key]))
@@ -89,7 +91,9 @@ class Action(Action):
             # Execute command
             result = device.execute_command(self.command, parameters)
             if not result:
-                logger.error(f"Command {self.command} failed on device {self.device_id}")
+                logger.error(
+                    f"Command {self.command} failed on device {self.device_id}"
+                )
                 return False
 
             return True
@@ -100,69 +104,69 @@ class Action(Action):
 
     def get_supported_commands(self) -> Dict[str, List[str]]:
         """Get list of supported commands by device type.
-        
+
         Returns:
             Dict[str, List[str]]: Device type to command list mapping
         """
         return {
-            'camera': [
-                'start_stream',
-                'stop_stream',
-                'set_resolution',
-                'set_framerate',
-                'set_bitrate',
-                'set_quality',
-                'set_position',
-                'move_relative',
-                'move_absolute',
-                'zoom_in',
-                'zoom_out',
-                'focus_near',
-                'focus_far',
-                'auto_focus',
-                'iris_open',
-                'iris_close',
-                'auto_iris'
+            "camera": [
+                "start_stream",
+                "stop_stream",
+                "set_resolution",
+                "set_framerate",
+                "set_bitrate",
+                "set_quality",
+                "set_position",
+                "move_relative",
+                "move_absolute",
+                "zoom_in",
+                "zoom_out",
+                "focus_near",
+                "focus_far",
+                "auto_focus",
+                "iris_open",
+                "iris_close",
+                "auto_iris",
             ],
-            'microphone': [
-                'start_stream',
-                'stop_stream',
-                'set_volume',
-                'set_gain',
-                'set_sample_rate',
-                'set_channels',
-                'enable_noise_reduction',
-                'disable_noise_reduction',
-                'enable_echo_cancellation',
-                'disable_echo_cancellation'
+            "microphone": [
+                "start_stream",
+                "stop_stream",
+                "set_volume",
+                "set_gain",
+                "set_sample_rate",
+                "set_channels",
+                "enable_noise_reduction",
+                "disable_noise_reduction",
+                "enable_echo_cancellation",
+                "disable_echo_cancellation",
             ],
-            'intercom': [
-                'start_input',
-                'stop_input',
-                'start_output',
-                'stop_output',
-                'set_volume',
-                'set_gain',
-                'enable_echo_cancellation',
-                'disable_echo_cancellation'
+            "intercom": [
+                "start_input",
+                "stop_input",
+                "start_output",
+                "stop_output",
+                "set_volume",
+                "set_gain",
+                "enable_echo_cancellation",
+                "disable_echo_cancellation",
             ],
-            'remote_desktop': [
-                'connect',
-                'disconnect',
-                'send_key',
-                'send_mouse',
-                'set_resolution',
-                'set_quality',
-                'set_compression'
+            "remote_desktop": [
+                "connect",
+                "disconnect",
+                "send_key",
+                "send_mouse",
+                "set_resolution",
+                "set_quality",
+                "set_compression",
             ],
-            'sip': [
-                'make_call',
-                'hangup',
-                'answer',
-                'reject',
-                'hold',
-                'unhold',
-                'send_dtmf',
-                'set_volume'
-            ]
+            "sip": [
+                "make_call",
+                "hangup",
+                "answer",
+                "reject",
+                "hold",
+                "unhold",
+                "send_dtmf",
+                "set_volume",
+            ],
         }

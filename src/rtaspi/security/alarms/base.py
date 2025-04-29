@@ -11,18 +11,22 @@ from ...core.logging import get_logger
 
 logger = get_logger(__name__)
 
+
 @dataclass
 class AlarmState:
     """Alarm system state."""
+
     armed: bool
     triggered: bool
     bypass_zones: List[str]
     last_event: Optional[Dict[str, Any]]
     last_update: datetime
 
+
 @dataclass
 class AlarmZone:
     """Alarm zone information."""
+
     zone_id: str
     name: str
     type: str  # e.g., motion, contact, glass_break
@@ -30,30 +34,33 @@ class AlarmZone:
     last_trigger: Optional[datetime]
     metadata: Optional[Dict[str, Any]]
 
+
 @dataclass
 class AlarmEvent:
     """Alarm system event."""
+
     timestamp: datetime
     type: str
     zone_id: Optional[str]
     details: Optional[Dict[str, Any]]
     severity: float  # 0-1, higher means more severe
 
+
 class AlarmSystem(ABC):
     """Base class for alarm systems."""
 
     def __init__(self, config: Dict[str, Any]):
         """Initialize alarm system.
-        
+
         Args:
             config: Alarm system configuration
         """
         self.config = config
-        self.system_id = config.get('system_id', 'default')
-        self.name = config.get('name', 'Alarm System')
-        self.auto_reconnect = config.get('auto_reconnect', True)
-        self.reconnect_delay = config.get('reconnect_delay', 30)
-        self.event_history_size = config.get('event_history_size', 1000)
+        self.system_id = config.get("system_id", "default")
+        self.name = config.get("name", "Alarm System")
+        self.auto_reconnect = config.get("auto_reconnect", True)
+        self.reconnect_delay = config.get("reconnect_delay", 30)
+        self.event_history_size = config.get("event_history_size", 1000)
 
         # State
         self._connected = False
@@ -62,7 +69,7 @@ class AlarmSystem(ABC):
             triggered=False,
             bypass_zones=[],
             last_event=None,
-            last_update=datetime.now()
+            last_update=datetime.now(),
         )
         self._zones: Dict[str, AlarmZone] = {}
         self._events: List[AlarmEvent] = []
@@ -74,7 +81,7 @@ class AlarmSystem(ABC):
     @abstractmethod
     def connect(self) -> bool:
         """Connect to alarm system.
-        
+
         Returns:
             bool: True if connection successful
         """
@@ -86,12 +93,12 @@ class AlarmSystem(ABC):
         pass
 
     @abstractmethod
-    def arm(self, mode: str = 'away') -> bool:
+    def arm(self, mode: str = "away") -> bool:
         """Arm the system.
-        
+
         Args:
             mode: Arming mode (away, stay, night)
-            
+
         Returns:
             bool: True if arming successful
         """
@@ -100,10 +107,10 @@ class AlarmSystem(ABC):
     @abstractmethod
     def disarm(self, code: Optional[str] = None) -> bool:
         """Disarm the system.
-        
+
         Args:
             code: Security code if required
-            
+
         Returns:
             bool: True if disarming successful
         """
@@ -112,10 +119,10 @@ class AlarmSystem(ABC):
     @abstractmethod
     def bypass_zone(self, zone_id: str) -> bool:
         """Bypass a zone.
-        
+
         Args:
             zone_id: Zone identifier
-            
+
         Returns:
             bool: True if bypass successful
         """
@@ -124,10 +131,10 @@ class AlarmSystem(ABC):
     @abstractmethod
     def unbypass_zone(self, zone_id: str) -> bool:
         """Remove zone bypass.
-        
+
         Args:
             zone_id: Zone identifier
-            
+
         Returns:
             bool: True if unbypass successful
         """
@@ -136,11 +143,11 @@ class AlarmSystem(ABC):
     @abstractmethod
     def trigger_alarm(self, zone_id: str, trigger_type: str) -> bool:
         """Trigger alarm in zone.
-        
+
         Args:
             zone_id: Zone identifier
             trigger_type: Type of trigger
-            
+
         Returns:
             bool: True if trigger successful
         """
@@ -149,10 +156,10 @@ class AlarmSystem(ABC):
     @abstractmethod
     def clear_alarm(self, zone_id: str) -> bool:
         """Clear alarm in zone.
-        
+
         Args:
             zone_id: Zone identifier
-            
+
         Returns:
             bool: True if clear successful
         """
@@ -160,7 +167,7 @@ class AlarmSystem(ABC):
 
     def get_state(self) -> AlarmState:
         """Get current alarm state.
-        
+
         Returns:
             AlarmState: Current state
         """
@@ -168,10 +175,10 @@ class AlarmSystem(ABC):
 
     def get_zone(self, zone_id: str) -> Optional[AlarmZone]:
         """Get zone information.
-        
+
         Args:
             zone_id: Zone identifier
-            
+
         Returns:
             Optional[AlarmZone]: Zone information if found
         """
@@ -179,7 +186,7 @@ class AlarmSystem(ABC):
 
     def get_zones(self) -> List[AlarmZone]:
         """Get all zones.
-        
+
         Returns:
             List[AlarmZone]: List of zones
         """
@@ -187,10 +194,10 @@ class AlarmSystem(ABC):
 
     def get_events(self, count: Optional[int] = None) -> List[AlarmEvent]:
         """Get recent events.
-        
+
         Args:
             count: Maximum number of events to return
-            
+
         Returns:
             List[AlarmEvent]: List of events
         """
@@ -200,7 +207,7 @@ class AlarmSystem(ABC):
 
     def add_event_callback(self, callback: callable) -> None:
         """Add event callback.
-        
+
         Args:
             callback: Function to call when event occurs
         """
@@ -208,7 +215,7 @@ class AlarmSystem(ABC):
 
     def remove_event_callback(self, callback: callable) -> None:
         """Remove event callback.
-        
+
         Args:
             callback: Callback to remove
         """
@@ -217,7 +224,7 @@ class AlarmSystem(ABC):
 
     def add_state_callback(self, callback: callable) -> None:
         """Add state callback.
-        
+
         Args:
             callback: Function to call when state changes
         """
@@ -225,7 +232,7 @@ class AlarmSystem(ABC):
 
     def remove_state_callback(self, callback: callable) -> None:
         """Remove state callback.
-        
+
         Args:
             callback: Callback to remove
         """
@@ -234,13 +241,13 @@ class AlarmSystem(ABC):
 
     def _update_state(self, state: AlarmState) -> None:
         """Update alarm state.
-        
+
         Args:
             state: New state
         """
         self._state = state
         self._state.last_update = datetime.now()
-        
+
         # Notify callbacks
         for callback in self._state_callbacks:
             try:
@@ -250,7 +257,7 @@ class AlarmSystem(ABC):
 
     def _update_zone(self, zone: AlarmZone) -> None:
         """Update zone information.
-        
+
         Args:
             zone: Zone information
         """
@@ -258,23 +265,23 @@ class AlarmSystem(ABC):
 
     def _add_event(self, event: AlarmEvent) -> None:
         """Add new event.
-        
+
         Args:
             event: Event information
         """
         self._events.append(event)
         if len(self._events) > self.event_history_size:
-            self._events = self._events[-self.event_history_size:]
-        
+            self._events = self._events[-self.event_history_size :]
+
         # Update state
         self._state.last_event = {
-            'timestamp': event.timestamp,
-            'type': event.type,
-            'zone_id': event.zone_id,
-            'details': event.details,
-            'severity': event.severity
+            "timestamp": event.timestamp,
+            "type": event.type,
+            "zone_id": event.zone_id,
+            "details": event.details,
+            "severity": event.severity,
         }
-        
+
         # Notify callbacks
         for callback in self._event_callbacks:
             try:
@@ -314,18 +321,18 @@ class AlarmSystem(ABC):
 
     def get_status(self) -> Dict[str, Any]:
         """Get system status.
-        
+
         Returns:
             Dict[str, Any]: Status information
         """
         return {
-            'system_id': self.system_id,
-            'name': self.name,
-            'connected': self._connected,
-            'armed': self._state.armed,
-            'triggered': self._state.triggered,
-            'bypass_zones': self._state.bypass_zones,
-            'last_update': self._state.last_update,
-            'zone_count': len(self._zones),
-            'event_count': len(self._events)
+            "system_id": self.system_id,
+            "name": self.name,
+            "connected": self._connected,
+            "armed": self._state.armed,
+            "triggered": self._state.triggered,
+            "bypass_zones": self._state.bypass_zones,
+            "last_update": self._state.last_update,
+            "zone_count": len(self._zones),
+            "event_count": len(self._events),
         }

@@ -14,12 +14,12 @@ from rtaspi.processing.audio.filters import NoiseReductionFilter, NormalizationF
 @pytest.fixture
 def recognizer():
     """Create test speech recognizer."""
-    with patch('whisper.load_model') as mock_load:
+    with patch("whisper.load_model") as mock_load:
         # Mock Whisper model
         mock_model = Mock()
         mock_model.transcribe.return_value = {"text": "test transcription"}
         mock_load.return_value = mock_model
-        
+
         # Create recognizer with mocked model
         recognizer = SpeechRecognizer(model_name="tiny")
         yield recognizer
@@ -28,9 +28,9 @@ def recognizer():
 
 def test_recognizer_init():
     """Test recognizer initialization."""
-    with patch('whisper.load_model') as mock_load:
+    with patch("whisper.load_model") as mock_load:
         # Test CPU initialization
-        with patch('torch.cuda.is_available', return_value=False):
+        with patch("torch.cuda.is_available", return_value=False):
             recognizer = SpeechRecognizer(model_name="tiny")
             assert recognizer.device == "cpu"
             assert recognizer.model_name == "tiny"
@@ -40,7 +40,7 @@ def test_recognizer_init():
             assert isinstance(recognizer.filters[1], NormalizationFilter)
 
         # Test CUDA initialization
-        with patch('torch.cuda.is_available', return_value=True):
+        with patch("torch.cuda.is_available", return_value=True):
             recognizer = SpeechRecognizer(model_name="tiny")
             assert recognizer.device == "cuda"
 
@@ -145,21 +145,21 @@ def test_recognizer_language_handling(recognizer):
     assert recognizer.language is None
 
     # Test getting available languages
-    with patch('whisper.tokenizer.LANGUAGES', {'en': 'English', 'de': 'German'}):
+    with patch("whisper.tokenizer.LANGUAGES", {"en": "English", "de": "German"}):
         languages = recognizer.get_available_languages()
-        assert 'en' in languages
-        assert 'de' in languages
+        assert "en" in languages
+        assert "de" in languages
 
 
 def test_recognizer_model_info(recognizer):
     """Test model info retrieval."""
     info = recognizer.get_model_info()
-    assert info['name'] == "tiny"
-    assert info['language'] == "auto"
-    assert info['device'] == recognizer.device
-    assert len(info['filters']) == 2
-    assert "NoiseReductionFilter" in info['filters']
-    assert "NormalizationFilter" in info['filters']
+    assert info["name"] == "tiny"
+    assert info["language"] == "auto"
+    assert info["device"] == recognizer.device
+    assert len(info["filters"]) == 2
+    assert "NoiseReductionFilter" in info["filters"]
+    assert "NormalizationFilter" in info["filters"]
 
 
 def test_recognizer_cleanup(recognizer):
@@ -177,7 +177,7 @@ def test_recognizer_cleanup(recognizer):
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA not available")
 def test_recognizer_cuda():
     """Test CUDA support."""
-    with patch('whisper.load_model') as mock_load:
+    with patch("whisper.load_model") as mock_load:
         recognizer = SpeechRecognizer(model_name="tiny")
         assert recognizer.device == "cuda"
         # Verify model was moved to CUDA

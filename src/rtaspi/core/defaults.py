@@ -9,8 +9,8 @@ DEFAULT_CONFIG = {
         "config_paths": {
             "global": "/etc/rtaspi/config.yaml",
             "user": "~/.config/rtaspi/config.yaml",
-            "project": ".rtaspi/config.yaml"
-        }
+            "project": ".rtaspi/config.yaml",
+        },
     },
     "local_devices": {
         "enable_video": True,
@@ -19,7 +19,7 @@ DEFAULT_CONFIG = {
         "scan_interval": 60,
         "rtsp_port_start": 8554,
         "rtmp_port_start": 1935,
-        "webrtc_port_start": 8080
+        "webrtc_port_start": 8080,
     },
     "network_devices": {
         "enable": True,
@@ -28,37 +28,30 @@ DEFAULT_CONFIG = {
         "discovery_methods": ["onvif", "upnp", "mdns"],
         "rtsp_port_start": 8654,
         "rtmp_port_start": 2935,
-        "webrtc_port_start": 9080
+        "webrtc_port_start": 9080,
     },
     "streaming": {
-        "rtsp": {
-            "port_start": 8554,
-            "enable_auth": False,
-            "auth_method": "basic"
-        },
-        "rtmp": {
-            "port_start": 1935,
-            "enable_auth": False
-        },
+        "rtsp": {"port_start": 8554, "enable_auth": False, "auth_method": "basic"},
+        "rtmp": {"port_start": 1935, "enable_auth": False},
         "webrtc": {
             "port_start": 8080,
             "stun_server": "stun://stun.l.google.com:19302",
             "turn_server": "",
             "turn_username": "",
-            "turn_password": ""
-        }
+            "turn_password": "",
+        },
     },
     "processing": {
         "video": {
             "default_resolution": "1280x720",
             "default_fps": 30,
-            "default_format": "h264"
+            "default_format": "h264",
         },
         "audio": {
             "default_sample_rate": 44100,
             "default_channels": 2,
-            "default_format": "aac"
-        }
+            "default_format": "aac",
+        },
     },
     "web": {
         "enable": True,
@@ -69,8 +62,8 @@ DEFAULT_CONFIG = {
         "key_path": "",
         "enable_auth": False,
         "auth_method": "basic",
-        "session_timeout": 3600
-    }
+        "session_timeout": 3600,
+    },
 }
 
 ENV_VARIABLE_MAP = {
@@ -84,5 +77,5 @@ ENV_VARIABLE_MAP = {
     "RTASPI_STUN_SERVER": "streaming.webrtc.stun_server",
     "RTASPI_TURN_SERVER": "streaming.webrtc.turn_server",
     "RTASPI_TURN_USERNAME": "streaming.webrtc.turn_username",
-    "RTASPI_TURN_PASSWORD": "streaming.webrtc.turn_password"
+    "RTASPI_TURN_PASSWORD": "streaming.webrtc.turn_password",
 }

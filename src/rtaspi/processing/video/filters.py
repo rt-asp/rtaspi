@@ -63,7 +63,10 @@ class VideoFilter:
             return self._apply_threshold(frame)
         elif self.filter_type == FilterType.NOISE_REDUCTION:
             return self._apply_noise_reduction(frame)
-        elif self.filter_type in {FilterType.FACE_DETECTION, FilterType.MOTION_DETECTION}:
+        elif self.filter_type in {
+            FilterType.FACE_DETECTION,
+            FilterType.MOTION_DETECTION,
+        }:
             # Detection filters are handled by separate modules
             return frame.copy()  # Return a copy to avoid modifying the original
         else:
@@ -284,10 +287,9 @@ class VideoFilter:
         gamma = max(0.1, min(gamma, 10.0))
 
         # Create lookup table for gamma correction
-        table = np.array([
-            ((i / 255.0) ** gamma) * 255
-            for i in np.arange(0, 256)
-        ]).astype(np.uint8)
+        table = np.array(
+            [((i / 255.0) ** gamma) * 255 for i in np.arange(0, 256)]
+        ).astype(np.uint8)
 
         # Apply gamma correction using lookup table
         return cv2.LUT(frame, table)
@@ -330,10 +332,10 @@ class VideoFilter:
 
         # Find non-zero pixels (colored regions)
         mask = np.any(frame > 0, axis=2)
-        
+
         # Create a copy of the frame
         result = frame.copy()
-        
+
         # Apply noise reduction only to colored regions
         if method == "gaussian":
             # Ensure kernel size is odd and within valid range
@@ -347,7 +349,9 @@ class VideoFilter:
                 frame_var = np.var(frame[mask])
                 if result_var >= frame_var:
                     # If variance didn't decrease, apply stronger blur
-                    blurred = cv2.GaussianBlur(frame, (kernel_size, kernel_size), strength * 5)
+                    blurred = cv2.GaussianBlur(
+                        frame, (kernel_size, kernel_size), strength * 5
+                    )
                     result[mask] = blurred[mask]
         elif method == "median":
             # Ensure kernel size is odd and within valid range
@@ -367,7 +371,9 @@ class VideoFilter:
         elif method == "bilateral":
             # Bilateral filter's d parameter should be small
             d = min(kernel_size, 9)
-            blurred = cv2.bilateralFilter(frame, d=d, sigmaColor=strength * 15, sigmaSpace=strength * 15)
+            blurred = cv2.bilateralFilter(
+                frame, d=d, sigmaColor=strength * 15, sigmaSpace=strength * 15
+            )
             result[mask] = blurred[mask]
             # Calculate variance only on colored region
             if np.any(mask):
@@ -375,9 +381,11 @@ class VideoFilter:
                 frame_var = np.var(frame[mask])
                 if result_var >= frame_var:
                     # If variance didn't decrease, increase sigma parameters
-                    blurred = cv2.bilateralFilter(frame, d=d, sigmaColor=strength * 30, sigmaSpace=strength * 30)
+                    blurred = cv2.bilateralFilter(
+                        frame, d=d, sigmaColor=strength * 30, sigmaSpace=strength * 30
+                    )
                     result[mask] = blurred[mask]
         else:
             raise ValueError(f"Unsupported noise reduction method: {method}")
-        
+
         return result

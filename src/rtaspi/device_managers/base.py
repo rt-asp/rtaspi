@@ -87,7 +87,7 @@ class BaseDevice(ABC):
             "type": self.type,
             "connected": self.connected,
             "error": str(self.error) if self.error else None,
-            "metadata": self.metadata
+            "metadata": self.metadata,
         }
 
     def update_metadata(self, metadata: Dict[str, Any]) -> None:

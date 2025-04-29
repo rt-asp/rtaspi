@@ -21,7 +21,7 @@ class ConfigManager:
             "defaults": DEFAULT_CONFIG,
             "global": self._expand_path("/etc/rtaspi/config.yaml"),
             "user": self._expand_path("~/.config/rtaspi/config.yaml"),
-            "project": ".rtaspi/config.yaml"
+            "project": ".rtaspi/config.yaml",
         }
         self.config = self._load_hierarchical_config()
 
@@ -59,11 +59,11 @@ class ConfigManager:
             if value is not None:
                 try:
                     # Convert string value to appropriate type
-                    if value.lower() in ('true', 'false'):
-                        value = value.lower() == 'true'
+                    if value.lower() in ("true", "false"):
+                        value = value.lower() == "true"
                     elif value.isdigit():
                         value = int(value)
-                    elif value.replace('.', '').isdigit() and value.count('.') == 1:
+                    elif value.replace(".", "").isdigit() and value.count(".") == 1:
                         value = float(value)
 
                     self.set(config_path, value, "env")
@@ -128,7 +128,9 @@ class ConfigManager:
                 return default
         return value
 
-    def set_config(self, section: str, key: str, value: Any, level: str = "project") -> bool:
+    def set_config(
+        self, section: str, key: str, value: Any, level: str = "project"
+    ) -> bool:
         """
         Set configuration value with section and key.
 

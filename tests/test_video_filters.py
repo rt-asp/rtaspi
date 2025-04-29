@@ -24,11 +24,7 @@ def test_grayscale_filter(sample_frame):
 
 
 def test_edge_detection_filter(sample_frame):
-    params = {
-        "threshold1": 100,
-        "threshold2": 200,
-        "aperture_size": 3
-    }
+    params = {"threshold1": 100, "threshold2": 200, "aperture_size": 3}
     filter = VideoFilter(FilterType.EDGE_DETECTION, params)
     result = filter.apply(sample_frame)
 
@@ -40,10 +36,7 @@ def test_edge_detection_filter(sample_frame):
 
 
 def test_blur_filter(sample_frame):
-    params = {
-        "kernel_size": 5,
-        "sigma": 1.0
-    }
+    params = {"kernel_size": 5, "sigma": 1.0}
     filter = VideoFilter(FilterType.BLUR, params)
     result = filter.apply(sample_frame)
 
@@ -65,11 +58,7 @@ def test_sharpen_filter(sample_frame):
 
 
 def test_color_balance_filter(sample_frame):
-    params = {
-        "red": 1.2,
-        "green": 0.8,
-        "blue": 1.0
-    }
+    params = {"red": 1.2, "green": 0.8, "blue": 1.0}
     filter = VideoFilter(FilterType.COLOR_BALANCE, params)
     result = filter.apply(sample_frame)
 
@@ -115,7 +104,7 @@ def test_saturation_filter(sample_frame):
     # Convert to HSV to check saturation
     hsv_orig = cv2.cvtColor(sample_frame, cv2.COLOR_BGR2HSV)
     hsv_result = cv2.cvtColor(result, cv2.COLOR_BGR2HSV)
-    assert np.mean(hsv_result[:,:,1]) > np.mean(hsv_orig[:,:,1])
+    assert np.mean(hsv_result[:, :, 1]) > np.mean(hsv_orig[:, :, 1])
 
 
 def test_hue_filter(sample_frame):
@@ -130,7 +119,7 @@ def test_hue_filter(sample_frame):
     hsv_orig = cv2.cvtColor(sample_frame, cv2.COLOR_BGR2HSV)
     hsv_result = cv2.cvtColor(result, cv2.COLOR_BGR2HSV)
     # Account for hue wrapping around 180
-    hue_diff = (np.mean(hsv_result[:,:,0]) - np.mean(hsv_orig[:,:,0])) % 180
+    hue_diff = (np.mean(hsv_result[:, :, 0]) - np.mean(hsv_orig[:, :, 0])) % 180
     assert abs(hue_diff - 30) < 1
 
 
@@ -146,11 +135,7 @@ def test_gamma_filter(sample_frame):
 
 
 def test_threshold_filter(sample_frame):
-    params = {
-        "threshold": 128,
-        "max_value": 255,
-        "method": cv2.THRESH_BINARY
-    }
+    params = {"threshold": 128, "max_value": 255, "method": cv2.THRESH_BINARY}
     filter = VideoFilter(FilterType.THRESHOLD, params)
     result = filter.apply(sample_frame)
 
@@ -167,11 +152,7 @@ def test_noise_reduction_filter(sample_frame):
     # Test all noise reduction methods
     methods = ["gaussian", "median", "bilateral"]
     for method in methods:
-        params = {
-            "method": method,
-            "kernel_size": 5,
-            "strength": 7
-        }
+        params = {"method": method, "kernel_size": 5, "strength": 7}
         filter = VideoFilter(FilterType.NOISE_REDUCTION, params)
         result = filter.apply(sample_frame)
 
@@ -198,16 +179,25 @@ def test_default_parameters():
     # Test that filters work with default parameters
     frame = np.zeros((50, 50, 3), dtype=np.uint8)
     frame[20:30, 20:30] = [128, 128, 128]  # Add some non-zero values
-    
+
     # Only test video filters
     video_filters = [
-        FilterType.GRAYSCALE, FilterType.EDGE_DETECTION, FilterType.BLUR,
-        FilterType.SHARPEN, FilterType.COLOR_BALANCE, FilterType.BRIGHTNESS,
-        FilterType.CONTRAST, FilterType.SATURATION, FilterType.HUE,
-        FilterType.GAMMA, FilterType.THRESHOLD, FilterType.NOISE_REDUCTION,
-        FilterType.FACE_DETECTION, FilterType.MOTION_DETECTION
+        FilterType.GRAYSCALE,
+        FilterType.EDGE_DETECTION,
+        FilterType.BLUR,
+        FilterType.SHARPEN,
+        FilterType.COLOR_BALANCE,
+        FilterType.BRIGHTNESS,
+        FilterType.CONTRAST,
+        FilterType.SATURATION,
+        FilterType.HUE,
+        FilterType.GAMMA,
+        FilterType.THRESHOLD,
+        FilterType.NOISE_REDUCTION,
+        FilterType.FACE_DETECTION,
+        FilterType.MOTION_DETECTION,
     ]
-    
+
     for filter_type in video_filters:
         filter = VideoFilter(filter_type)
         result = filter.apply(frame)

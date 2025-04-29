@@ -16,10 +16,11 @@ from ...constants.devices import (
     DEVICE_SUBTYPE_RDP,
     DEVICE_SUBTYPE_VNC,
     DEVICE_PROTOCOL_RDP,
-    DEVICE_PROTOCOL_VNC
+    DEVICE_PROTOCOL_VNC,
 )
 
 logger = logging.getLogger(__name__)
+
 
 class RemoteDesktopManager(DeviceManager):
     """Manager for remote desktop devices."""
@@ -33,7 +34,7 @@ class RemoteDesktopManager(DeviceManager):
 
     def start_discovery(self, networks: Optional[List[str]] = None) -> None:
         """Start remote desktop device discovery.
-        
+
         Args:
             networks: List of networks to scan (e.g., ["192.168.1.0/24"])
                      If None, scan local network
@@ -44,8 +45,7 @@ class RemoteDesktopManager(DeviceManager):
 
         self._stop_discovery.clear()
         self._discovery_thread = threading.Thread(
-            target=self._discover_devices,
-            args=(networks,)
+            target=self._discover_devices, args=(networks,)
         )
         self._discovery_thread.daemon = True
         self._discovery_thread.start()
@@ -61,7 +61,7 @@ class RemoteDesktopManager(DeviceManager):
 
     def _discover_devices(self, networks: Optional[List[str]]) -> None:
         """Discover remote desktop devices on network.
-        
+
         Args:
             networks: List of networks to scan
         """
@@ -88,7 +88,7 @@ class RemoteDesktopManager(DeviceManager):
 
     def _scan_network(self, network: str) -> None:
         """Scan network for remote desktop devices.
-        
+
         Args:
             network: Network to scan (e.g., "192.168.1.0/24")
         """
@@ -99,19 +99,19 @@ class RemoteDesktopManager(DeviceManager):
                     return
 
                 ip_str = str(ip)
-                
+
                 # Check RDP (port 3389)
                 if self._check_port(ip_str, 3389):
                     device_id = f"rdp-{ip_str}"
                     if device_id not in self._devices:
                         config = {
-                            'id': device_id,
-                            'name': f'RDP Device ({ip_str})',
-                            'type': DEVICE_TYPE_REMOTE_DESKTOP,
-                            'subtype': DEVICE_SUBTYPE_RDP,
-                            'protocol': DEVICE_PROTOCOL_RDP,
-                            'host': ip_str,
-                            'port': 3389
+                            "id": device_id,
+                            "name": f"RDP Device ({ip_str})",
+                            "type": DEVICE_TYPE_REMOTE_DESKTOP,
+                            "subtype": DEVICE_SUBTYPE_RDP,
+                            "protocol": DEVICE_PROTOCOL_RDP,
+                            "host": ip_str,
+                            "port": 3389,
                         }
                         self._devices[device_id] = RDPDevice(device_id, config)
                         logger.info(f"Found RDP device at {ip_str}")
@@ -121,13 +121,13 @@ class RemoteDesktopManager(DeviceManager):
                     device_id = f"vnc-{ip_str}"
                     if device_id not in self._devices:
                         config = {
-                            'id': device_id,
-                            'name': f'VNC Device ({ip_str})',
-                            'type': DEVICE_TYPE_REMOTE_DESKTOP,
-                            'subtype': DEVICE_SUBTYPE_VNC,
-                            'protocol': DEVICE_PROTOCOL_VNC,
-                            'host': ip_str,
-                            'port': 5900
+                            "id": device_id,
+                            "name": f"VNC Device ({ip_str})",
+                            "type": DEVICE_TYPE_REMOTE_DESKTOP,
+                            "subtype": DEVICE_SUBTYPE_VNC,
+                            "protocol": DEVICE_PROTOCOL_VNC,
+                            "host": ip_str,
+                            "port": 5900,
                         }
                         self._devices[device_id] = VNCDevice(device_id, config)
                         logger.info(f"Found VNC device at {ip_str}")
@@ -137,11 +137,11 @@ class RemoteDesktopManager(DeviceManager):
 
     def _check_port(self, host: str, port: int) -> bool:
         """Check if port is open on host.
-        
+
         Args:
             host: Host to check
             port: Port to check
-            
+
         Returns:
             bool: True if port is open
         """
@@ -156,7 +156,7 @@ class RemoteDesktopManager(DeviceManager):
 
     def get_devices(self) -> List[RemoteDesktopDevice]:
         """Get list of discovered devices.
-        
+
         Returns:
             List[RemoteDesktopDevice]: List of remote desktop devices
         """
@@ -164,10 +164,10 @@ class RemoteDesktopManager(DeviceManager):
 
     def get_device(self, device_id: str) -> Optional[RemoteDesktopDevice]:
         """Get device by ID.
-        
+
         Args:
             device_id: Device ID
-            
+
         Returns:
             Optional[RemoteDesktopDevice]: Device if found, None otherwise
         """
@@ -175,20 +175,20 @@ class RemoteDesktopManager(DeviceManager):
 
     def add_device(self, config: Dict[str, str]) -> Optional[RemoteDesktopDevice]:
         """Add device manually.
-        
+
         Args:
             config: Device configuration
-            
+
         Returns:
             Optional[RemoteDesktopDevice]: Created device if successful
         """
         try:
-            device_id = config['id']
+            device_id = config["id"]
             if device_id in self._devices:
                 logger.warning(f"Device {device_id} already exists")
                 return None
 
-            device_type = config.get('subtype', '').lower()
+            device_type = config.get("subtype", "").lower()
             if device_type == DEVICE_SUBTYPE_RDP:
                 device = RDPDevice(device_id, config)
             elif device_type == DEVICE_SUBTYPE_VNC:
@@ -207,10 +207,10 @@ class RemoteDesktopManager(DeviceManager):
 
     def remove_device(self, device_id: str) -> bool:
         """Remove device.
-        
+
         Args:
             device_id: Device ID
-            
+
         Returns:
             bool: True if device was removed
         """

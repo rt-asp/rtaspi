@@ -16,7 +16,9 @@ from rtaspi.device_managers.utils.device import LocalDevice, NetworkDevice
 def pytest_configure(config):
     """Configure pytest before running tests."""
     # Register custom markers
-    config.addinivalue_line("markers", "discovery: tests for device discovery functionality")
+    config.addinivalue_line(
+        "markers", "discovery: tests for device discovery functionality"
+    )
     config.addinivalue_line("markers", "streaming: tests for streaming functionality")
     config.addinivalue_line("markers", "devices: tests for device management")
     config.addinivalue_line("markers", "asyncio: tests requiring async functionality")
@@ -45,7 +47,7 @@ def pytest_configure(config):
         # Configure Python path - use dynamic site-packages discovery
         if str(src_dir) not in sys.path:
             sys.path.insert(0, str(src_dir))
-        
+
         # Add site-packages from virtual environment if it exists
         venv_site_packages = project_root / "venv/lib/python3.12/site-packages"
         if venv_site_packages.exists():
