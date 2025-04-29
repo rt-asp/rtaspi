@@ -77,7 +77,7 @@
 
 ## 10. Testy Integracyjne
 - [x] Rozbudować system testów:
-  - [x] Testy jednostkowe dla nowych komponentów
+  - [x] Testy jednostkowe dla nowych komponentów (command_handler.py: 75%, local_devices.py: 85%, rtsp.py: 81%)
   - [x] Testy integracyjne dla kluczowych funkcjonalności
   - [x] Testy wydajności streamingu
 - [ ] Stworzyć środowisko testowe:
@@ -351,4 +351,3 @@
         ├── test_linux.py
         ├── test_macos.py
         └── test_windows.py
-
