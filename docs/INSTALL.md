@@ -1,80 +1,251 @@
+# Installation Guide
 
-## Uruchomienie
+This guide covers the installation and initial setup of RTASPI.
 
-1. Uruchom główny skrypt:
+## System Requirements
+
+- Python 3.8 or newer
+- FFmpeg 4.0 or newer
+- GStreamer 1.14 or newer (for WebRTC support)
+- NGINX with RTMP module (for RTMP support)
+
+## Dependencies Installation
+
+### Ubuntu/Debian
+
 ```bash
-python main.py
+# Update package list
+sudo apt update
+
+# Install system dependencies
+sudo apt install -y \
+    python3 python3-pip python3-venv \
+    ffmpeg \
+    gstreamer1.0-tools \
+    gstreamer1.0-plugins-base \
+    gstreamer1.0-plugins-good \
+    gstreamer1.0-plugins-bad \
+    gstreamer1.0-plugins-ugly \
+    nginx \
+    libnginx-mod-rtmp \
+    v4l-utils
+
+# Install additional development libraries
+sudo apt install -y \
+    build-essential \
+    python3-dev \
+    libgstreamer1.0-dev \
+    libgstreamer-plugins-base1.0-dev \
+    libavcodec-dev \
+    libavformat-dev \
+    libswscale-dev
 ```
 
-2. Opcjonalnie, możesz podać ścieżkę do pliku konfiguracyjnego:
+### macOS (using Homebrew)
+
 ```bash
-python main.py -c /sciezka/do/config.yaml
+# Install Homebrew if not already installed
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# Install dependencies
+brew install python@3.10
+brew install ffmpeg
+brew install gstreamer
+brew install gst-plugins-base
+brew install gst-plugins-good
+brew install gst-plugins-bad
+brew install gst-plugins-ugly
+brew install nginx
 ```
 
-## Protokół komunikacyjny MCP
+### Windows
 
-System używa wewnętrznego protokołu komunikacyjnego MCP (Module Communication Protocol) do wymiany informacji między modułami. Protokół opiera się na wzorcu publikuj/subskrybuj (pub/sub), gdzie moduły mogą publikować wiadomości na określone tematy i subskrybować tematy, aby otrzymywać wiadomości.
+1. Install Python 3.8 or newer from [python.org](https://www.python.org/downloads/)
 
-### Przykładowe tematy MCP:
+2. Install FFmpeg:
+   - Download from [ffmpeg.org](https://ffmpeg.org/download.html)
+   - Add to system PATH
 
-- `local_devices/devices` - Informacje o wykrytych lokalnych urządzeniach
-- `local_devices/stream/started` - Informacja o uruchomieniu strumienia z lokalnego urządzenia
-- `network_devices/devices` - Informacje o wykrytych urządzeniach sieciowych
-- `command/local_devices/scan` - Komenda do skanowania lokalnych urządzeń
-- `command/network_devices/add_device` - Komenda do dodania zdalnego urządzenia
+3. Install GStreamer:
+   - Download from [gstreamer.freedesktop.org](https://gstreamer.freedesktop.org/download/)
+   - Select Complete installation
+   - Add to system PATH
 
-## Używanie API
+4. Install NGINX with RTMP module:
+   - Download from [nginx-rtmp-win32](https://github.com/illuspas/nginx-rtmp-win32)
 
-System udostępnia API do zarządzania urządzeniami i strumieniami. Poniżej znajdują się przykłady użycia API w kodzie Python:
+## RTASPI Installation
 
-```python
-from core.mcp import MCPBroker, MCPClient
+### 1. Create Virtual Environment
 
-# Utwórz klienta MCP
-broker = MCPBroker()
-client = MCPClient(broker, client_id="my_client")
-
-# Subskrybuj tematy
-client.subscribe("local_devices/devices", handler=handle_devices)
-client.subscribe("local_devices/stream/started", handler=handle_stream_started)
-
-# Wysyłaj komendy
-client.publish("command/local_devices/scan", {})
-
-# Uruchom strumień z urządzenia
-client.publish("command/local_devices/start_stream", {
-    "device_id": "video:/dev/video0",
-    "protocol": "rtsp"
-})
-
-# Dodaj zdalne urządzenie
-client.publish("command/network_devices/add_device", {
-    "name": "Kamera IP",
-    "ip": "192.168.1.100",
-    "port": 554,
-    "username": "admin",
-    "password": "admin",
-    "type": "video",
-    "protocol": "rtsp",
-    "paths": ["cam/realmonitor"]
-})
-```
-
-## Testy
-
-Uruchomienie testów jednostkowych:
 ```bash
-pytest -v tests/
+# Create virtual environment
+python -m venv venv
+
+# Activate virtual environment
+# On Linux/macOS:
+source venv/bin/activate
+# On Windows:
+venv\Scripts\activate
 ```
 
-## Licencja
+### 2. Install RTASPI
 
-Ten projekt jest udostępniany na licencji Apache 2. Zobacz plik LICENSE, aby uzyskać więcej informacji.
+```bash
+# Install from PyPI
+pip install rtaspi
 
-## Autorzy
+# Or install from source
+git clone https://github.com/rt-asp/rtaspi.git
+cd rtaspi
+pip install -e .
+```
 
-- Zespół rtaspi
+### 3. Configuration
 
-## Współpraca
+1. Create configuration directory:
+```bash
+# Linux/macOS
+mkdir -p ~/.config/rtaspi
 
-Zachęcamy do współpracy przy rozwoju projektu. Zapraszamy do zgłaszania problemów (issues) i propozycji zmian (pull requests).
+# Windows (PowerShell)
+New-Item -ItemType Directory -Force -Path "$env:APPDATA\rtaspi"
+```
+
+2. Create basic configuration:
+```yaml
+# config.yaml
+system:
+  storage_path: "~/.local/share/rtaspi"  # Windows: %LOCALAPPDATA%\rtaspi
+  log_level: "INFO"
+
+local_devices:
+  enable_video: true
+  enable_audio: true
+  auto_start: false
+
+streaming:
+  rtsp:
+    port_start: 8554
+  rtmp:
+    port_start: 1935
+  webrtc:
+    port_start: 8080
+    stun_server: "stun:stun.l.google.com:19302"
+```
+
+### 4. System Service Setup (Linux)
+
+1. Create service file:
+```bash
+sudo tee /etc/systemd/system/rtaspi.service << 'EOF'
+[Unit]
+Description=RTASPI Service
+After=network.target
+
+[Service]
+Type=simple
+User=rtaspi
+Environment=RTASPI_CONFIG=/etc/rtaspi/config.yaml
+ExecStart=/usr/local/bin/rtaspi start
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+```
+
+2. Create system user and directories:
+```bash
+# Create system user
+sudo useradd -r rtaspi
+
+# Create configuration directories
+sudo mkdir -p /etc/rtaspi /var/lib/rtaspi
+sudo chown -R rtaspi:rtaspi /etc/rtaspi /var/lib/rtaspi
+```
+
+3. Enable and start service:
+```bash
+sudo systemctl enable rtaspi
+sudo systemctl start rtaspi
+```
+
+### 5. Verify Installation
+
+1. Check RTASPI version:
+```bash
+rtaspi --version
+```
+
+2. List available devices:
+```bash
+rtaspi devices list
+```
+
+3. Check system status:
+```bash
+rtaspi status
+```
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Missing Dependencies**
+```bash
+# Check Python version
+python --version
+
+# Check FFmpeg installation
+ffmpeg -version
+
+# Check GStreamer installation
+gst-launch-1.0 --version
+```
+
+2. **Permission Issues**
+```bash
+# Add user to video group (Linux)
+sudo usermod -a -G video $USER
+
+# Check device permissions
+ls -l /dev/video*
+```
+
+3. **Port Conflicts**
+```bash
+# Check if ports are in use
+sudo netstat -tulpn | grep "8554\|1935\|8080"
+```
+
+### Debug Mode
+
+Enable debug logging for troubleshooting:
+
+```yaml
+# config.yaml
+system:
+  log_level: "DEBUG"
+  debug_mode: true
+```
+
+### Log Files
+
+Check logs for detailed information:
+
+```bash
+# System service logs
+sudo journalctl -u rtaspi
+
+# Application logs
+tail -f ~/.local/share/rtaspi/logs/rtaspi.log
+```
+
+## Next Steps
+
+- Read the [Configuration Guide](CONFIGURATION.md) for detailed configuration options
+- Check the [Examples](EXAMPLES.md) for common usage scenarios
+- Explore the [API Reference](API.md) for programmatic control
+- See the [CLI Guide](CLI.md) for command-line usage
