@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.20] - 2025-04-29
+
+### Changed
+- Changes in src/rtaspi/device_managers/network/device_monitor.py
+- Changes in src/rtaspi/device_managers/network_devices.py
+
 ## [0.1.19] - 2025-04-29
 
 ### Added

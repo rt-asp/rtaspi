@@ -37,6 +37,14 @@ class NetworkDevicesManager(DeviceManager):
         # Device state
         self.devices: Dict[str, NetworkDevice] = {}
 
+        # Configuration
+        network_devices_config = config.get("network_devices", {})
+        self.scan_interval = network_devices_config.get("scan_interval", 30)
+        self.discovery_methods = network_devices_config.get(
+            "discovery_methods", ["onvif", "upnp", "mdns"]
+        )
+        self.discovery_modules = self.device_monitor.get_discovery_modules()
+
     def start(self):
         """Start the network devices manager."""
         logger.info("Starting network devices manager...")
@@ -79,6 +87,7 @@ class NetworkDevicesManager(DeviceManager):
 
     def _scan_devices(self):
         """Scan network devices."""
+        logger.info("Scanning for network devices...")
         # Check status of known devices
         for device_id, device in list(self.devices.items()):
             if isinstance(device, NetworkDevice):
@@ -93,7 +102,7 @@ class NetworkDevicesManager(DeviceManager):
         # Add new devices
         for device_info in new_devices:
             try:
-                self.command_handler.add_device(
+                self.add_device(
                     name=device_info.get("name", f"Device {device_info['ip']}"),
                     ip=device_info["ip"],
                     port=device_info["port"],
@@ -108,6 +117,206 @@ class NetworkDevicesManager(DeviceManager):
 
         # Save updated devices
         self._save_devices()
+
+    def add_device(
+        self,
+        name: str,
+        ip: str,
+        port: int = None,
+        type: str = None,
+        protocol: str = None,
+        username: str = None,
+        password: str = None,
+        paths: list = None,
+    ) -> str:
+        """
+        Add a new network device.
+
+        Args:
+            name (str): Device name
+            ip (str): Device IP address
+            port (int, optional): Device port
+            type (str, optional): Device type (video/audio)
+            protocol (str, optional): Device protocol (rtsp/rtmp)
+            username (str, optional): Authentication username
+            password (str, optional): Authentication password
+            paths (list, optional): List of stream paths
+
+        Returns:
+            str: Device ID
+
+        Raises:
+            ValueError: If required fields are missing
+        """
+        if not name or not name.strip() or not ip or not ip.strip():
+            raise ValueError("Name and IP address are required")
+        if not isinstance(name, str) or not isinstance(ip, str):
+            raise ValueError("Name and IP address must be strings")
+        if port and not isinstance(port, int):
+            raise ValueError("Port must be an integer")
+        if type and type not in ["video", "audio"]:
+            raise ValueError("Type must be 'video' or 'audio'")
+        if protocol and protocol not in ["rtsp", "rtmp", "http"]:
+            raise ValueError("Protocol must be 'rtsp', 'rtmp', or 'http'")
+
+        port = port or 554
+        device_id = f"{ip}:{port}"
+        device = NetworkDevice(
+            device_id=device_id,
+            name=name,
+            ip=ip,
+            port=port,
+            type=type or "video",
+            protocol=protocol or "rtsp",
+            username=username or "",
+            password=password or "",
+        )
+
+        # Add paths to streams
+        if paths:
+            for path in paths:
+                stream_id = f"{device_id}_{path}"
+                device.streams[stream_id] = path
+        if device_id in self.devices:
+            raise ValueError(f"Device {device_id} already exists")
+
+        self.devices[device_id] = device
+        self._save_devices()
+        return device_id
+
+    def remove_device(self, device_id: str) -> bool:
+        """
+        Remove a device.
+
+        Args:
+            device_id (str): Device identifier
+
+        Returns:
+            bool: True if device was removed
+
+        Raises:
+            ValueError: If device not found
+        """
+        if device_id not in self.devices:
+            raise ValueError(f"Device {device_id} not found")
+        
+        del self.devices[device_id]
+        self._save_devices()
+        return True
+
+    def update_device(self, device_id: str, **kwargs) -> bool:
+        """
+        Update device properties.
+
+        Args:
+            device_id (str): Device identifier
+            **kwargs: Device properties to update
+
+        Returns:
+            bool: True if device was updated, False otherwise
+
+        Raises:
+            ValueError: If device not found
+        """
+        if device_id not in self.devices:
+            raise ValueError(f"Device {device_id} not found")
+
+        device = self.devices[device_id]
+        for key, value in kwargs.items():
+            if hasattr(device, key):
+                setattr(device, key, value)
+
+        self._save_devices()
+        return True
+
+    def get_devices(self) -> Dict[str, NetworkDevice]:
+        """
+        Get all devices.
+
+        Returns:
+            Dict[str, NetworkDevice]: Dictionary of devices
+        """
+        return self.devices
+
+    def _discover_devices(self):
+        """
+        Discover network devices using configured methods.
+
+        Returns:
+            List[dict]: List of discovered devices.
+        """
+        discovered_devices = self.device_monitor.discover_devices()
+        new_devices = self.device_monitor.process_discovered_devices(
+            discovered_devices, self.devices
+        )
+
+        # Add new devices
+        for device_info in new_devices:
+            try:
+                self.add_device(
+                    name=device_info.get("name", f"Device {device_info['ip']}"),
+                    ip=device_info["ip"],
+                    port=device_info["port"],
+                    type=device_info.get("type", "video"),
+                    protocol=device_info.get("protocol", "rtsp"),
+                    username=device_info.get("username", ""),
+                    password=device_info.get("password", ""),
+                    paths=device_info.get("paths", []),
+                )
+            except Exception as e:
+                logger.error(f"Error adding discovered device: {e}")
+                continue
+
+        return new_devices
+
+    def _handle_command(self, topic: str, payload: dict):
+        """
+        Handle MCP commands.
+
+        Args:
+            topic (str): Command topic
+            payload (dict): Command payload
+        """
+        command = topic.split("/")[-1]
+
+        try:
+            if command == "scan":
+                self._scan_devices()
+            elif command == "add":
+                try:
+                    self.add_device(**payload)
+                except (ValueError, TypeError) as e:
+                    raise ValueError(str(e))
+            elif command == "update":
+                device_id = payload.pop("device_id")
+                self.update_device(device_id, **payload)
+            elif command == "remove":
+                device_id = payload.get("device_id")
+                if not device_id:
+                    raise ValueError("Device ID is required")
+                self.remove_device(device_id)
+            else:
+                raise ValueError(f"Unknown command: {command}")
+        except (ValueError, TypeError) as e:
+            raise ValueError(str(e))
+
+    def save_state(self, state_file: str):
+        """
+        Save devices state to a file.
+
+        Args:
+            state_file (str): Path to save state to.
+        """
+        self._save_devices()
+
+    def load_state(self, state_file: str):
+        """
+        Load devices state from a file.
+
+        Args:
+            state_file (str): Path to load state from.
+        """
+        self._load_saved_devices()
 
     def update_device_status(self, device_id: str, status: DeviceStatus):
         """

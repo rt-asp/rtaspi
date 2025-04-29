@@ -152,6 +152,15 @@ class NetworkDeviceMonitor:
 
         return True
 
+    def get_discovery_modules(self) -> Dict:
+        """
+        Get the discovery modules.
+
+        Returns:
+            Dict: Dictionary of discovery modules
+        """
+        return self.discovery_modules
+
     def process_discovered_devices(
         self, discovered_devices: List[dict], existing_devices: Dict[str, NetworkDevice]
     ) -> List[dict]:

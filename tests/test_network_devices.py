@@ -50,11 +50,12 @@ def test_add_device_success(network_manager, mock_network_device):
 
 
 def test_add_device_invalid_data(network_manager):
-    # Missing required fields
+    # Empty strings
     with pytest.raises(ValueError):
-        network_manager.add_device(
-            name="Test Camera", ip="192.168.1.100"  # Missing required fields
-        )
+        network_manager.add_device(name="", ip="192.168.1.100")
+    
+    with pytest.raises(ValueError):
+        network_manager.add_device(name="Test Camera", ip="")
 
     # Invalid IP address
     with pytest.raises(ValueError):
@@ -113,8 +114,8 @@ def test_remove_device_success(network_manager):
 
 
 def test_remove_device_nonexistent(network_manager):
-    success = network_manager.remove_device("nonexistent_id")
-    assert not success
+    with pytest.raises(ValueError):
+        network_manager.remove_device("nonexistent_id")
 
 
 def test_update_device(network_manager):
@@ -138,8 +139,8 @@ def test_update_device(network_manager):
 
 def test_update_device_invalid(network_manager):
     # Try to update nonexistent device
-    success = network_manager.update_device("nonexistent_id", name="Updated Camera")
-    assert not success
+    with pytest.raises(ValueError):
+        network_manager.update_device("nonexistent_id", name="Updated Camera")
 
 
 def test_discover_devices_success(network_manager):
@@ -287,11 +288,26 @@ def test_handle_command_invalid(network_manager):
     with pytest.raises(ValueError):
         network_manager._handle_command("command/network_devices/add", {})
 
+    # Test add command with empty strings
+    with pytest.raises(ValueError):
+        network_manager._handle_command(
+            "command/network_devices/add", {"name": "", "ip": "192.168.1.100"}
+        )
+
+    with pytest.raises(ValueError):
+        network_manager._handle_command(
+            "command/network_devices/add", {"name": "Test Camera", "ip": ""}
+        )
+
     # Test update command with nonexistent device
     with pytest.raises(ValueError):
         network_manager._handle_command(
             "command/network_devices/update", {"device_id": "nonexistent"}
         )
+
+    # Test remove command with missing device_id
+    with pytest.raises(ValueError):
+        network_manager._handle_command("command/network_devices/remove", {})
 
     # Test remove command with nonexistent device
     with pytest.raises(ValueError):
