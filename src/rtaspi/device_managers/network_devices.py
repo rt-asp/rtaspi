@@ -31,6 +31,7 @@ logger = logging.getLogger("NetworkDevices")
 
 class NetworkDevicesManager:
     """Menedżer zdalnych urządzeń sieciowych (kamery IP, mikrofony IP)."""
+
     def __init__(self, config, mcp_broker):
         self.config = config
         self.mcp_broker = mcp_broker
@@ -44,7 +45,8 @@ class NetworkDevicesManager:
             'mdns': MDNSDiscovery(),
         }
         self.scan_interval = config.get('network_devices', {}).get('scan_interval', 60)
-        self.devices_file = os.path.join(config.get('system', {}).get('storage_path', 'storage'), 'network_devices.json')
+        self.devices_file = os.path.join(config.get('system', {}).get('storage_path', 'storage'),
+                                         'network_devices.json')
         self.mcp_client = MCPClient(mcp_broker, client_id=self._get_client_id())
 
     def start(self):
@@ -133,7 +135,7 @@ class NetworkDevicesManager:
     def _publish_stream_stopped(self, stream_id, stream_info):
         """
         Publikuje informację o zatrzymaniu strumienia.
-        
+
         Args:
             stream_id (str): Identyfikator strumienia.
             stream_info (dict): Informacje o strumieniu.
@@ -217,7 +219,7 @@ class NetworkDevicesManager:
     def _check_device_status(self, device):
         """
         Sprawdza stan zdalnego urządzenia.
-        
+
         Args:
             device (NetworkDevice): Urządzenie do sprawdzenia.
         """
@@ -423,7 +425,7 @@ class NetworkDevicesManager:
                    is_input=None, is_output=None):
         """
         Dodaje nowe zdalne urządzenie.
-        
+
         Args:
             name (str): Nazwa urządzenia.
             ip (str): Adres IP urządzenia.
@@ -433,7 +435,7 @@ class NetworkDevicesManager:
             type (str): Typ urządzenia ('video' lub 'audio').
             protocol (str): Protokół ('rtsp', 'rtmp', 'http', etc.).
             paths (list): Lista ścieżek do zasobów w urządzeniu.
-            
+
         Returns:
             str: Identyfikator dodanego urządzenia lub None w przypadku błędu.
         """
