@@ -2,6 +2,38 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.26] - 2025-04-29
+
+### Added
+- Changes in docs/SCRIPTS.md
+- Changes in examples/automation/README.md
+- Changes in examples/commands/README.md
+- Changes in examples/dev/README.md
+- Changes in examples/devices/README.md
+- Changes in examples/edu/README.md
+- Changes in examples/edu/advanced_motion_detection.py
+- Changes in examples/edu/basic_camera_stream.py
+- Changes in examples/edu/motion_detection_monitor.py
+- Changes in examples/embedded/README.md
+- Changes in examples/iot/README.md
+- Changes in examples/pro/README.md
+- Changes in examples/pro/advanced_camera_stream.py
+- Changes in examples/pro/device_automation.py
+- Changes in examples/pro/industrial_integration.py
+- Changes in examples/pro/security_system.py
+- Changes in examples/saas/README.md
+- Changes in scripts/configure_hardware.ps1
+- Changes in scripts/install_fedora.sh
+- Changes in scripts/install_macos.sh
+- Changes in scripts/install_ubuntu.sh
+- Changes in scripts/install_windows.ps1
+
+### Changed
+- Changes in docs/README.md
+
+### Security
+- Changes in examples/config/README.md
+
 ## [0.1.25] - 2025-04-29
 
 ### Added

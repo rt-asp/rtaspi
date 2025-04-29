@@ -11,6 +11,7 @@ RTASPI (Real-Time Audio and Stream Processing Interface) is a comprehensive Pyth
 - [Installation Guide](INSTALL.md) - Complete installation instructions
 - [Quick Start](QUICKSTART.md) - Get up and running quickly
 - [Basic Concepts](CONCEPTS.md) - Core concepts and architecture
+- [Scripts Guide](SCRIPTS.md) - Utility scripts for installation and configuration
 
 ### Core Features
 - [Configuration](CONFIGURATION.md) - Configuration system and options

@@ -1,126 +1,189 @@
-# rtaspi Configuration System
+# Configuration Examples
 
-rtaspi uses a hierarchical configuration system that allows settings to be defined at different levels, with each level overriding the settings from the previous level. This provides flexibility in managing configurations across different scopes.
+This directory contains examples demonstrating RTASPI's configuration system and capabilities.
+
+## Examples
+
+### 1. Project Configuration (`project_config.yaml`)
+Shows how to:
+- Set up project-level settings
+- Configure environment variables
+- Define project structure
+- Set development options
+
+### 2. User Configuration (`user_config.yaml`)
+Demonstrates:
+- User-specific settings
+- Personal preferences
+- Local overrides
+- Development tools
+
+### 3. RTASPI Configuration (`rtaspi_config.yaml`)
+Features:
+- Global system settings
+- Default configurations
+- Feature toggles
+- System paths
 
 ## Configuration Hierarchy
 
-The configuration is loaded in the following order (later levels override earlier ones):
+RTASPI uses a hierarchical configuration system:
 
-1. **Default Configuration** (`src/rtaspi/core/defaults.py`)
-   - Built-in default values
-   - Provides fallback values for all settings
-   - Cannot be modified directly
+1. Default Configuration (built-in)
+2. Global Configuration (`/etc/rtaspi/config.yaml`)
+3. User Configuration (`~/.config/rtaspi/config.yaml`)
+4. Project Configuration (`.rtaspi/config.yaml`)
+5. Environment Variables
+6. Command Line Arguments
 
-2. **Global Configuration** (`/etc/rtaspi/config.yaml`)
-   - System-wide settings
-   - Affects all users
-   - Requires root access to modify
-   - Example: `rtaspi.config.yaml`
-
-3. **User Configuration** (`~/.config/rtaspi/config.yaml`)
-   - User-specific settings
-   - Overrides global settings
-   - Can be modified by the user
-   - Example: `user.config.yaml`
-
-4. **Project Configuration** (`.rtaspi/config.yaml`)
-   - Project-specific settings
-   - Overrides user and global settings
-   - Should be version controlled with the project
-   - Example: `project.config.yaml`
-
-5. **Environment Variables**
-   - Highest precedence
-   - Can override any setting
-   - Useful for sensitive data (passwords, tokens)
-   - Format: `RTASPI_*` (e.g., `RTASPI_LOG_LEVEL=DEBUG`)
+Later levels override earlier ones.
 
 ## Configuration Files
 
-### Global Configuration (`rtaspi.config.yaml`)
-- System-wide default settings
-- Basic configuration that works for most cases
-- Conservative resource usage
-- Default ports and protocols
+### `project_config.yaml`
+```yaml
+project:
+  name: my_camera_system
+  version: 1.0.0
+  description: Camera monitoring system
 
-### User Configuration (`user.config.yaml`)
-- Personal preferences
-- Development settings
-- Custom paths
-- Different ports to avoid conflicts
-- HTTPS certificates
+paths:
+  data: data/
+  models: models/
+  output: output/
+  logs: logs/
 
-### Project Configuration (`project.config.yaml`)
-- Project-specific devices
-- Stream configurations
-- Pipeline definitions
-- Processing settings
-- Local development settings
+devices:
+  cameras:
+    - name: front_door
+      type: rtsp
+      url: rtsp://192.168.1.100/stream1
+    - name: backyard
+      type: local
+      device: /dev/video0
 
-## Environment Variables
+processing:
+  detection:
+    model: yolov5s
+    confidence: 0.6
+  recording:
+    format: mp4
+    quality: high
+```
 
-Environment variables can override any configuration value. The mapping is defined in `src/rtaspi/core/defaults.py`. Common variables include:
+### `user_config.yaml`
+```yaml
+development:
+  debug: true
+  hot_reload: true
+  log_level: debug
 
-- `RTASPI_STORAGE_PATH`: Override storage location
-- `RTASPI_LOG_LEVEL`: Set logging verbosity
-- `RTASPI_WEB_PORT`: Override web interface port
-- `RTASPI_TURN_USERNAME`: WebRTC TURN server username
-- `RTASPI_TURN_PASSWORD`: WebRTC TURN server password
+preferences:
+  theme: dark
+  language: en
+  timezone: Europe/Berlin
 
-## Usage Example
+tools:
+  editor: vscode
+  terminal: gnome-terminal
+  browser: firefox
+```
 
-1. Install global configuration:
-   ```bash
-   sudo cp rtaspi.config.yaml /etc/rtaspi/config.yaml
-   ```
+## Usage
 
-2. Create user configuration:
-   ```bash
-   mkdir -p ~/.config/rtaspi
-   cp user.config.yaml ~/.config/rtaspi/config.yaml
-   ```
+1. Set up configuration:
+```bash
+# Copy example configurations
+cp project_config.yaml.example .rtaspi/config.yaml
+cp user_config.yaml.example ~/.config/rtaspi/config.yaml
+```
 
-3. Initialize project configuration:
-   ```bash
-   mkdir .rtaspi
-   cp project.config.yaml .rtaspi/config.yaml
-   ```
+2. Environment variables:
+```bash
+# Set environment variables
+export RTASPI_LOG_LEVEL=debug
+export RTASPI_DATA_DIR=/path/to/data
+```
 
-4. Set environment variables:
-   ```bash
-   export RTASPI_LOG_LEVEL=DEBUG
-   export RTASPI_TURN_USERNAME=myuser
-   export RTASPI_TURN_PASSWORD=mypassword
-   ```
+3. Command line:
+```bash
+# Override with command line arguments
+rtaspi --config custom_config.yaml --log-level debug
+```
 
-## Configuration Validation
+## Features
 
-All configuration files are validated against schemas defined in:
-- `src/rtaspi/schemas/device.py`
-- `src/rtaspi/schemas/stream.py`
-- `src/rtaspi/schemas/pipeline.py`
+### Configuration System
+- Hierarchical override
+- Environment variables
+- Command line arguments
+- Hot reload support
 
-These schemas ensure configuration correctness and provide type safety.
+### Value Types
+- Simple values
+- Lists/arrays
+- Nested objects
+- Environment variables
+- File paths
+
+### Validation
+- Schema validation
+- Type checking
+- Required fields
+- Default values
+
+### Security
+- Secrets management
+- Credential handling
+- Path validation
+- Access control
 
 ## Best Practices
 
-1. Use the most appropriate configuration level:
-   - Global: System-wide defaults
-   - User: Personal preferences
-   - Project: Project-specific settings
-   - Environment: Sensitive data
+1. Project Setup
+   - Use version control
+   - Document changes
+   - Validate configs
+   - Use templates
 
-2. Version control:
-   - Commit project configuration
-   - Ignore user-specific files
-   - Never commit sensitive data
+2. Security
+   - Protect secrets
+   - Use env vars
+   - Validate input
+   - Check permissions
 
-3. Use environment variables for:
-   - Sensitive information
-   - Deployment-specific settings
-   - CI/CD configuration
+3. Development
+   - Use defaults
+   - Document options
+   - Test changes
+   - Version configs
 
-4. Document any custom configuration:
-   - What settings were changed
-   - Why changes were needed
-   - Impact on the system
+## Troubleshooting
+
+Common issues and solutions:
+
+1. Loading Issues
+   - Check file paths
+   - Verify permissions
+   - Validate syntax
+   - Check hierarchy
+
+2. Override Problems
+   - Check precedence
+   - Verify sources
+   - Debug values
+   - Test changes
+
+3. Validation Errors
+   - Check schemas
+   - Verify types
+   - Test required fields
+   - Validate formats
+
+## Support
+
+For configuration-related issues:
+- Check documentation
+- Join config channel on Discord
+- Submit detailed bug reports
+- Share configuration templates
