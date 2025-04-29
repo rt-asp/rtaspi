@@ -1,0 +1,38 @@
+# rtaspi.config.yaml - Główna konfiguracja aplikacji
+system:
+  log_level: INFO
+  storage_path: /var/lib/rtaspi
+  temp_path: /tmp/rtaspi
+  pid_file: /var/run/rtaspi.pid
+
+networking:
+  host: 0.0.0.0
+  discovery:
+    enabled: true
+    methods: [onvif, upnp, mdns]
+    scan_interval: 300  # seconds
+
+streaming:
+  rtsp:
+    enabled: true
+    port_start: 8554
+    port_range: 100
+    transport: tcp
+  rtmp:
+    enabled: true
+    port: 1935
+    chunk_size: 4096
+  webrtc:
+    enabled: true
+    port: 8080
+    stun_server: stun:stun.l.google.com:19302
+
+web_server:
+  enabled: true
+  http_port: 8000
+  https_port: 8443
+  ssl:
+    enabled: true
+    cert_path: ~/.config/rtaspi/cert.pem
+    key_path: ~/.config/rtaspi/key.pem
+    auto_generate: true

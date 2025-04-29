@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.11] - 2025-04-29
+
+### Added
+- Changes in rtaspi.config.yaml
+- Changes in rtaspi.devices.yaml
+- Changes in rtaspi.pipeline.yaml
+- Changes in rtaspi.secrets.yaml
+- Changes in rtaspi.streams.yaml
+
 ## [0.1.10] - 2025-04-29
 
 ## [0.1.9] - 2025-04-29

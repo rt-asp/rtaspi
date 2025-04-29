@@ -1,0 +1,45 @@
+
+# rtaspi.pipeline.yaml - Definicja przetwarzania
+pipelines:
+  motion_detection:
+    input:
+      type: camera
+      source: Living Room Camera
+      path: /live/main
+
+    steps:
+      - name: convert_to_grayscale
+        type: opencv
+        function: cvtColor
+        params:
+          code: COLOR_BGR2GRAY
+
+      - name: blur
+        type: opencv
+        function: GaussianBlur
+        params:
+          ksize: [5, 5]
+          sigmaX: 0
+
+      - name: motion_detect
+        type: custom
+        module: rtaspi.processing.motion
+        function: detect_motion
+        params:
+          threshold: 25
+          min_area: 500
+
+    output:
+      - type: rtsp
+        name: motion_detection_stream
+        codec: h264
+
+      - type: event
+        topic: motion_detected
+        condition: "result['motion'] == True"
+
+      - type: file
+        path: /var/lib/rtaspi/recordings/${YEAR}-${MONTH}-${DAY}/
+        format: mp4
+        trigger: motion
+        duration: 30  # seconds

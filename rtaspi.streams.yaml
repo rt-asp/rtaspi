@@ -1,0 +1,35 @@
+
+# rtaspi.streams.yaml - Konfiguracja strumieni
+streams:
+  living_room_hd:
+    source:
+      device: Living Room Camera
+      path: /live/main
+    output:
+      rtsp:
+        enabled: true
+        path: /live/living_room_hd
+      rtmp:
+        enabled: true
+        path: /live/living_room_hd
+      webrtc:
+        enabled: true
+        path: /live/living_room_hd
+    recording:
+      enabled: true
+      storage_path: ${STORAGE_PATH}/recordings
+      format: mp4
+      retention: 7  # days
+
+  office_audio:
+    source:
+      device: Office Microphone
+      path: /audio
+    processing:
+      noise_reduction: true
+      gain: 1.5
+    output:
+      rtsp:
+        enabled: true
+        path: /audio/office
+

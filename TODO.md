@@ -5,18 +5,54 @@
   - [ ] Rozbić duże pliki na moduły o maksymalnej wielkości 300 linii
   - [ ] Zapewnić, że każda klasa/funkcja ma jedną, jasno określoną odpowiedzialność
   - [ ] Stosować zasadę DRY (Don't Repeat Yourself) dla powtarzającego się kodu
+
+- [ ] Uporządkować strukturę danych i konfiguracji:
+  - [ ] Stworzyć hierarchiczny system konfiguracji:
+    - [ ] Domyślna konfiguracja w kodzie (moduł `src/rtaspi/core/defaults.py`)
+    - [ ] Globalna konfiguracja w pliku `rtaspi.config.yaml` w katalogu instalacyjnym
+    - [ ] Konfiguracja użytkownika w `~/.config/rtaspi/config.yaml`
+    - [ ] Konfiguracja projektu w `.rtaspi/config.yaml` w folderze projektu
+    - [ ] Zmienne środowiskowe poprzez plik `.env` (najwyższy priorytet)
+  - [ ] Zdefiniować stałe w dedykowanych modułach:
+    - [ ] `src/rtaspi/core/constants.py` dla stałych systemowych (porty, timeouty, etc.)
+    - [ ] `src/rtaspi/streaming/constants.py` dla stałych związanych ze streamingiem
+    - [ ] `src/rtaspi/device_managers/constants.py` dla stałych związanych z urządzeniami
+  - [ ] Standaryzacja plików konfiguracyjnych:
+    - [ ] `rtaspi.config.yaml` - główna konfiguracja aplikacji (ustawienia globalne)
+    - [ ] `rtaspi.devices.yaml` - definicje i konfiguracja urządzeń
+    - [ ] `rtaspi.streams.yaml` - definicje strumieni (źródła, wyjścia)
+    - [ ] `rtaspi.pipeline.yaml` - konfiguracja przetwarzania (filtry, transformacje)
+    - [ ] `rtaspi.secrets.yaml` - dane wrażliwe (hasła, tokeny) - nie w repozytorium
+
+- [ ] Stworzyć wzorzec dostępu do konfiguracji:
+  - [ ] Klasa `ConfigManager` w `src/rtaspi/core/config.py` z metodami:
+    - [ ] `get_config(section, key, default=None)` - pobranie wartości konfiguracyjnej
+    - [ ] `set_config(section, key, value, level='user')` - ustawienie wartości
+    - [ ] `load_config_file(path)` - wczytanie konfiguracji z pliku
+    - [ ] `save_config_file(path, level='user')` - zapisanie konfiguracji do pliku
+  - [ ] Implementacja walidatorów konfiguracji w `src/rtaspi/core/validators/`
+  - [ ] System migracji konfiguracji w `src/rtaspi/core/config_migrations/`
+
+- [ ] Implementacja systemu zarządzania schematami danych:
+  - [ ] Definicje schematów w `src/rtaspi/schemas/` (JSON Schema lub Pydantic)
+  - [ ] Automatyczna walidacja danych wejściowych/wyjściowych
+  - [ ] Serializacja/deserializacja danych z zachowaniem typów
+
 - [ ] Refaktoryzacja w `src/rtaspi/device_managers/`:
   - [ ] Utworzyć folder `protocols/` z oddzielnymi klasami dla każdego protokołu
   - [ ] Wydzielić logikę autoryzacji i autentykacji do oddzielnego modułu `auth/`
   - [ ] Przenieść metody wykrywania urządzeń do wyspecjalizowanych klas w `discovery/`
+
 - [ ] Refaktoryzacja w `src/rtaspi/streaming/`:
   - [ ] Stworzyć wspólny interfejs `BaseStreamingServer` dla wszystkich serwerów
   - [ ] Wyodrębnić logikę konfiguracji strumieni do `stream_config.py`
   - [ ] Wydzielić obsługę kodowania/dekodowania do modułu `codec_handlers/`
   - [ ] Stworzyć moduł `adapters/` do integracji z różnymi implementacjami streamingu
+
 - [ ] Utworzyć nowy moduł `src/rtaspi/utils/`:
   - [ ] Przenieść wspólne funkcje pomocnicze do dedykowanych plików (`network.py`, `process.py`, `format.py`)
   - [ ] Stworzyć reużywalne dekoratory do obsługi błędów, logowania, cache w `decorators.py`
+
 - [ ] Zaktualizować testy jednostkowe po refaktoryzacji:
   - [ ] Zapewnić, że istniejące testy przechodzą (test_discovery.py, test_local_devices.py, test_network_devices.py, test_streaming.py)
   - [ ] Dodać testy dla nowo utworzonych, mniejszych komponentów

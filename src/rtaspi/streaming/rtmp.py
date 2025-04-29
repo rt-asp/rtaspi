@@ -34,7 +34,7 @@ class RTMPServer:
         self.port_start = streaming_config.get('port_start', 1935)
         self.storage_path = config.get('system', {}).get('storage_path', 'storage')
 
-    def start_stream(self, device, stream_id, output_dir):
+    async def start_stream(self, device, stream_id, output_dir):
         """
         Uruchamia strumień RTMP z lokalnego urządzenia.
 
@@ -108,7 +108,7 @@ class RTMPServer:
             logger.error(f"Błąd podczas uruchamiania strumienia RTMP: {e}")
             return None
 
-    def proxy_stream(self, device, stream_id, source_url, output_dir, transcode=False):
+    async def proxy_stream(self, device, stream_id, source_url, output_dir, transcode=False):
         """
         Uruchamia proxy RTMP dla zdalnego strumienia.
 

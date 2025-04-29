@@ -39,7 +39,7 @@ class WebRTCServer:
         self.turn_username = streaming_config.get('turn_username', '')
         self.turn_password = streaming_config.get('turn_password', '')
 
-    def start_stream(self, device, stream_id, output_dir):
+    async def start_stream(self, device, stream_id, output_dir):
         """
         Uruchamia strumień WebRTC z lokalnego urządzenia.
 
@@ -132,7 +132,7 @@ class WebRTCServer:
             logger.error(f"Błąd podczas uruchamiania strumienia WebRTC: {e}")
             return None
 
-    def proxy_stream(self, device, stream_id, source_url, output_dir, transcode=False):
+    async def proxy_stream(self, device, stream_id, source_url, output_dir, transcode=False):
         """
         Uruchamia proxy WebRTC dla zdalnego strumienia.
 

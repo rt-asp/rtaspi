@@ -1,0 +1,26 @@
+# rtaspi.devices.yaml - Definicje urządzeń
+local_devices:
+  enable_video: true
+  enable_audio: true
+  auto_start: false
+  scan_interval: 60  # seconds
+
+network_devices:
+  scan_interval: 300  # seconds
+
+predefined_devices:
+  - name: Living Room Camera
+    type: video
+    ip: 192.168.1.100
+    port: 554
+    protocol: rtsp
+    paths: [/live/main, /live/sub]
+    username: admin
+    password: ${CAMERA_PASSWORD}  # Odwołanie do zmiennej środowiskowej
+
+  - name: Office Microphone
+    type: audio
+    ip: 192.168.1.200
+    port: 80
+    protocol: http
+    paths: [/audio]
