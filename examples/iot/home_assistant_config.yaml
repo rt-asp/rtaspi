@@ -1,0 +1,67 @@
+# configuration.yaml dla Home Assistant
+rtaspi:
+  host: 192.168.1.100
+  port: 8080
+  devices:
+    - name: Doorbell Camera
+      type: camera
+      stream_url: rtsp://192.168.1.100:8554/doorbell
+      snapshot_url: http://192.168.1.100:8080/api/snapshot/doorbell
+      
+automation:
+  - alias: "Powiadomienie o dzwonku do drzwi"
+    trigger:
+      platform: mqtt
+      topic: rtaspi/doorbell/events
+      payload: 'button_pressed'
+    action:
+      - service: notify.mobile_app
+        data:
+          title: "Dzwonek do drzwi"
+          message: "Ktoś dzwoni do drzwi"
+          data:
+            image: "{{ states.camera.doorbell_camera.attributes.entity_picture }}"
+
+  - alias: "Powiadomienie o wykryciu osoby"
+    trigger:
+      platform: mqtt
+      topic: rtaspi/doorbell/events
+      payload: 'person_detected'
+    action:
+      - service: notify.mobile_app
+        data:
+          title: "Wykryto osobę"
+          message: "Ktoś jest przy drzwiach"
+          data:
+            image: "{{ states.camera.doorbell_camera.attributes.entity_picture }}"
+
+  - alias: "Włącz nagrywanie przy wykryciu ruchu"
+    trigger:
+      platform: mqtt
+      topic: rtaspi/doorbell/events
+      payload: 'motion_detected'
+    action:
+      - service: rtaspi.start_recording
+        data:
+          device_id: "doorbell_camera"
+          duration: 30  # Nagrywaj przez 30 sekund
+          
+  - alias: "Włącz oświetlenie przy wykryciu ruchu"
+    trigger:
+      platform: mqtt
+      topic: rtaspi/doorbell/events
+      payload: 'motion_detected'
+    condition:
+      - condition: sun
+        after: sunset
+        before: sunrise
+    action:
+      - service: light.turn_on
+        target:
+          entity_id: light.porch_light
+        data:
+          brightness_pct: 100
+      - delay: '00:05:00'  # Wyłącz światło po 5 minutach
+      - service: light.turn_off
+        target:
+          entity_id: light.porch_light

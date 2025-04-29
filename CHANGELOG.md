@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.27] - 2025-04-29
+
+### Added
+- Changes in examples/dev/advanced_examples.py
+- Changes in examples/dev/basic_examples.py
+- Changes in examples/dev/integration_examples.py
+- Changes in examples/edu/pipeline_examples.py
+- Changes in examples/iot/home_assistant_config.yaml
+- Changes in examples/iot/mobile_app.js
+- Changes in examples/iot/mqtt_integration.py
+- Changes in examples/iot/smart_doorbell.py
+- Changes in examples/saas/content_creation.py
+- Changes in examples/saas/image_processing.py
+- Changes in examples/saas/monitoring_system.py
+- Changes in examples/saas/video_conference.py
+
 ## [0.1.26] - 2025-04-29
 
 ### Added
