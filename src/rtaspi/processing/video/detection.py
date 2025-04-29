@@ -6,6 +6,7 @@ This module provides object and face detection using OpenCV and deep learning mo
 - Face detection using Haar cascades and deep learning
 - Motion detection
 """
+
 import cv2
 import numpy as np
 from typing import Optional, Dict, Any, List, Tuple
@@ -21,7 +22,7 @@ class ObjectDetector:
         config_path: Optional[str] = None,
         classes_path: Optional[str] = None,
         confidence_threshold: float = 0.5,
-        nms_threshold: float = 0.4
+        nms_threshold: float = 0.4,
     ):
         """Initialize the object detector.
 
@@ -50,14 +51,11 @@ class ObjectDetector:
 
         # Get output layer names
         self.output_layers = [
-            self.net.getLayerNames()[i - 1]
-            for i in self.net.getUnconnectedOutLayers()
+            self.net.getLayerNames()[i - 1] for i in self.net.getUnconnectedOutLayers()
         ]
 
     def detect(
-        self,
-        frame: np.ndarray,
-        draw: bool = True
+        self, frame: np.ndarray, draw: bool = True
     ) -> Tuple[List[Dict[str, Any]], np.ndarray]:
         """Detect objects in a frame.
 
@@ -72,11 +70,7 @@ class ObjectDetector:
 
         # Create blob from image
         blob = cv2.dnn.blobFromImage(
-            frame,
-            1/255.0,
-            (416, 416),
-            swapRB=True,
-            crop=False
+            frame, 1 / 255.0, (416, 416), swapRB=True, crop=False
         )
 
         # Forward pass
@@ -102,8 +96,8 @@ class ObjectDetector:
                     h = int(detection[3] * height)
 
                     # Rectangle coordinates
-                    x = int(center_x - w/2)
-                    y = int(center_y - h/2)
+                    x = int(center_x - w / 2)
+                    y = int(center_y - h / 2)
 
                     boxes.append([x, y, w, h])
                     confidences.append(float(confidence))
@@ -111,10 +105,7 @@ class ObjectDetector:
 
         # Apply non-maximum suppression
         indices = cv2.dnn.NMSBoxes(
-            boxes,
-            confidences,
-            self.confidence_threshold,
-            self.nms_threshold
+            boxes, confidences, self.confidence_threshold, self.nms_threshold
         )
 
         # Prepare detections
@@ -131,19 +122,13 @@ class ObjectDetector:
             detection = {
                 "class": self.classes[class_id],
                 "confidence": confidence,
-                "box": box
+                "box": box,
             }
             detections.append(detection)
 
             if draw:
                 # Draw box
-                cv2.rectangle(
-                    output_frame,
-                    (x, y),
-                    (x + w, y + h),
-                    (0, 255, 0),
-                    2
-                )
+                cv2.rectangle(output_frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
                 # Draw label
                 label = f"{self.classes[class_id]}: {confidence:.2f}"
@@ -154,7 +139,7 @@ class ObjectDetector:
                     cv2.FONT_HERSHEY_SIMPLEX,
                     0.5,
                     (0, 255, 0),
-                    2
+                    2,
                 )
 
         return detections, output_frame
@@ -169,7 +154,7 @@ class FaceDetector:
         model_path: Optional[str] = None,
         config_path: Optional[str] = None,
         cascade_path: Optional[str] = None,
-        confidence_threshold: float = 0.5
+        confidence_threshold: float = 0.5,
     ):
         """Initialize the face detector.
 
@@ -195,14 +180,14 @@ class FaceDetector:
         else:  # cascade
             # Load Haar cascade
             if not cascade_path:
-                cascade_path = cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+                cascade_path = (
+                    cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+                )
 
             self.cascade = cv2.CascadeClassifier(cascade_path)
 
     def detect(
-        self,
-        frame: np.ndarray,
-        draw: bool = True
+        self, frame: np.ndarray, draw: bool = True
     ) -> Tuple[List[Dict[str, Any]], np.ndarray]:
         """Detect faces in a frame.
 
@@ -219,9 +204,7 @@ class FaceDetector:
             return self._detect_cascade(frame, draw)
 
     def _detect_dnn(
-        self,
-        frame: np.ndarray,
-        draw: bool
+        self, frame: np.ndarray, draw: bool
     ) -> Tuple[List[Dict[str, Any]], np.ndarray]:
         """Detect faces using DNN.
 
@@ -236,12 +219,7 @@ class FaceDetector:
 
         # Create blob from image
         blob = cv2.dnn.blobFromImage(
-            frame,
-            1.0,
-            (300, 300),
-            [104, 117, 123],
-            False,
-            False
+            frame, 1.0, (300, 300), [104, 117, 123], False, False
         )
 
         # Forward pass
@@ -260,21 +238,12 @@ class FaceDetector:
                 box = detections[0, 0, i, 3:7] * [width, height, width, height]
                 x1, y1, x2, y2 = box.astype(int)
 
-                face = {
-                    "confidence": confidence,
-                    "box": [x1, y1, x2 - x1, y2 - y1]
-                }
+                face = {"confidence": confidence, "box": [x1, y1, x2 - x1, y2 - y1]}
                 faces.append(face)
 
                 if draw:
                     # Draw box
-                    cv2.rectangle(
-                        output_frame,
-                        (x1, y1),
-                        (x2, y2),
-                        (0, 255, 0),
-                        2
-                    )
+                    cv2.rectangle(output_frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
 
                     # Draw label
                     label = f"Face: {confidence:.2f}"
@@ -285,15 +254,13 @@ class FaceDetector:
                         cv2.FONT_HERSHEY_SIMPLEX,
                         0.5,
                         (0, 255, 0),
-                        2
+                        2,
                     )
 
         return faces, output_frame
 
     def _detect_cascade(
-        self,
-        frame: np.ndarray,
-        draw: bool
+        self, frame: np.ndarray, draw: bool
     ) -> Tuple[List[Dict[str, Any]], np.ndarray]:
         """Detect faces using Haar cascade.
 
@@ -309,32 +276,23 @@ class FaceDetector:
 
         # Detect faces
         faces = self.cascade.detectMultiScale(
-            gray,
-            scaleFactor=1.1,
-            minNeighbors=5,
-            minSize=(30, 30)
+            gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30)
         )
 
         # Prepare detections
         detections = []
         output_frame = frame.copy() if draw else frame
 
-        for (x, y, w, h) in faces:
+        for x, y, w, h in faces:
             detection = {
                 "confidence": 1.0,  # Cascade doesn't provide confidence
-                "box": [x, y, w, h]
+                "box": [x, y, w, h],
             }
             detections.append(detection)
 
             if draw:
                 # Draw box
-                cv2.rectangle(
-                    output_frame,
-                    (x, y),
-                    (x + w, y + h),
-                    (0, 255, 0),
-                    2
-                )
+                cv2.rectangle(output_frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
                 # Draw label
                 cv2.putText(
@@ -344,7 +302,7 @@ class FaceDetector:
                     cv2.FONT_HERSHEY_SIMPLEX,
                     0.5,
                     (0, 255, 0),
-                    2
+                    2,
                 )
 
         return detections, output_frame

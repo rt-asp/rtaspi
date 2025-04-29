@@ -4,6 +4,7 @@ DSL executor implementation.
 This module provides an executor for the pipeline DSL, which takes the AST
 from the parser and executes it using the pipeline executor.
 """
+
 from typing import Dict, Any, Optional
 from pathlib import Path
 
@@ -63,18 +64,13 @@ class Executor:
             name=ast.name,
             enabled=True,
             stages=stages,
-            execution_settings={
-                "parallel_execution": ast.parallel
-            },
-            resource_limits={
-                "max_cpu_percent": 80,
-                "max_memory_mb": 1024
-            },
+            execution_settings={"parallel_execution": ast.parallel},
+            resource_limits={"max_cpu_percent": 80, "max_memory_mb": 1024},
             error_handling={
                 "stop_on_error": True,
                 "retry_count": 3,
-                "retry_delay": 1.0
-            }
+                "retry_delay": 1.0,
+            },
         )
 
     def _convert_node(self, node: Node) -> PipelineStage:
@@ -111,7 +107,7 @@ class Executor:
             device=node.device,
             inputs=[],
             outputs=[],
-            params=node.params
+            params=node.params,
         )
 
     def _convert_filter(self, node: Filter) -> PipelineStage:
@@ -134,7 +130,7 @@ class Executor:
             enabled=True,
             inputs=node.inputs,
             outputs=[],
-            params=node.params
+            params=node.params,
         )
 
     def _convert_output(self, node: Output) -> PipelineStage:
@@ -157,7 +153,7 @@ class Executor:
             enabled=True,
             inputs=node.inputs,
             outputs=[],
-            params=node.params
+            params=node.params,
         )
 
 

@@ -4,6 +4,7 @@ Main CLI entry point for the rtaspi library.
 This module provides the RTASPIShell class which handles all CLI operations
 and serves as the main entry point for the command-line interface.
 """
+
 import os
 import sys
 import click
@@ -17,17 +18,17 @@ from rtaspi.core.config import load_config
 
 class RTASPIShell:
     """Main shell class for handling CLI operations."""
-    
+
     def __init__(self):
         self.config = None
         self.logger = logging.getLogger(__name__)
-    
+
     def setup(self, config_path: Optional[str] = None, verbose: bool = False):
         """Set up the shell environment."""
         # Configure logging
         log_level = logging.DEBUG if verbose else logging.INFO
         setup_logging(level=log_level)
-        
+
         # Load configuration
         if config_path:
             if not os.path.exists(config_path):
@@ -46,7 +47,7 @@ class RTASPIShell:
                 if os.path.exists(expanded_path):
                     self.config = load_config(expanded_path)
                     break
-            
+
             if not self.config:
                 self.logger.warning("No configuration file found, using defaults")
                 self.config = {}
@@ -78,7 +79,7 @@ def common_options(f):
 @common_options
 def cli(config: Optional[str], verbose: bool):
     """RT-ASP: Real-Time Audio/Video Stream Processing.
-    
+
     This tool provides a command-line interface for managing audio/video devices,
     configuring streams, and controlling processing pipelines.
     """
@@ -104,6 +105,7 @@ cli.add_command(server_cli)
 def version():
     """Show version information."""
     from rtaspi import __version__
+
     click.echo(f"RT-ASP version {__version__}")
 
 
@@ -123,19 +125,19 @@ def completion(shell: Optional[str], path: Optional[str]):
     if not shell:
         # Try to detect shell
         shell = os.path.basename(os.environ.get("SHELL", ""))
-    
+
     if shell not in ["bash", "zsh", "fish"]:
         click.echo("Unsupported shell type. Please specify --shell", err=True)
         sys.exit(1)
-    
+
     # Load completion script
     script_path = Path(__file__).parent / "completion" / f"{shell}.{shell}"
     if not script_path.exists():
         click.echo(f"Completion script not found for shell: {shell}", err=True)
         sys.exit(1)
-    
+
     script_content = script_path.read_text()
-    
+
     if path:
         # Save to specified path
         Path(path).write_text(script_content)

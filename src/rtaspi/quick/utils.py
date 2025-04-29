@@ -4,6 +4,7 @@ Simplified utility functions.
 This module provides easy-to-use functions for common tasks like adding filters,
 configuring outputs, and managing configuration files.
 """
+
 from typing import Optional, Dict, Any, Union
 import logging
 import yaml
@@ -16,7 +17,7 @@ from rtaspi.api import StreamAPI
 def add_filter(
     stream_name: str,
     filter_type: Union[str, FilterType],
-    params: Optional[Dict[str, Any]] = None
+    params: Optional[Dict[str, Any]] = None,
 ) -> None:
     """Add a filter to a stream.
 
@@ -30,17 +31,12 @@ def add_filter(
 
     # Add filter to stream
     stream_api.add_filter(
-        name=stream_name,
-        filter_type=filter_type,
-        params=params or {}
+        name=stream_name, filter_type=filter_type, params=params or {}
     )
     logger.info(f"Added {filter_type} filter to stream: {stream_name}")
 
 
-def remove_filter(
-    stream_name: str,
-    filter_type: Union[str, FilterType]
-) -> None:
+def remove_filter(stream_name: str, filter_type: Union[str, FilterType]) -> None:
     """Remove a filter from a stream.
 
     Args:
@@ -51,10 +47,7 @@ def remove_filter(
     logger = logging.getLogger(__name__)
 
     # Remove filter from stream
-    stream_api.remove_filter(
-        name=stream_name,
-        filter_type=filter_type
-    )
+    stream_api.remove_filter(name=stream_name, filter_type=filter_type)
     logger.info(f"Removed {filter_type} filter from stream: {stream_name}")
 
 
@@ -62,7 +55,7 @@ def add_output(
     stream_name: str,
     output_type: Union[str, OutputType],
     url: str,
-    settings: Optional[Dict[str, Any]] = None
+    settings: Optional[Dict[str, Any]] = None,
 ) -> None:
     """Add an output to a stream.
 
@@ -84,15 +77,12 @@ def add_output(
         name=stream_name,
         output_type=output_type,
         output_name=f"{stream_name}_{output_type.lower()}",
-        settings=output_settings
+        settings=output_settings,
     )
     logger.info(f"Added {output_type} output to stream: {stream_name}")
 
 
-def remove_output(
-    stream_name: str,
-    output_name: str
-) -> None:
+def remove_output(stream_name: str, output_name: str) -> None:
     """Remove an output from a stream.
 
     Args:
@@ -103,10 +93,7 @@ def remove_output(
     logger = logging.getLogger(__name__)
 
     # Remove output from stream
-    stream_api.remove_output(
-        name=stream_name,
-        output_name=output_name
-    )
+    stream_api.remove_output(name=stream_name, output_name=output_name)
     logger.info(f"Removed output {output_name} from stream: {stream_name}")
 
 
@@ -114,7 +101,7 @@ def save_config(
     stream_name: str,
     file_path: str,
     include_filters: bool = True,
-    include_outputs: bool = True
+    include_outputs: bool = True,
 ) -> None:
     """Save stream configuration to a file.
 
@@ -145,20 +132,13 @@ def save_config(
 
     if include_filters:
         config["filters"] = [
-            {
-                "type": f["type"],
-                "params": f.get("params", {})
-            }
+            {"type": f["type"], "params": f.get("params", {})}
             for f in stream["filters"]
         ]
 
     if include_outputs:
         config["outputs"] = [
-            {
-                "type": o["type"],
-                "settings": o["settings"]
-            }
-            for o in stream["outputs"]
+            {"type": o["type"], "settings": o["settings"]} for o in stream["outputs"]
         ]
 
     # Save configuration
@@ -195,7 +175,7 @@ def load_config(file_path: str) -> str:
         name=stream_name,
         device=config["device"],
         stream_type=config["type"],
-        settings=config["settings"]
+        settings=config["settings"],
     )
 
     # Add filters
@@ -203,7 +183,7 @@ def load_config(file_path: str) -> str:
         stream_api.add_filter(
             name=stream_name,
             filter_type=filter_config["type"],
-            params=filter_config.get("params", {})
+            params=filter_config.get("params", {}),
         )
 
     # Add outputs
@@ -212,11 +192,13 @@ def load_config(file_path: str) -> str:
             name=stream_name,
             output_type=output_config["type"],
             output_name=f"{stream_name}_{output_config['type'].lower()}",
-            settings=output_config["settings"]
+            settings=output_config["settings"],
         )
 
     # Start stream
     stream_api.start_stream(stream_name)
-    logger.info(f"Loaded configuration from {file_path} and started stream: {stream_name}")
+    logger.info(
+        f"Loaded configuration from {file_path} and started stream: {stream_name}"
+    )
 
     return stream_name

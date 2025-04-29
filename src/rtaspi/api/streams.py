@@ -4,11 +4,18 @@ Stream management API facade.
 This module provides a high-level interface for managing audio/video streams,
 abstracting away the internal implementation details.
 """
+
 from typing import Optional, Dict, List, Any, Union
 import logging
 
 from rtaspi.constants import OutputType, FilterType
-from rtaspi.schemas import StreamConfig, StreamStatus, StreamSource, StreamFilter, StreamOutput
+from rtaspi.schemas import (
+    StreamConfig,
+    StreamStatus,
+    StreamSource,
+    StreamFilter,
+    StreamOutput,
+)
 from rtaspi.streaming import RTSPServer, RTMPServer, WebRTCServer
 
 
@@ -27,7 +34,7 @@ class StreamAPI:
         self,
         device: Optional[str] = None,
         stream_type: Optional[str] = None,
-        include_status: bool = True
+        include_status: bool = True,
     ) -> Dict[str, Dict[str, Any]]:
         """List all configured streams.
 
@@ -82,7 +89,7 @@ class StreamAPI:
         enabled: bool = True,
         filters: Optional[List[Dict[str, Any]]] = None,
         outputs: Optional[List[Dict[str, Any]]] = None,
-        settings: Optional[Dict[str, Any]] = None
+        settings: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Create a new stream.
 
@@ -140,7 +147,7 @@ class StreamAPI:
         enabled: Optional[bool] = None,
         filters: Optional[List[Dict[str, Any]]] = None,
         outputs: Optional[List[Dict[str, Any]]] = None,
-        settings: Optional[Dict[str, Any]] = None
+        settings: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Update stream configuration.
 
@@ -165,10 +172,7 @@ class StreamAPI:
         if outputs is not None:
             config["outputs"] = outputs
         if settings is not None:
-            config["settings"] = {
-                **config.get("settings", {}),
-                **settings
-            }
+            config["settings"] = {**config.get("settings", {}), **settings}
 
         # Validate updated config
         stream_config = StreamConfig(**config)
@@ -269,7 +273,7 @@ class StreamAPI:
         name: str,
         filter_type: Union[FilterType, str],
         order: Optional[int] = None,
-        params: Optional[Dict[str, Any]] = None
+        params: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Add a filter to a stream.
 
@@ -295,10 +299,7 @@ class StreamAPI:
 
         # Create filter config
         filter_config = StreamFilter(
-            type=filter_type,
-            enabled=True,
-            order=order,
-            params=params or {}
+            type=filter_type, enabled=True, order=order, params=params or {}
         )
 
         # Add filter and sort by order
@@ -333,7 +334,7 @@ class StreamAPI:
         name: str,
         output_type: Union[OutputType, str],
         output_name: str,
-        settings: Optional[Dict[str, Any]] = None
+        settings: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Add an output to a stream.
 
@@ -359,10 +360,7 @@ class StreamAPI:
 
         # Create output config
         output_config = StreamOutput(
-            type=output_type,
-            enabled=True,
-            name=output_name,
-            settings=settings or {}
+            type=output_type, enabled=True, name=output_name, settings=settings or {}
         )
 
         # Add output

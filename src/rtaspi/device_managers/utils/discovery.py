@@ -43,7 +43,9 @@ class ONVIFDiscovery(DiscoveryModule):
             try:
                 return self._discover_with_library()
             except ImportError:
-                logger.warning("Biblioteka ONVIF nie jest dostępna. Używam alternatywnej metody.")
+                logger.warning(
+                    "Biblioteka ONVIF nie jest dostępna. Używam alternatywnej metody."
+                )
                 return self._discover_alternative()
         except Exception as e:
             logger.error(f"Błąd podczas wykrywania urządzeń ONVIF: {e}")
@@ -57,7 +59,9 @@ class ONVIFDiscovery(DiscoveryModule):
         from wsdiscovery.scope import Scope
         from wsdiscovery.qname import QName
 
-        onvif_type = QName("http://www.onvif.org/ver10/network/wsdl", "NetworkVideoTransmitter")
+        onvif_type = QName(
+            "http://www.onvif.org/ver10/network/wsdl", "NetworkVideoTransmitter"
+        )
         wsd = WSDiscovery()
         wsd.start()
         ret = wsd.searchServices(types=[onvif_type])
@@ -66,14 +70,14 @@ class ONVIFDiscovery(DiscoveryModule):
         discovered = []
         for service in ret:
             device_info = {
-                'name': service.getEPR() or 'ONVIF Camera',
-                'ip': self._extract_ip_from_xaddrs(service.getXAddrs()),
-                'port': self._extract_port_from_xaddrs(service.getXAddrs()),
-                'type': 'video',
-                'protocol': 'rtsp',
-                'paths': ['/onvif-media/media.amp']
+                "name": service.getEPR() or "ONVIF Camera",
+                "ip": self._extract_ip_from_xaddrs(service.getXAddrs()),
+                "port": self._extract_port_from_xaddrs(service.getXAddrs()),
+                "type": "video",
+                "protocol": "rtsp",
+                "paths": ["/onvif-media/media.amp"],
             }
-            if device_info['ip']:
+            if device_info["ip"]:
                 discovered.append(device_info)
 
         return discovered
@@ -102,18 +106,18 @@ class ONVIFDiscovery(DiscoveryModule):
                 </Body>
             </Envelope>"""
 
-            sock.sendto(msg.encode(), ('239.255.255.250', 3702))
+            sock.sendto(msg.encode(), ("239.255.255.250", 3702))
 
             while True:
                 try:
                     data, addr = sock.recvfrom(65535)
                     device_info = {
-                        'name': 'ONVIF Camera',
-                        'ip': addr[0],
-                        'port': 80,
-                        'type': 'video',
-                        'protocol': 'rtsp',
-                        'paths': ['/onvif-media/media.amp']
+                        "name": "ONVIF Camera",
+                        "ip": addr[0],
+                        "port": 80,
+                        "type": "video",
+                        "protocol": "rtsp",
+                        "paths": ["/onvif-media/media.amp"],
                     }
                     discovered.append(device_info)
                 except socket.timeout:
@@ -165,7 +169,9 @@ class UPnPDiscovery(DiscoveryModule):
             try:
                 return self._discover_with_library()
             except ImportError:
-                logger.warning("Biblioteka UPnP nie jest dostępna. Używam alternatywnej metody.")
+                logger.warning(
+                    "Biblioteka UPnP nie jest dostępna. Używam alternatywnej metody."
+                )
                 return self._discover_alternative()
         except Exception as e:
             logger.error(f"Błąd podczas wykrywania urządzeń UPnP: {e}")
@@ -176,6 +182,7 @@ class UPnPDiscovery(DiscoveryModule):
         Wykrywa urządzenia UPnP używając biblioteki upnpclient.
         """
         import upnpclient
+
         devices = []
         upnp_devices = upnpclient.discover(timeout=5)
 
@@ -185,11 +192,11 @@ class UPnPDiscovery(DiscoveryModule):
                 is_av_device = False
                 device_type = upnp_device.device_type.lower()
 
-                if 'camera' in device_type or 'video' in device_type:
-                    device_type = 'video'
+                if "camera" in device_type or "video" in device_type:
+                    device_type = "video"
                     is_av_device = True
-                elif 'audio' in device_type or 'sound' in device_type:
-                    device_type = 'audio'
+                elif "audio" in device_type or "sound" in device_type:
+                    device_type = "audio"
                     is_av_device = True
 
                 if not is_av_device:
@@ -202,13 +209,15 @@ class UPnPDiscovery(DiscoveryModule):
                 port = url_parts.port or 80
 
                 # Dodanie urządzenia do listy
-                devices.append({
-                    'name': name,
-                    'ip': ip,
-                    'port': port,
-                    'type': device_type,
-                    'protocol': 'http'
-                })
+                devices.append(
+                    {
+                        "name": name,
+                        "ip": ip,
+                        "port": port,
+                        "type": device_type,
+                        "protocol": "http",
+                    }
+                )
 
             except Exception as e:
                 logger.warning(f"Błąd podczas przetwarzania urządzenia UPnP: {e}")
@@ -221,40 +230,44 @@ class UPnPDiscovery(DiscoveryModule):
         """
         devices = []
         try:
-            msg = '''M-SEARCH * HTTP/1.1
+            msg = """M-SEARCH * HTTP/1.1
 Host: 239.255.255.250:1900
 Man: "ssdp:discover"
 ST: ssdp:all
 MX: 5
-'''
+"""
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
             sock.settimeout(5)
-            sock.sendto(msg.encode(), ('239.255.255.250', 1900))
+            sock.sendto(msg.encode(), ("239.255.255.250", 1900))
 
             while True:
                 try:
                     data, addr = sock.recvfrom(10240)
-                    response = data.decode('utf-8')
+                    response = data.decode("utf-8")
 
-                    location_match = re.search(r'LOCATION: (.*)', response, re.IGNORECASE)
+                    location_match = re.search(
+                        r"LOCATION: (.*)", response, re.IGNORECASE
+                    )
                     if location_match:
                         location = location_match.group(1).strip()
                         url_parts = urlparse(location)
                         ip = url_parts.hostname
                         port = url_parts.port or 80
 
-                        device_type = 'video'
-                        if 'audio' in response.lower() or 'sound' in response.lower():
-                            device_type = 'audio'
+                        device_type = "video"
+                        if "audio" in response.lower() or "sound" in response.lower():
+                            device_type = "audio"
 
-                        devices.append({
-                            'name': f"UPnP Device ({ip})",
-                            'ip': ip,
-                            'port': port,
-                            'type': device_type,
-                            'protocol': 'http'
-                        })
+                        devices.append(
+                            {
+                                "name": f"UPnP Device ({ip})",
+                                "ip": ip,
+                                "port": port,
+                                "type": device_type,
+                                "protocol": "http",
+                            }
+                        )
                 except socket.timeout:
                     break
 
@@ -280,7 +293,9 @@ class MDNSDiscovery(DiscoveryModule):
             try:
                 return self._discover_with_library()
             except ImportError:
-                logger.warning("Biblioteka mDNS nie jest dostępna. Używam alternatywnej metody.")
+                logger.warning(
+                    "Biblioteka mDNS nie jest dostępna. Używam alternatywnej metody."
+                )
                 return self._discover_alternative()
         except Exception as e:
             logger.error(f"Błąd podczas wykrywania urządzeń mDNS: {e}")
@@ -303,7 +318,7 @@ class MDNSDiscovery(DiscoveryModule):
 
                 ip = socket.inet_ntoa(info.addresses[0])
                 port = info.port
-                device_name = name.split('.')[0]
+                device_name = name.split(".")[0]
 
                 device_type = "video"
                 if "camera" in type.lower() or "video" in type.lower():
@@ -317,13 +332,15 @@ class MDNSDiscovery(DiscoveryModule):
                 elif "rtmp" in type.lower():
                     protocol = "rtmp"
 
-                self.found_devices.append({
-                    'name': device_name,
-                    'ip': ip,
-                    'port': port,
-                    'type': device_type,
-                    'protocol': protocol
-                })
+                self.found_devices.append(
+                    {
+                        "name": device_name,
+                        "ip": ip,
+                        "port": port,
+                        "type": device_type,
+                        "protocol": protocol,
+                    }
+                )
 
             def remove_service(self, zc, type, name):
                 pass
@@ -340,7 +357,7 @@ class MDNSDiscovery(DiscoveryModule):
             "_vzocam._tcp.local.",
             "_axis-video._tcp.local.",
             "_daap._tcp.local.",
-            "_airplay._tcp.local."
+            "_airplay._tcp.local.",
         ]
 
         browsers = []
@@ -359,7 +376,7 @@ class MDNSDiscovery(DiscoveryModule):
         """
         devices = []
         try:
-            multicast_group = '224.0.0.251'
+            multicast_group = "224.0.0.251"
             port = 5353
 
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -367,7 +384,7 @@ class MDNSDiscovery(DiscoveryModule):
 
             queries = [
                 b"\x00\x01\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x05_rtsp\x04_tcp\x05local\x00\x00\x0c\x00\x01",
-                b"\x00\x01\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x05_http\x04_tcp\x05local\x00\x00\x0c\x00\x01"
+                b"\x00\x01\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x05_http\x04_tcp\x05local\x00\x00\x0c\x00\x01",
             ]
 
             for query in queries:
@@ -377,16 +394,20 @@ class MDNSDiscovery(DiscoveryModule):
                     while True:
                         try:
                             data, addr = sock.recvfrom(1024)
-                            response = data.decode('utf-8', errors='ignore')
+                            response = data.decode("utf-8", errors="ignore")
                             ip = addr[0]
 
-                            devices.append({
-                                'name': f"mDNS Device ({ip})",
-                                'ip': ip,
-                                'port': port,
-                                'type': 'video',
-                                'protocol': 'rtsp' if '_rtsp._tcp' in response else 'http'
-                            })
+                            devices.append(
+                                {
+                                    "name": f"mDNS Device ({ip})",
+                                    "ip": ip,
+                                    "port": port,
+                                    "type": "video",
+                                    "protocol": (
+                                        "rtsp" if "_rtsp._tcp" in response else "http"
+                                    ),
+                                }
+                            )
                         except socket.timeout:
                             break
                 except Exception as e:

@@ -4,6 +4,7 @@ Simplified camera management functions.
 This module provides easy-to-use functions for managing camera devices,
 abstracting away the complexity of the full API.
 """
+
 from typing import Optional, Dict, List, Any
 import logging
 
@@ -30,12 +31,14 @@ def list_cameras() -> List[Dict[str, Any]]:
     devices.update(device_api.list_devices(device_type=DeviceType.CSI_CAMERA))
 
     for name, config in devices.items():
-        cameras.append({
-            "name": name,
-            "type": config["type"],
-            "status": config.get("status", {}).get("online", False),
-            "capabilities": config.get("capabilities", {}),
-        })
+        cameras.append(
+            {
+                "name": name,
+                "type": config["type"],
+                "status": config.get("status", {}).get("online", False),
+                "capabilities": config.get("capabilities", {}),
+            }
+        )
 
     return cameras
 
@@ -47,7 +50,7 @@ def start_camera(
     framerate: int = 30,
     rtsp_url: Optional[str] = None,
     rtmp_url: Optional[str] = None,
-    webrtc_url: Optional[str] = None
+    webrtc_url: Optional[str] = None,
 ) -> str:
     """Start a camera stream.
 
@@ -91,7 +94,7 @@ def start_camera(
             settings={
                 "resolution": resolution,
                 "framerate": framerate,
-            }
+            },
         )
         logger.info(f"Auto-detected and added camera: {name}")
     else:
@@ -104,7 +107,7 @@ def start_camera(
                 settings={
                     "resolution": resolution,
                     "framerate": framerate,
-                }
+                },
             )
             logger.info(f"Added camera: {name}")
 
@@ -119,7 +122,7 @@ def start_camera(
         settings={
             "resolution": resolution,
             "framerate": framerate,
-        }
+        },
     )
 
     # Add outputs
@@ -129,7 +132,7 @@ def start_camera(
             name=stream_name,
             output_type=OutputType.RTSP,
             output_name=f"{stream_name}_rtsp",
-            settings={"url": rtsp_url}
+            settings={"url": rtsp_url},
         )
         output_count += 1
 
@@ -138,7 +141,7 @@ def start_camera(
             name=stream_name,
             output_type=OutputType.RTMP,
             output_name=f"{stream_name}_rtmp",
-            settings={"url": rtmp_url}
+            settings={"url": rtmp_url},
         )
         output_count += 1
 
@@ -147,7 +150,7 @@ def start_camera(
             name=stream_name,
             output_type=OutputType.WEBRTC,
             output_name=f"{stream_name}_webrtc",
-            settings={"url": webrtc_url}
+            settings={"url": webrtc_url},
         )
         output_count += 1
 
@@ -158,7 +161,7 @@ def start_camera(
             name=stream_name,
             output_type=OutputType.RTSP,
             output_name=f"{stream_name}_rtsp",
-            settings={"url": default_url}
+            settings={"url": default_url},
         )
         logger.info(f"Added default RTSP output: {default_url}")
 

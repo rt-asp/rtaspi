@@ -8,10 +8,10 @@ from .network_devices import NetworkDevicesManager
 from .utils.discovery import ONVIFDiscovery, UPnPDiscovery, MDNSDiscovery
 
 __all__ = [
-    'DeviceManager',
-    'LocalDevicesManager',
-    'NetworkDevicesManager',
-    'ONVIFDiscovery',
-    'UPnPDiscovery',
-    'MDNSDiscovery'
+    "DeviceManager",
+    "LocalDevicesManager",
+    "NetworkDevicesManager",
+    "ONVIFDiscovery",
+    "UPnPDiscovery",
+    "MDNSDiscovery",
 ]

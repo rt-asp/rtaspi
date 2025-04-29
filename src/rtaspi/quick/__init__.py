@@ -27,18 +27,15 @@ __all__ = [
     "start_camera",
     "stop_camera",
     "list_cameras",
-    
     # Microphone functions
     "start_microphone",
     "stop_microphone",
     "list_microphones",
-    
     # Stream functions
     "add_filter",
     "remove_filter",
     "add_output",
     "remove_output",
-    
     # Configuration functions
     "save_config",
     "load_config",

@@ -2,6 +2,39 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.19] - 2025-04-29
+
+### Added
+- Changes in requirements-dev.txt
+- Changes in src/rtaspi/device_managers/command_handler.py
+- Changes in src/rtaspi/device_managers/network/command_handler.py
+- Changes in src/rtaspi/device_managers/network/device_monitor.py
+- Changes in src/rtaspi/device_managers/network/state_manager.py
+- Changes in src/rtaspi/device_managers/scanners/__init__.py
+- Changes in src/rtaspi/device_managers/scanners/base.py
+- Changes in src/rtaspi/device_managers/scanners/linux_scanner.py
+- Changes in src/rtaspi/device_managers/scanners/macos_scanner.py
+- Changes in src/rtaspi/device_managers/scanners/windows_scanner.py
+- Changes in src/rtaspi/device_managers/stream_manager.py
+- Changes in src/rtaspi/streaming/webrtc/__init__.py
+- Changes in src/rtaspi/streaming/webrtc/pipeline.py
+- Changes in src/rtaspi/streaming/webrtc/server.py
+- Changes in src/rtaspi/streaming/webrtc/ui.py
+- Changes in src/rtaspi/web/endpoints/devices.py
+- Changes in src/rtaspi/web/endpoints/pipelines.py
+- Changes in src/rtaspi/web/endpoints/server.py
+- Changes in src/rtaspi/web/endpoints/streams.py
+- Changes in src/rtaspi/web/interface/handlers.py
+- Changes in tox.ini
+
+### Changed
+- Changes in src/rtaspi/device_managers/local_devices.py
+- Changes in src/rtaspi/device_managers/network_devices.py
+- Changes in src/rtaspi/web/api.py
+
+### Fixed
+- Changes in src/rtaspi/streaming/webrtc.py
+
 ## [0.1.18] - 2025-04-29
 
 ## [0.1.17] - 2025-04-29

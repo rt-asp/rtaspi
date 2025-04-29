@@ -3,6 +3,7 @@ Configuration management commands for the rtaspi CLI.
 
 This module provides commands for viewing and modifying rtaspi configuration.
 """
+
 import os
 import click
 import yaml
@@ -24,7 +25,7 @@ def config_cli():
 @common_options
 def get(key: Optional[str], **kwargs):
     """Get configuration value(s).
-    
+
     If KEY is provided, show only that value.
     Otherwise, show all configuration values.
     """
@@ -37,7 +38,7 @@ def get(key: Optional[str], **kwargs):
             except (KeyError, TypeError):
                 click.echo(f"Configuration key not found: {key}", err=True)
                 return
-        
+
         # Format output based on value type
         if isinstance(value, (dict, list)):
             click.echo(yaml.dump(value, default_flow_style=False))
@@ -60,7 +61,7 @@ def get(key: Optional[str], **kwargs):
 @common_options
 def set(key: str, value: str, level: str, **kwargs):
     """Set configuration value.
-    
+
     KEY is the dot-separated path to the configuration value.
     VALUE is the new value to set.
     """
@@ -71,19 +72,19 @@ def set(key: str, value: str, level: str, **kwargs):
         config_path = ".rtaspi/config.yaml"
     else:  # global
         config_path = "/etc/rtaspi/config.yaml"
-    
+
     # Load existing config or create new
     config = {}
     if os.path.exists(config_path):
         config = load_config(config_path)
-    
+
     # Parse value
     try:
         parsed_value = yaml.safe_load(value)
     except yaml.YAMLError:
         # If YAML parsing fails, treat as string
         parsed_value = value
-    
+
     # Update config
     current = config
     parts = key.split(".")
@@ -92,10 +93,10 @@ def set(key: str, value: str, level: str, **kwargs):
             current[part] = {}
         current = current[part]
     current[parts[-1]] = parsed_value
-    
+
     # Ensure directory exists
     os.makedirs(os.path.dirname(config_path), exist_ok=True)
-    
+
     # Save config
     save_config(config, config_path)
     click.echo(f"Configuration updated at {config_path}")
@@ -112,7 +113,7 @@ def set(key: str, value: str, level: str, **kwargs):
 @common_options
 def unset(key: str, level: str, **kwargs):
     """Remove configuration value.
-    
+
     KEY is the dot-separated path to the configuration value.
     """
     # Determine config file path based on level
@@ -122,14 +123,14 @@ def unset(key: str, level: str, **kwargs):
         config_path = ".rtaspi/config.yaml"
     else:  # global
         config_path = "/etc/rtaspi/config.yaml"
-    
+
     if not os.path.exists(config_path):
         click.echo(f"Configuration file not found: {config_path}", err=True)
         return
-    
+
     # Load config
     config = load_config(config_path)
-    
+
     # Remove key
     current = config
     parts = key.split(".")
@@ -140,7 +141,7 @@ def unset(key: str, level: str, **kwargs):
     except (KeyError, TypeError):
         click.echo(f"Configuration key not found: {key}", err=True)
         return
-    
+
     # Save config
     save_config(config, config_path)
     click.echo(f"Configuration key removed: {key}")
@@ -157,7 +158,7 @@ def unset(key: str, level: str, **kwargs):
 def dump(output: Optional[str], **kwargs):
     """Dump complete configuration to file."""
     config_yaml = yaml.dump(shell.config, default_flow_style=False)
-    
+
     if output:
         Path(output).write_text(config_yaml)
         click.echo(f"Configuration dumped to {output}")
@@ -180,11 +181,11 @@ def dump(output: Optional[str], **kwargs):
 @common_options
 def load(files: tuple[str, ...], merge: bool, **kwargs):
     """Load configuration from file(s).
-    
+
     Multiple files can be specified and will be merged in order.
     """
     config = {} if not merge else dict(shell.config)
-    
+
     for file in files:
         new_config = load_config(file)
         if merge:
@@ -195,13 +196,14 @@ def load(files: tuple[str, ...], merge: bool, **kwargs):
                         merge_dicts(d1[k], v)
                     else:
                         d1[k] = v
+
             merge_dicts(config, new_config)
         else:
             config = new_config
-    
+
     # Save as user config
     config_path = os.path.expanduser("~/.config/rtaspi/config.yaml")
     os.makedirs(os.path.dirname(config_path), exist_ok=True)
     save_config(config, config_path)
-    
+
     click.echo(f"Configuration {'merged into' if merge else 'loaded to'} {config_path}")

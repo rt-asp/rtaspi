@@ -4,6 +4,7 @@ Pipeline management API facade.
 This module provides a high-level interface for managing processing pipelines,
 abstracting away the internal implementation details.
 """
+
 from typing import Optional, Dict, List, Any, Union
 import logging
 
@@ -27,10 +28,7 @@ class PipelineAPI:
         self.pipelines: Dict[str, PipelineConfig] = {}
         self.running_pipelines: Dict[str, bool] = {}
 
-    def list_pipelines(
-        self,
-        include_status: bool = True
-    ) -> Dict[str, Dict[str, Any]]:
+    def list_pipelines(self, include_status: bool = True) -> Dict[str, Dict[str, Any]]:
         """List all configured pipelines.
 
         Args:
@@ -74,7 +72,7 @@ class PipelineAPI:
         parallel: bool = True,
         resource_limits: Optional[Dict[str, Any]] = None,
         error_handling: Optional[Dict[str, Any]] = None,
-        settings: Optional[Dict[str, Any]] = None
+        settings: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Create a new pipeline.
 
@@ -137,7 +135,7 @@ class PipelineAPI:
         parallel: Optional[bool] = None,
         resource_limits: Optional[Dict[str, Any]] = None,
         error_handling: Optional[Dict[str, Any]] = None,
-        settings: Optional[Dict[str, Any]] = None
+        settings: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Update pipeline configuration.
 
@@ -168,10 +166,7 @@ class PipelineAPI:
         if error_handling is not None:
             config["error_handling"] = error_handling
         if settings is not None:
-            config["metadata"] = {
-                **config.get("metadata", {}),
-                **settings
-            }
+            config["metadata"] = {**config.get("metadata", {}), **settings}
 
         # Validate updated config
         pipeline_config = PipelineConfig(**config)
@@ -205,7 +200,7 @@ class PipelineAPI:
         filters: Optional[List[FilterType]] = None,
         inputs: Optional[List[str]] = None,
         outputs: Optional[List[str]] = None,
-        params: Optional[Dict[str, Any]] = None
+        params: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Add a stage to a pipeline.
 
@@ -236,7 +231,7 @@ class PipelineAPI:
             filters=filters or [],
             inputs=inputs or [],
             outputs=outputs or [],
-            params=params or {}
+            params=params or {},
         )
 
         # Add stage
@@ -349,9 +344,12 @@ class PipelineAPI:
         Raises:
             ValueError: If cycle is detected
         """
+
         def visit(stage_name: str, visited: set, path: set) -> None:
             if stage_name in path:
-                raise ValueError(f"Cycle detected in pipeline involving stage: {stage_name}")
+                raise ValueError(
+                    f"Cycle detected in pipeline involving stage: {stage_name}"
+                )
             if stage_name in visited:
                 return
 

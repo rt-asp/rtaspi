@@ -16,11 +16,9 @@ __all__ = [
     "VideoFilter",
     "ObjectDetector",
     "FaceDetector",
-    
     # Audio processing
     "AudioFilter",
     "SpeechRecognizer",
-    
     # Pipeline execution
     "PipelineExecutor",
 ]

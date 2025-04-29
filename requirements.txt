@@ -30,6 +30,7 @@ pyaudio
 opencv-python
 pytest-cov
 onvif-zeep
+tox
 #onvif-zeep>=0.3.3; platform_system != "Windows"
 
 # Opcjonalne zależności dla dodatkowych funkcjonalności

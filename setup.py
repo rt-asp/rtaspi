@@ -47,7 +47,7 @@ setup(
         "uvicorn>=0.27.0",
         
         # HTTPS/Certificate management
-        "python-acme>=2.7.0",
+        "acme>=4.0.0",
         "cryptography>=42.0.0",
         "certbot>=2.7.0",
         "dnspython>=2.4.0",

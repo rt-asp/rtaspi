@@ -19,6 +19,7 @@ logger = logging.getLogger("Devices")
 
 class DeviceStatus(Enum):
     """Status urządzenia."""
+
     UNKNOWN = auto()
     ONLINE = auto()
     OFFLINE = auto()
@@ -54,14 +55,14 @@ class Device(ABC):
             "id": self.device_id,
             "name": self.name,
             "type": self.type,
-            "status": self.status.name.lower()
+            "status": self.status.name.lower(),
         }
 
 
 class LocalDevice(Device):
     """Klasa reprezentująca lokalne urządzenie (kamera, mikrofon)."""
 
-    def __init__(self, device_id, name, type, system_path, driver='default'):
+    def __init__(self, device_id, name, type, system_path, driver="default"):
         """
         Inicjalizacja lokalnego urządzenia.
 
@@ -86,19 +87,23 @@ class LocalDevice(Device):
             dict: Reprezentacja urządzenia jako słownik.
         """
         result = super().to_dict()
-        result.update({
-            "system_path": self.system_path,
-            "driver": self.driver,
-            "formats": self.formats,
-            "resolutions": self.resolutions
-        })
+        result.update(
+            {
+                "system_path": self.system_path,
+                "driver": self.driver,
+                "formats": self.formats,
+                "resolutions": self.resolutions,
+            }
+        )
         return result
 
 
 class NetworkDevice(Device):
     """Klasa reprezentująca zdalne urządzenie sieciowe (kamera IP, mikrofon IP)."""
 
-    def __init__(self, device_id, name, type, ip, port, username="", password="", protocol="rtsp"):
+    def __init__(
+        self, device_id, name, type, ip, port, username="", password="", protocol="rtsp"
+    ):
         """
         Inicjalizacja urządzenia sieciowego.
 
@@ -128,12 +133,14 @@ class NetworkDevice(Device):
             dict: Reprezentacja urządzenia jako słownik.
         """
         result = super().to_dict()
-        result.update({
-            "ip": self.ip,
-            "port": self.port,
-            "protocol": self.protocol,
-            "streams": self.streams
-        })
+        result.update(
+            {
+                "ip": self.ip,
+                "port": self.port,
+                "protocol": self.protocol,
+                "streams": self.streams,
+            }
+        )
         # Nie zwracamy wrażliwych danych (username, password)
         return result
 

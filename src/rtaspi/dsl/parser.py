@@ -4,6 +4,7 @@ DSL parser implementation.
 This module provides a parser for the pipeline DSL, which takes tokens from
 the lexer and builds an Abstract Syntax Tree (AST) for pipeline configuration.
 """
+
 from dataclasses import dataclass
 from typing import List, Dict, Any, Optional
 from .lexer import Token, TokenType
@@ -12,12 +13,14 @@ from .lexer import Token, TokenType
 @dataclass
 class Node:
     """Base class for AST nodes."""
+
     pass
 
 
 @dataclass
 class Pipeline(Node):
     """Pipeline definition node."""
+
     name: str
     parallel: bool
     stages: List[Node]
@@ -26,6 +29,7 @@ class Pipeline(Node):
 @dataclass
 class Source(Node):
     """Source stage node."""
+
     name: str
     device: str
     params: Dict[str, Any]
@@ -34,6 +38,7 @@ class Source(Node):
 @dataclass
 class Filter(Node):
     """Filter stage node."""
+
     name: str
     type: str
     inputs: List[str]
@@ -43,6 +48,7 @@ class Filter(Node):
 @dataclass
 class Output(Node):
     """Output stage node."""
+
     name: str
     type: str
     inputs: List[str]
@@ -120,7 +126,10 @@ class Parser:
 
         # Check for execution mode
         parallel = True
-        if self.current_token and self.current_token.type in (TokenType.PARALLEL, TokenType.SEQUENTIAL):
+        if self.current_token and self.current_token.type in (
+            TokenType.PARALLEL,
+            TokenType.SEQUENTIAL,
+        ):
             parallel = self.current_token.type == TokenType.PARALLEL
             self.advance()
 

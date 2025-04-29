@@ -4,8 +4,10 @@ protocols.py
 
 from enum import Enum, auto
 
+
 class ProtocolType(Enum):
     """Type of protocol."""
+
     RTSP = auto()
     RTMP = auto()
     HTTP = auto()
@@ -14,8 +16,10 @@ class ProtocolType(Enum):
     UPNP = auto()
     MDNS = auto()
 
+
 class Protocol:
     """Base class for protocol implementations."""
+
     def __init__(self, protocol_type: ProtocolType, port: int = None):
         self.type = protocol_type
         self.port = port or self._get_default_port()

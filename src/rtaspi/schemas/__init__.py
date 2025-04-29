@@ -21,7 +21,6 @@ __all__ = [
     "DeviceCapabilities",
     "DeviceConfig",
     "DeviceStatus",
-    
     # Stream schemas
     "StreamSource",
     "StreamFilter",
@@ -29,7 +28,6 @@ __all__ = [
     "StreamEncoding",
     "StreamConfig",
     "StreamStatus",
-    
     # Pipeline schemas
     "PipelineStage",
     "ResourceLimits",

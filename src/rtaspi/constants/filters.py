@@ -1,12 +1,13 @@
 """
 Constants and enumerations for filter types used in video and audio processing.
 """
+
 from enum import Enum, auto
 
 
 class FilterType(Enum):
     """Enumeration of available filter types for video and audio processing."""
-    
+
     # Video Filters
     GRAYSCALE = auto()
     EDGE_DETECTION = auto()
@@ -22,7 +23,7 @@ class FilterType(Enum):
     GAMMA = auto()
     THRESHOLD = auto()
     NOISE_REDUCTION = auto()
-    
+
     # Audio Filters
     EQUALIZER = auto()
     NOISE_GATE = auto()
@@ -35,9 +36,9 @@ class FilterType(Enum):
     BANDPASS = auto()
     LOWPASS = auto()
     HIGHPASS = auto()
-    
+
     @classmethod
-    def video_filters(cls) -> list['FilterType']:
+    def video_filters(cls) -> list["FilterType"]:
         """Return a list of video-specific filters."""
         return [
             cls.GRAYSCALE,
@@ -55,9 +56,9 @@ class FilterType(Enum):
             cls.THRESHOLD,
             cls.NOISE_REDUCTION,
         ]
-    
+
     @classmethod
-    def audio_filters(cls) -> list['FilterType']:
+    def audio_filters(cls) -> list["FilterType"]:
         """Return a list of audio-specific filters."""
         return [
             cls.EQUALIZER,
@@ -72,11 +73,11 @@ class FilterType(Enum):
             cls.LOWPASS,
             cls.HIGHPASS,
         ]
-    
+
     def is_video_filter(self) -> bool:
         """Check if this filter is applicable to video streams."""
         return self in self.video_filters()
-    
+
     def is_audio_filter(self) -> bool:
         """Check if this filter is applicable to audio streams."""
         return self in self.audio_filters()

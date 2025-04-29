@@ -4,6 +4,7 @@ DSL lexer implementation.
 This module provides a simple lexer for the pipeline DSL, which tokenizes
 input text into a stream of tokens for the parser.
 """
+
 from enum import Enum, auto
 from dataclasses import dataclass
 from typing import List, Optional
@@ -11,6 +12,7 @@ from typing import List, Optional
 
 class TokenType(Enum):
     """Token types for the DSL lexer."""
+
     # Keywords
     PIPELINE = auto()
     SOURCE = auto()
@@ -28,14 +30,14 @@ class TokenType(Enum):
     NUMBER = auto()
 
     # Punctuation
-    LBRACE = auto()    # {
-    RBRACE = auto()    # }
-    LPAREN = auto()    # (
-    RPAREN = auto()    # )
-    COMMA = auto()     # ,
-    COLON = auto()     # :
-    ARROW = auto()     # ->
-    EQUALS = auto()    # =
+    LBRACE = auto()  # {
+    RBRACE = auto()  # }
+    LPAREN = auto()  # (
+    RPAREN = auto()  # )
+    COMMA = auto()  # ,
+    COLON = auto()  # :
+    ARROW = auto()  # ->
+    EQUALS = auto()  # =
 
     # Special
     EOF = auto()
@@ -45,6 +47,7 @@ class TokenType(Enum):
 @dataclass
 class Token:
     """Token class representing a lexical unit."""
+
     type: TokenType
     value: str
     line: int
@@ -68,15 +71,15 @@ class Lexer:
 
         # Keywords mapping
         self.keywords = {
-            'pipeline': TokenType.PIPELINE,
-            'source': TokenType.SOURCE,
-            'filter': TokenType.FILTER,
-            'output': TokenType.OUTPUT,
-            'from': TokenType.FROM,
-            'to': TokenType.TO,
-            'with': TokenType.WITH,
-            'parallel': TokenType.PARALLEL,
-            'sequential': TokenType.SEQUENTIAL,
+            "pipeline": TokenType.PIPELINE,
+            "source": TokenType.SOURCE,
+            "filter": TokenType.FILTER,
+            "output": TokenType.OUTPUT,
+            "from": TokenType.FROM,
+            "to": TokenType.TO,
+            "with": TokenType.WITH,
+            "parallel": TokenType.PARALLEL,
+            "sequential": TokenType.SEQUENTIAL,
         }
 
     def advance(self) -> None:
@@ -86,7 +89,7 @@ class Lexer:
             self.current_char = None
         else:
             self.current_char = self.text[self.pos]
-            if self.current_char == '\n':
+            if self.current_char == "\n":
                 self.line += 1
                 self.column = 1
             else:
@@ -99,9 +102,9 @@ class Lexer:
 
     def skip_comment(self) -> None:
         """Skip comment lines."""
-        while self.current_char and self.current_char != '\n':
+        while self.current_char and self.current_char != "\n":
             self.advance()
-        if self.current_char == '\n':
+        if self.current_char == "\n":
             self.advance()
 
     def read_identifier(self) -> Token:
@@ -111,8 +114,10 @@ class Lexer:
             Token representing the identifier or keyword
         """
         start_column = self.column
-        result = ''
-        while self.current_char and (self.current_char.isalnum() or self.current_char == '_'):
+        result = ""
+        while self.current_char and (
+            self.current_char.isalnum() or self.current_char == "_"
+        ):
             result += self.current_char
             self.advance()
 
@@ -127,8 +132,10 @@ class Lexer:
             Token representing the number
         """
         start_column = self.column
-        result = ''
-        while self.current_char and (self.current_char.isdigit() or self.current_char == '.'):
+        result = ""
+        while self.current_char and (
+            self.current_char.isdigit() or self.current_char == "."
+        ):
             result += self.current_char
             self.advance()
         return Token(TokenType.NUMBER, result, self.line, start_column)
@@ -141,14 +148,14 @@ class Lexer:
         """
         start_column = self.column
         self.advance()  # Skip opening quote
-        result = ''
+        result = ""
         while self.current_char and self.current_char != '"':
-            if self.current_char == '\\':
+            if self.current_char == "\\":
                 self.advance()
-                if self.current_char == 'n':
-                    result += '\n'
-                elif self.current_char == 't':
-                    result += '\t'
+                if self.current_char == "n":
+                    result += "\n"
+                elif self.current_char == "t":
+                    result += "\t"
                 else:
                     result += self.current_char
             else:
@@ -159,7 +166,9 @@ class Lexer:
             self.advance()  # Skip closing quote
             return Token(TokenType.STRING, result, self.line, start_column)
         else:
-            return Token(TokenType.ERROR, "Unterminated string", self.line, start_column)
+            return Token(
+                TokenType.ERROR, "Unterminated string", self.line, start_column
+            )
 
     def get_next_token(self) -> Token:
         """Get the next token from the input.
@@ -174,12 +183,12 @@ class Lexer:
                 continue
 
             # Skip comments
-            if self.current_char == '#':
+            if self.current_char == "#":
                 self.skip_comment()
                 continue
 
             # Identifiers and keywords
-            if self.current_char.isalpha() or self.current_char == '_':
+            if self.current_char.isalpha() or self.current_char == "_":
                 return self.read_identifier()
 
             # Numbers
@@ -191,7 +200,11 @@ class Lexer:
                 return self.read_string()
 
             # Arrow operator
-            if self.current_char == '-' and self.pos + 1 < len(self.text) and self.text[self.pos + 1] == '>':
+            if (
+                self.current_char == "-"
+                and self.pos + 1 < len(self.text)
+                and self.text[self.pos + 1] == ">"
+            ):
                 token = Token(TokenType.ARROW, "->", self.line, self.column)
                 self.advance()
                 self.advance()
@@ -199,22 +212,32 @@ class Lexer:
 
             # Single-character tokens
             char_tokens = {
-                '{': TokenType.LBRACE,
-                '}': TokenType.RBRACE,
-                '(': TokenType.LPAREN,
-                ')': TokenType.RPAREN,
-                ',': TokenType.COMMA,
-                ':': TokenType.COLON,
-                '=': TokenType.EQUALS,
+                "{": TokenType.LBRACE,
+                "}": TokenType.RBRACE,
+                "(": TokenType.LPAREN,
+                ")": TokenType.RPAREN,
+                ",": TokenType.COMMA,
+                ":": TokenType.COLON,
+                "=": TokenType.EQUALS,
             }
 
             if self.current_char in char_tokens:
-                token = Token(char_tokens[self.current_char], self.current_char, self.line, self.column)
+                token = Token(
+                    char_tokens[self.current_char],
+                    self.current_char,
+                    self.line,
+                    self.column,
+                )
                 self.advance()
                 return token
 
             # Invalid character
-            token = Token(TokenType.ERROR, f"Invalid character: {self.current_char}", self.line, self.column)
+            token = Token(
+                TokenType.ERROR,
+                f"Invalid character: {self.current_char}",
+                self.line,
+                self.column,
+            )
             self.advance()
             return token
 

@@ -56,15 +56,15 @@ class LoggingManager:
         Returns:
             int: Poziom logowania (np. logging.INFO).
         """
-        log_level_str = self.config.get('system', {}).get('log_level', 'INFO')
+        log_level_str = self.config.get("system", {}).get("log_level", "INFO")
 
         # Konwersja stringa na poziom logowania
         log_levels = {
-            'DEBUG': logging.DEBUG,
-            'INFO': logging.INFO,
-            'WARNING': logging.WARNING,
-            'ERROR': logging.ERROR,
-            'CRITICAL': logging.CRITICAL
+            "DEBUG": logging.DEBUG,
+            "INFO": logging.INFO,
+            "WARNING": logging.WARNING,
+            "ERROR": logging.ERROR,
+            "CRITICAL": logging.CRITICAL,
         }
 
         return log_levels.get(log_level_str, logging.INFO)
@@ -76,8 +76,8 @@ class LoggingManager:
         Returns:
             str: Ścieżka do katalogu logów.
         """
-        storage_path = self.config.get('system', {}).get('storage_path', 'storage')
-        return os.path.join(storage_path, 'logs')
+        storage_path = self.config.get("system", {}).get("storage_path", "storage")
+        return os.path.join(storage_path, "logs")
 
     def _get_log_file(self):
         """
@@ -86,15 +86,18 @@ class LoggingManager:
         Returns:
             str: Ścieżka do pliku logu.
         """
-        date_str = datetime.now().strftime('%Y-%m-%d')
-        return os.path.join(self.log_dir, f'rtasp_{date_str}.log')
+        date_str = datetime.now().strftime("%Y-%m-%d")
+        return os.path.join(self.log_dir, f"rtasp_{date_str}.log")
 
     def configure_logging(self):
         """Konfiguruje system logowania."""
         # Utwórz formatery
-        console_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        console_formatter = logging.Formatter(
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        )
         file_formatter = logging.Formatter(
-            '%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s')
+            "%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s"
+        )
 
         # Utwórz handlary
         console_handler = logging.StreamHandler()
@@ -103,8 +106,8 @@ class LoggingManager:
 
         file_handler = logging.handlers.TimedRotatingFileHandler(
             self.log_file,
-            when='midnight',
-            backupCount=30  # Przechowuj logi z ostatnich 30 dni
+            when="midnight",
+            backupCount=30,  # Przechowuj logi z ostatnich 30 dni
         )
         file_handler.setLevel(self.log_level)
         file_handler.setFormatter(file_formatter)
@@ -122,7 +125,9 @@ class LoggingManager:
         root_logger.addHandler(file_handler)
 
         # Skonfiguruj logger dla bibliotek zewnętrznych
-        for logger_name in ['urllib3', 'requests', 'werkzeug']:
+        for logger_name in ["urllib3", "requests", "werkzeug"]:
             logging.getLogger(logger_name).setLevel(logging.WARNING)
 
-        logging.info(f"Skonfigurowano logowanie, poziom: {logging.getLevelName(self.log_level)}, plik: {self.log_file}")
+        logging.info(
+            f"Skonfigurowano logowanie, poziom: {logging.getLevelName(self.log_level)}, plik: {self.log_file}"
+        )

@@ -7,6 +7,7 @@ This module provides pipeline execution capabilities, including:
 - Resource management
 - Error handling
 """
+
 import logging
 import asyncio
 from typing import Optional, Dict, Any, List
@@ -22,11 +23,7 @@ from rtaspi.processing.audio.speech import SpeechRecognizer
 class PipelineExecutor:
     """Pipeline execution handler."""
 
-    def __init__(
-        self,
-        config: PipelineConfig,
-        max_workers: Optional[int] = None
-    ):
+    def __init__(self, config: PipelineConfig, max_workers: Optional[int] = None):
         """Initialize the pipeline executor.
 
         Args:
@@ -49,26 +46,18 @@ class PipelineExecutor:
             # Create stage instance based on type
             if stage.type == "VIDEO_FILTER":
                 self.stages[stage.name] = VideoFilter(
-                    filter_type=stage.filter_type,
-                    params=stage.params
+                    filter_type=stage.filter_type, params=stage.params
                 )
             elif stage.type == "OBJECT_DETECTION":
-                self.stages[stage.name] = ObjectDetector(
-                    **stage.params
-                )
+                self.stages[stage.name] = ObjectDetector(**stage.params)
             elif stage.type == "FACE_DETECTION":
-                self.stages[stage.name] = FaceDetector(
-                    **stage.params
-                )
+                self.stages[stage.name] = FaceDetector(**stage.params)
             elif stage.type == "AUDIO_FILTER":
                 self.stages[stage.name] = AudioFilter(
-                    filter_type=stage.filter_type,
-                    params=stage.params
+                    filter_type=stage.filter_type, params=stage.params
                 )
             elif stage.type == "SPEECH_RECOGNITION":
-                self.stages[stage.name] = SpeechRecognizer(
-                    **stage.params
-                )
+                self.stages[stage.name] = SpeechRecognizer(**stage.params)
             else:
                 raise ValueError(f"Unsupported stage type: {stage.type}")
 
@@ -165,11 +154,7 @@ class PipelineExecutor:
                 self.logger.error(f"Stage {stage.name} error: {e}")
                 instance.output = None
 
-    async def _process_stage(
-        self,
-        instance: Any,
-        input_data: Any
-    ) -> Any:
+    async def _process_stage(self, instance: Any, input_data: Any) -> Any:
         """Process a stage with input data.
 
         Args:
@@ -186,10 +171,7 @@ class PipelineExecutor:
         # Process in thread pool
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(
-            self.executor,
-            self._process_stage_sync,
-            instance,
-            input_data
+            self.executor, self._process_stage_sync, instance, input_data
         )
 
     def _process_stage_sync(self, instance: Any, input_data: Any) -> Any:

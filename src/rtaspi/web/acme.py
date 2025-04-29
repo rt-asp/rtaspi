@@ -16,12 +16,13 @@ from cryptography.x509.oid import NameOID
 from josepy import JWKRSA
 from aiohttp import web
 
+
 class ACMEClient:
     """ACME client for Let's Encrypt certificate management."""
 
     LETS_ENCRYPT_DIRECTORY_URL = {
         True: "https://acme-staging-v02.api.letsencrypt.org/directory",
-        False: "https://acme-v02.api.letsencrypt.org/directory"
+        False: "https://acme-v02.api.letsencrypt.org/directory",
     }
 
     def __init__(
@@ -29,7 +30,7 @@ class ACMEClient:
         domain: str,
         email: str,
         staging: bool = True,
-        storage_dir: Optional[str] = None
+        storage_dir: Optional[str] = None,
     ):
         """Initialize ACME client.
 
@@ -58,21 +59,17 @@ class ACMEClient:
         if account_key_path.exists():
             with open(account_key_path, "rb") as f:
                 key_data = f.read()
-            private_key = serialization.load_pem_private_key(
-                key_data,
-                password=None
-            )
+            private_key = serialization.load_pem_private_key(key_data, password=None)
         else:
-            private_key = rsa.generate_private_key(
-                public_exponent=65537,
-                key_size=2048
-            )
+            private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
             with open(account_key_path, "wb") as f:
-                f.write(private_key.private_bytes(
-                    encoding=serialization.Encoding.PEM,
-                    format=serialization.PrivateFormat.PKCS8,
-                    encryption_algorithm=serialization.NoEncryption()
-                ))
+                f.write(
+                    private_key.private_bytes(
+                        encoding=serialization.Encoding.PEM,
+                        format=serialization.PrivateFormat.PKCS8,
+                        encryption_algorithm=serialization.NoEncryption(),
+                    )
+                )
 
         # Create ACME client
         self.account_key = JWKRSA(key=private_key)
@@ -93,16 +90,12 @@ class ACMEClient:
 
         registration = await self.client.new_account(
             messages.NewRegistration.from_data(
-                email=self.email,
-                terms_of_service_agreed=True
+                email=self.email, terms_of_service_agreed=True
             )
         )
 
         with open(account_path, "w") as f:
-            json.dump({
-                "uri": registration.uri,
-                "email": self.email
-            }, f)
+            json.dump({"uri": registration.uri, "email": self.email}, f)
 
     async def obtain_certificate(self) -> Dict[str, str]:
         """Obtain new certificate using HTTP challenge.
@@ -111,21 +104,16 @@ class ACMEClient:
             Dictionary containing paths to certificate files
         """
         # Create domain private key
-        domain_key = rsa.generate_private_key(
-            public_exponent=65537,
-            key_size=2048
-        )
+        domain_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
 
         # Create certificate signing request
         csr = (
             x509.CertificateSigningRequestBuilder()
-            .subject_name(x509.Name([
-                x509.NameAttribute(NameOID.COMMON_NAME, self.domain)
-            ]))
+            .subject_name(
+                x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, self.domain)])
+            )
             .add_extension(
-                x509.SubjectAlternativeName([
-                    x509.DNSName(self.domain)
-                ]),
+                x509.SubjectAlternativeName([x509.DNSName(self.domain)]),
                 critical=False,
             )
             .sign(domain_key, hashes.SHA256())
@@ -169,16 +157,15 @@ class ACMEClient:
                 f.write(order.fullchain_pem.encode())
 
             with open(key_path, "wb") as f:
-                f.write(domain_key.private_bytes(
-                    encoding=serialization.Encoding.PEM,
-                    format=serialization.PrivateFormat.PKCS8,
-                    encryption_algorithm=serialization.NoEncryption()
-                ))
+                f.write(
+                    domain_key.private_bytes(
+                        encoding=serialization.Encoding.PEM,
+                        format=serialization.PrivateFormat.PKCS8,
+                        encryption_algorithm=serialization.NoEncryption(),
+                    )
+                )
 
-            return {
-                "cert_file": str(cert_path),
-                "key_file": str(key_path)
-            }
+            return {"cert_file": str(cert_path), "key_file": str(key_path)}
 
         finally:
             # Clear challenge
@@ -210,6 +197,7 @@ class ACMEClient:
 
         # Renew if less than 30 days until expiry
         return datetime.utcnow() + timedelta(days=30) > expiry
+
 
 async def challenge_handler(request: web.Request) -> web.Response:
     """Handle ACME HTTP challenge requests."""

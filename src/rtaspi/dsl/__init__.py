@@ -100,7 +100,6 @@ __all__ = [
     # Main functions
     "execute_pipeline_file",
     "execute_pipeline_text",
-
     # Classes
     "Lexer",
     "Parser",

@@ -6,6 +6,7 @@ This module provides audio filter implementations using numpy and scipy, includi
 - Effects (reverb, echo, etc.)
 - Audio adjustments (pitch, time stretch, etc.)
 """
+
 import numpy as np
 from typing import Optional, Dict, Any
 from scipy import signal
@@ -71,35 +72,34 @@ class AudioFilter:
             Equalized audio signal
         """
         # Get parameters
-        bands = self.params.get("bands", {
-            "60": 0,    # Sub bass
-            "170": 0,   # Bass
-            "310": 0,   # Low midrange
-            "600": 0,   # Midrange
-            "1000": 0,  # Higher midrange
-            "3000": 0,  # Presence
-            "6000": 0,  # Brilliance
-            "12000": 0, # Air
-        })
+        bands = self.params.get(
+            "bands",
+            {
+                "60": 0,  # Sub bass
+                "170": 0,  # Bass
+                "310": 0,  # Low midrange
+                "600": 0,  # Midrange
+                "1000": 0,  # Higher midrange
+                "3000": 0,  # Presence
+                "6000": 0,  # Brilliance
+                "12000": 0,  # Air
+            },
+        )
 
         # Apply each band
         output = np.zeros_like(audio)
         for freq, gain in bands.items():
             freq = float(freq)
-            
+
             # Create bandpass filter
             nyquist = sample_rate / 2
             low = freq / 1.5
             high = freq * 1.5
-            b, a = signal.butter(
-                2,
-                [low/nyquist, high/nyquist],
-                btype="band"
-            )
+            b, a = signal.butter(2, [low / nyquist, high / nyquist], btype="band")
 
             # Apply filter and adjust gain
             filtered = signal.filtfilt(b, a, audio)
-            output += filtered * (10 ** (gain/20))
+            output += filtered * (10 ** (gain / 20))
 
         return output
 
@@ -119,16 +119,20 @@ class AudioFilter:
         release = self.params.get("release", 0.1)
 
         # Convert threshold to linear
-        threshold_linear = 10 ** (threshold/20)
+        threshold_linear = 10 ** (threshold / 20)
 
         # Calculate envelope
         abs_audio = np.abs(audio)
         envelope = np.zeros_like(audio)
         for i in range(1, len(audio)):
-            if abs_audio[i] > envelope[i-1]:
-                envelope[i] = envelope[i-1] + attack * (abs_audio[i] - envelope[i-1])
+            if abs_audio[i] > envelope[i - 1]:
+                envelope[i] = envelope[i - 1] + attack * (
+                    abs_audio[i] - envelope[i - 1]
+                )
             else:
-                envelope[i] = envelope[i-1] + release * (abs_audio[i] - envelope[i-1])
+                envelope[i] = envelope[i - 1] + release * (
+                    abs_audio[i] - envelope[i - 1]
+                )
 
         # Apply gate
         gain = np.ones_like(audio)
@@ -153,21 +157,25 @@ class AudioFilter:
         release = self.params.get("release", 0.1)
 
         # Convert threshold to linear
-        threshold_linear = 10 ** (threshold/20)
+        threshold_linear = 10 ** (threshold / 20)
 
         # Calculate envelope
         abs_audio = np.abs(audio)
         envelope = np.zeros_like(audio)
         for i in range(1, len(audio)):
-            if abs_audio[i] > envelope[i-1]:
-                envelope[i] = envelope[i-1] + attack * (abs_audio[i] - envelope[i-1])
+            if abs_audio[i] > envelope[i - 1]:
+                envelope[i] = envelope[i - 1] + attack * (
+                    abs_audio[i] - envelope[i - 1]
+                )
             else:
-                envelope[i] = envelope[i-1] + release * (abs_audio[i] - envelope[i-1])
+                envelope[i] = envelope[i - 1] + release * (
+                    abs_audio[i] - envelope[i - 1]
+                )
 
         # Apply compression
         gain = np.ones_like(audio)
         mask = envelope > threshold_linear
-        gain[mask] = (threshold_linear / envelope[mask]) ** (1 - 1/ratio)
+        gain[mask] = (threshold_linear / envelope[mask]) ** (1 - 1 / ratio)
 
         return audio * gain
 
@@ -183,22 +191,19 @@ class AudioFilter:
         """
         # Get parameters
         room_size = self.params.get("room_size", 0.5)  # 0.0 to 1.0
-        damping = self.params.get("damping", 0.5)      # 0.0 to 1.0
+        damping = self.params.get("damping", 0.5)  # 0.0 to 1.0
         wet_level = self.params.get("wet_level", 0.3)  # 0.0 to 1.0
         dry_level = self.params.get("dry_level", 0.7)  # 0.0 to 1.0
 
         # Calculate delay times
-        delays = [
-            int(sample_rate * t) for t in
-            [0.0297, 0.0371, 0.0411, 0.0437]
-        ]
+        delays = [int(sample_rate * t) for t in [0.0297, 0.0371, 0.0411, 0.0437]]
 
         # Create feedback matrix
         size = len(delays)
         feedback = np.zeros((size, size))
         for i in range(size):
             for j in range(size):
-                feedback[i,j] = (-1 if (i+j) % 2 else 1) * room_size * damping
+                feedback[i, j] = (-1 if (i + j) % 2 else 1) * room_size * damping
 
         # Apply reverb
         output = np.zeros_like(audio)
@@ -206,10 +211,9 @@ class AudioFilter:
 
         for i in range(len(audio)):
             # Get delayed samples
-            delayed = np.array([
-                state[j, (i - delays[j]) % len(state[j])]
-                for j in range(size)
-            ])
+            delayed = np.array(
+                [state[j, (i - delays[j]) % len(state[j])] for j in range(size)]
+            )
 
             # Calculate feedback
             feedback_signal = feedback.dot(delayed)
@@ -234,9 +238,9 @@ class AudioFilter:
             Echo-processed audio signal
         """
         # Get parameters
-        delay = self.params.get("delay", 0.3)     # seconds
-        decay = self.params.get("decay", 0.5)     # 0.0 to 1.0
-        count = self.params.get("count", 3)       # number of echoes
+        delay = self.params.get("delay", 0.3)  # seconds
+        decay = self.params.get("decay", 0.5)  # 0.0 to 1.0
+        count = self.params.get("count", 3)  # number of echoes
 
         # Calculate delay samples
         delay_samples = int(delay * sample_rate)
@@ -246,7 +250,7 @@ class AudioFilter:
         for i in range(1, count + 1):
             # Shift and attenuate
             echo = np.zeros_like(audio)
-            echo[i * delay_samples:] = audio[:-i * delay_samples] * (decay ** i)
+            echo[i * delay_samples :] = audio[: -i * delay_samples] * (decay**i)
             output += echo
 
         return output
@@ -274,7 +278,7 @@ class AudioFilter:
         output_length = int(len(audio) / factor)
         time_orig = np.arange(len(audio))
         time_new = np.linspace(0, len(audio) - 1, output_length)
-        
+
         return np.interp(time_new, time_orig, audio)
 
     def _apply_time_stretch(self, audio: np.ndarray) -> np.ndarray:
@@ -298,7 +302,7 @@ class AudioFilter:
         # Resample audio
         time_orig = np.arange(len(audio))
         time_new = np.linspace(0, len(audio) - 1, output_length)
-        
+
         return np.interp(time_new, time_orig, audio)
 
     def _apply_normalization(self, audio: np.ndarray) -> np.ndarray:
@@ -319,7 +323,7 @@ class AudioFilter:
             return audio
 
         # Calculate target amplitude
-        target_amplitude = 10 ** (target_db/20)
+        target_amplitude = 10 ** (target_db / 20)
 
         return audio * (target_amplitude / peak)
 

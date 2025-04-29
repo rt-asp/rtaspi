@@ -4,6 +4,7 @@ Simplified microphone management functions.
 This module provides easy-to-use functions for managing microphone devices,
 abstracting away the complexity of the full API.
 """
+
 from typing import Optional, Dict, List, Any
 import logging
 
@@ -29,12 +30,14 @@ def list_microphones() -> List[Dict[str, Any]]:
     devices.update(device_api.list_devices(device_type=DeviceType.BUILT_IN_MICROPHONE))
 
     for name, config in devices.items():
-        microphones.append({
-            "name": name,
-            "type": config["type"],
-            "status": config.get("status", {}).get("online", False),
-            "capabilities": config.get("capabilities", {}),
-        })
+        microphones.append(
+            {
+                "name": name,
+                "type": config["type"],
+                "status": config.get("status", {}).get("online", False),
+                "capabilities": config.get("capabilities", {}),
+            }
+        )
 
     return microphones
 
@@ -46,7 +49,7 @@ def start_microphone(
     channels: int = 2,
     rtsp_url: Optional[str] = None,
     rtmp_url: Optional[str] = None,
-    webrtc_url: Optional[str] = None
+    webrtc_url: Optional[str] = None,
 ) -> str:
     """Start a microphone stream.
 
@@ -90,7 +93,7 @@ def start_microphone(
             settings={
                 "sample_rate": sample_rate,
                 "channels": channels,
-            }
+            },
         )
         logger.info(f"Auto-detected and added microphone: {name}")
     else:
@@ -103,7 +106,7 @@ def start_microphone(
                 settings={
                     "sample_rate": sample_rate,
                     "channels": channels,
-                }
+                },
             )
             logger.info(f"Added microphone: {name}")
 
@@ -118,7 +121,7 @@ def start_microphone(
         settings={
             "sample_rate": sample_rate,
             "channels": channels,
-        }
+        },
     )
 
     # Add outputs
@@ -128,7 +131,7 @@ def start_microphone(
             name=stream_name,
             output_type=OutputType.RTSP,
             output_name=f"{stream_name}_rtsp",
-            settings={"url": rtsp_url}
+            settings={"url": rtsp_url},
         )
         output_count += 1
 
@@ -137,7 +140,7 @@ def start_microphone(
             name=stream_name,
             output_type=OutputType.RTMP,
             output_name=f"{stream_name}_rtmp",
-            settings={"url": rtmp_url}
+            settings={"url": rtmp_url},
         )
         output_count += 1
 
@@ -146,7 +149,7 @@ def start_microphone(
             name=stream_name,
             output_type=OutputType.WEBRTC,
             output_name=f"{stream_name}_webrtc",
-            settings={"url": webrtc_url}
+            settings={"url": webrtc_url},
         )
         output_count += 1
 
@@ -157,7 +160,7 @@ def start_microphone(
             name=stream_name,
             output_type=OutputType.RTSP,
             output_name=f"{stream_name}_rtsp",
-            settings={"url": default_url}
+            settings={"url": default_url},
         )
         logger.info(f"Added default RTSP output: {default_url}")
 

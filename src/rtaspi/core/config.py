@@ -27,7 +27,7 @@ class ConfigManager:
         Args:
             config_path (str, optional): Ścieżka do pliku konfiguracyjnego.
         """
-        self.config_path = config_path or os.environ.get('rtaspi_CONFIG', 'config.yaml')
+        self.config_path = config_path or os.environ.get("rtaspi_CONFIG", "config.yaml")
         self.config = self.load_config()
 
     def load_config(self):
@@ -39,43 +39,36 @@ class ConfigManager:
         """
         # Domyślna konfiguracja
         default_config = {
-            'system': {
-                'storage_path': 'storage',
-                'log_level': 'INFO'
+            "system": {"storage_path": "storage", "log_level": "INFO"},
+            "local_devices": {
+                "enable_video": True,
+                "enable_audio": True,
+                "auto_start": False,
+                "scan_interval": 60,
+                "rtsp_port_start": 8554,
+                "rtmp_port_start": 1935,
+                "webrtc_port_start": 8080,
             },
-            'local_devices': {
-                'enable_video': True,
-                'enable_audio': True,
-                'auto_start': False,
-                'scan_interval': 60,
-                'rtsp_port_start': 8554,
-                'rtmp_port_start': 1935,
-                'webrtc_port_start': 8080
+            "network_devices": {
+                "enable": True,
+                "scan_interval": 60,
+                "discovery_enabled": True,
+                "discovery_methods": ["onvif", "upnp", "mdns"],
+                "rtsp_port_start": 8654,
+                "rtmp_port_start": 2935,
+                "webrtc_port_start": 9080,
             },
-            'network_devices': {
-                'enable': True,
-                'scan_interval': 60,
-                'discovery_enabled': True,
-                'discovery_methods': ['onvif', 'upnp', 'mdns'],
-                'rtsp_port_start': 8654,
-                'rtmp_port_start': 2935,
-                'webrtc_port_start': 9080
-            },
-            'streaming': {
-                'rtsp': {
-                    'port_start': 8554
+            "streaming": {
+                "rtsp": {"port_start": 8554},
+                "rtmp": {"port_start": 1935},
+                "webrtc": {
+                    "port_start": 8080,
+                    "stun_server": "stun://stun.l.google.com:19302",
+                    "turn_server": "",
+                    "turn_username": "",
+                    "turn_password": "",
                 },
-                'rtmp': {
-                    'port_start': 1935
-                },
-                'webrtc': {
-                    'port_start': 8080,
-                    'stun_server': 'stun://stun.l.google.com:19302',
-                    'turn_server': '',
-                    'turn_username': '',
-                    'turn_password': ''
-                }
-            }
+            },
         }
 
         config = default_config.copy()
@@ -83,7 +76,7 @@ class ConfigManager:
         try:
             # Sprawdź, czy plik konfiguracyjny istnieje
             if os.path.exists(self.config_path):
-                with open(self.config_path, 'r') as f:
+                with open(self.config_path, "r") as f:
                     loaded_config = yaml.safe_load(f)
 
                 # Aktualizacja konfiguracji
@@ -93,7 +86,8 @@ class ConfigManager:
                 logger.info(f"Załadowano konfigurację z pliku: {self.config_path}")
             else:
                 logger.warning(
-                    f"Nie znaleziono pliku konfiguracyjnego: {self.config_path}, używam domyślnej konfiguracji")
+                    f"Nie znaleziono pliku konfiguracyjnego: {self.config_path}, używam domyślnej konfiguracji"
+                )
 
                 # Zapisz domyślną konfigurację
                 self.save_config(config)
@@ -118,10 +112,12 @@ class ConfigManager:
             config = config or self.config
 
             # Utwórz katalogi, jeśli nie istnieją
-            os.makedirs(os.path.dirname(os.path.abspath(self.config_path)), exist_ok=True)
+            os.makedirs(
+                os.path.dirname(os.path.abspath(self.config_path)), exist_ok=True
+            )
 
             # Zapisz konfigurację do pliku
-            with open(self.config_path, 'w') as f:
+            with open(self.config_path, "w") as f:
                 yaml.dump(config, f, default_flow_style=False)
 
             logger.info(f"Zapisano konfigurację do pliku: {self.config_path}")
@@ -145,7 +141,7 @@ class ConfigManager:
         value = self.config
 
         # Obsługa zagnieżdżonych słowników
-        for part in key.split('.'):
+        for part in key.split("."):
             if isinstance(value, dict) and part in value:
                 value = value[part]
             else:
@@ -166,7 +162,7 @@ class ConfigManager:
         """
         try:
             # Obsługa zagnieżdżonych słowników
-            parts = key.split('.')
+            parts = key.split(".")
             current = self.config
 
             # Przejdź do odpowiedniego zagnieżdżenia

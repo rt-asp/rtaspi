@@ -3,6 +3,7 @@ Pipeline management commands for the rtaspi CLI.
 
 This module provides commands for managing processing pipelines.
 """
+
 import click
 import yaml
 from typing import Optional
@@ -36,44 +37,48 @@ def list(format: str, status: bool, **kwargs):
     """List configured pipelines."""
     # Get pipelines from config
     pipelines = shell.config.get("pipelines", {})
-    
+
     if not pipelines:
         click.echo("No pipelines configured")
         return
-    
+
     if format == "table":
         # Prepare table data
         headers = ["Name", "Enabled", "Stages", "Description"]
         if status:
             headers.extend(["Status", "Start Time"])
-        
+
         rows = []
         for name, config in pipelines.items():
             stages = config.get("stages", [])
-            
+
             row = [
                 name,
                 "Yes" if config.get("enabled", True) else "No",
                 str(len(stages)),
-                config.get("description", "")[:50] + ("..." if len(config.get("description", "")) > 50 else "")
+                config.get("description", "")[:50]
+                + ("..." if len(config.get("description", "")) > 50 else ""),
             ]
-            
+
             if status:
                 pipeline_status = PipelineStatus(**config.get("status", {}))
-                row.extend([
-                    "Running" if pipeline_status.running else "Stopped",
-                    pipeline_status.start_time or "Never"
-                ])
-            
+                row.extend(
+                    [
+                        "Running" if pipeline_status.running else "Stopped",
+                        pipeline_status.start_time or "Never",
+                    ]
+                )
+
             rows.append(row)
-        
+
         click.echo(tabulate(rows, headers=headers, tablefmt="simple"))
-    
+
     elif format == "yaml":
         click.echo(yaml.dump(pipelines, default_flow_style=False))
-    
+
     else:  # json
         import json
+
         click.echo(json.dumps(pipelines, indent=2))
 
 
@@ -105,16 +110,16 @@ def create(
     enabled: bool,
     parallel: bool,
     settings: Optional[str],
-    **kwargs
+    **kwargs,
 ):
     """Create a new pipeline."""
     # Load existing pipelines
     pipelines = shell.config.get("pipelines", {})
-    
+
     if name in pipelines:
         click.echo(f"Pipeline '{name}' already exists", err=True)
         return
-    
+
     # Create pipeline config
     config = {
         "name": name,
@@ -125,24 +130,24 @@ def create(
         },
         "stages": [],
     }
-    
+
     # Load settings from file
     if settings:
         with open(settings) as f:
             pipeline_settings = yaml.safe_load(f)
         config.update(pipeline_settings)
-    
+
     # Validate config
     try:
         PipelineConfig(**config)
     except Exception as e:
         click.echo(f"Invalid pipeline configuration: {str(e)}", err=True)
         return
-    
+
     # Add to config
     pipelines[name] = config
     shell.config["pipelines"] = pipelines
-    
+
     click.echo(f"Pipeline '{name}' created successfully")
 
 
@@ -188,23 +193,23 @@ def add_stage(
     inputs: list[str],
     outputs: list[str],
     settings: Optional[str],
-    **kwargs
+    **kwargs,
 ):
     """Add a stage to a pipeline."""
     pipelines = shell.config.get("pipelines", {})
-    
+
     if name not in pipelines:
         click.echo(f"Pipeline '{name}' not found", err=True)
         return
-    
+
     pipeline = pipelines[name]
     stages = pipeline.get("stages", [])
-    
+
     # Check for duplicate stage name
     if any(s["name"] == stage_name for s in stages):
         click.echo(f"Stage '{stage_name}' already exists in pipeline", err=True)
         return
-    
+
     # Create stage config
     stage_config = {
         "name": stage_name,
@@ -214,24 +219,24 @@ def add_stage(
         "inputs": list(inputs),
         "outputs": list(outputs),
     }
-    
+
     # Load additional settings
     if settings:
         with open(settings) as f:
             additional_settings = yaml.safe_load(f)
         stage_config.update(additional_settings)
-    
+
     # Add stage
     stages.append(stage_config)
     pipeline["stages"] = stages
-    
+
     # Validate updated pipeline
     try:
         PipelineConfig(**pipeline)
     except Exception as e:
         click.echo(f"Invalid pipeline configuration: {str(e)}", err=True)
         return
-    
+
     shell.config["pipelines"] = pipelines
     click.echo(f"Stage '{stage_name}' added to pipeline '{name}'")
 
@@ -243,31 +248,31 @@ def add_stage(
 def remove_stage(name: str, stage_name: str, **kwargs):
     """Remove a stage from a pipeline."""
     pipelines = shell.config.get("pipelines", {})
-    
+
     if name not in pipelines:
         click.echo(f"Pipeline '{name}' not found", err=True)
         return
-    
+
     pipeline = pipelines[name]
     stages = pipeline.get("stages", [])
-    
+
     # Find and remove stage
     for i, stage in enumerate(stages):
         if stage["name"] == stage_name:
             del stages[i]
             pipeline["stages"] = stages
-            
+
             # Validate updated pipeline
             try:
                 PipelineConfig(**pipeline)
             except Exception as e:
                 click.echo(f"Invalid pipeline configuration: {str(e)}", err=True)
                 return
-            
+
             shell.config["pipelines"] = pipelines
             click.echo(f"Stage '{stage_name}' removed from pipeline '{name}'")
             return
-    
+
     click.echo(f"Stage '{stage_name}' not found in pipeline", err=True)
 
 
@@ -277,14 +282,14 @@ def remove_stage(name: str, stage_name: str, **kwargs):
 def remove(name: str, **kwargs):
     """Remove a pipeline."""
     pipelines = shell.config.get("pipelines", {})
-    
+
     if name not in pipelines:
         click.echo(f"Pipeline '{name}' not found", err=True)
         return
-    
+
     del pipelines[name]
     shell.config["pipelines"] = pipelines
-    
+
     click.echo(f"Pipeline '{name}' removed")
 
 
@@ -300,17 +305,18 @@ def remove(name: str, **kwargs):
 def show(name: str, format: str, **kwargs):
     """Show pipeline details."""
     pipelines = shell.config.get("pipelines", {})
-    
+
     if name not in pipelines:
         click.echo(f"Pipeline '{name}' not found", err=True)
         return
-    
+
     pipeline = pipelines[name]
-    
+
     if format == "yaml":
         click.echo(yaml.dump(pipeline, default_flow_style=False))
     else:  # json
         import json
+
         click.echo(json.dumps(pipeline, indent=2))
 
 
@@ -326,18 +332,19 @@ def show(name: str, format: str, **kwargs):
 def status(name: str, format: str, **kwargs):
     """Show pipeline status."""
     pipelines = shell.config.get("pipelines", {})
-    
+
     if name not in pipelines:
         click.echo(f"Pipeline '{name}' not found", err=True)
         return
-    
+
     pipeline = pipelines[name]
     status = pipeline.get("status", {})
-    
+
     if format == "yaml":
         click.echo(yaml.dump(status, default_flow_style=False))
     else:  # json
         import json
+
         click.echo(json.dumps(status, indent=2))
 
 
@@ -347,11 +354,11 @@ def status(name: str, format: str, **kwargs):
 def start(name: str, **kwargs):
     """Start a pipeline."""
     pipelines = shell.config.get("pipelines", {})
-    
+
     if name not in pipelines:
         click.echo(f"Pipeline '{name}' not found", err=True)
         return
-    
+
     click.echo(f"Starting pipeline '{name}'...")
     # TODO: Implement pipeline starting
     click.echo("Pipeline starting not implemented yet")
@@ -363,11 +370,11 @@ def start(name: str, **kwargs):
 def stop(name: str, **kwargs):
     """Stop a pipeline."""
     pipelines = shell.config.get("pipelines", {})
-    
+
     if name not in pipelines:
         click.echo(f"Pipeline '{name}' not found", err=True)
         return
-    
+
     click.echo(f"Stopping pipeline '{name}'...")
     # TODO: Implement pipeline stopping
     click.echo("Pipeline stopping not implemented yet")
@@ -379,13 +386,13 @@ def stop(name: str, **kwargs):
 def validate(name: str, **kwargs):
     """Validate a pipeline configuration."""
     pipelines = shell.config.get("pipelines", {})
-    
+
     if name not in pipelines:
         click.echo(f"Pipeline '{name}' not found", err=True)
         return
-    
+
     pipeline = pipelines[name]
-    
+
     try:
         PipelineConfig(**pipeline)
         click.echo(f"Pipeline '{name}' configuration is valid")

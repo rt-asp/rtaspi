@@ -4,6 +4,7 @@ Server management commands for the rtaspi CLI.
 This module provides commands for managing the web server that provides
 the web interface and REST API.
 """
+
 import click
 import yaml
 from typing import Optional
@@ -65,14 +66,14 @@ def start(
     key: Optional[str],
     workers: int,
     debug: bool,
-    **kwargs
+    **kwargs,
 ):
     """Start the web server."""
     # Validate SSL configuration
     if ssl and (not cert or not key):
         click.echo("SSL certificate and key files are required for HTTPS", err=True)
         return
-    
+
     click.echo(
         f"Starting server on {'https' if ssl else 'http'}://{host}:{port} "
         f"with {workers} worker{'s' if workers > 1 else ''}"
@@ -109,11 +110,12 @@ def status(**kwargs):
 def config(format: str, **kwargs):
     """Show server configuration."""
     server_config = shell.config.get("server", {})
-    
+
     if format == "yaml":
         click.echo(yaml.dump(server_config, default_flow_style=False))
     else:  # json
         import json
+
         click.echo(json.dumps(server_config, indent=2))
 
 
@@ -136,7 +138,7 @@ def openapi(output: Optional[str], **kwargs):
         },
         "paths": {},  # TODO: Add actual API paths
     }
-    
+
     if output:
         Path(output).write_text(yaml.dump(api_doc, default_flow_style=False))
         click.echo(f"OpenAPI documentation saved to {output}")
@@ -170,17 +172,17 @@ def generate_cert(
     email: Optional[str],
     staging: bool,
     output_dir: str,
-    **kwargs
+    **kwargs,
 ):
     """Generate SSL certificate using Let's Encrypt."""
     if not domain:
         click.echo("Domain name is required", err=True)
         return
-    
+
     if not email:
         click.echo("Email address is required", err=True)
         return
-    
+
     click.echo(
         f"Generating {'staging ' if staging else ''}certificate for {domain} "
         f"using {email}"
@@ -224,7 +226,7 @@ def reset_password(username: str, **kwargs):
         hide_input=True,
         confirmation_prompt=True,
     )
-    
+
     click.echo(f"Resetting password for user '{username}'...")
     # TODO: Implement password reset
     click.echo("Password reset not implemented yet")
@@ -238,7 +240,7 @@ def reset_password(username: str, **kwargs):
 @common_options
 def api_token(token: Optional[str], **kwargs):
     """Manage API tokens.
-    
+
     If TOKEN is provided, show token details.
     Otherwise, list all tokens.
     """

@@ -4,6 +4,7 @@ Server management API facade.
 This module provides a high-level interface for managing the web server,
 abstracting away the internal implementation details.
 """
+
 from typing import Optional, Dict, List, Any
 import logging
 import os
@@ -37,7 +38,7 @@ class ServerAPI:
         cert_file: Optional[str] = None,
         key_file: Optional[str] = None,
         workers: int = 1,
-        debug: bool = False
+        debug: bool = False,
     ) -> None:
         """Start the web server.
 
@@ -127,11 +128,7 @@ class ServerAPI:
         return f"{protocol}://{self.host}:{self.port}"
 
     def generate_cert(
-        self,
-        domain: str,
-        email: str,
-        staging: bool = True,
-        output_dir: str = "certs"
+        self, domain: str, email: str, staging: bool = True, output_dir: str = "certs"
     ) -> Dict[str, str]:
         """Generate SSL certificate using Let's Encrypt.
 
@@ -223,9 +220,7 @@ class ServerAPI:
         return self.api_tokens.get(token)
 
     def create_token(
-        self,
-        name: str,
-        expires_days: Optional[int] = None
+        self, name: str, expires_days: Optional[int] = None
     ) -> Dict[str, Any]:
         """Create new API token.
 
@@ -243,8 +238,7 @@ class ServerAPI:
         expires_at = None
         if expires_days is not None and expires_days > 0:
             expires_at = (
-                datetime.datetime.now() +
-                datetime.timedelta(days=expires_days)
+                datetime.datetime.now() + datetime.timedelta(days=expires_days)
             ).isoformat()
 
         # Store token

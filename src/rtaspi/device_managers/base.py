@@ -43,7 +43,7 @@ class DeviceManager(ABC):
         self.streams = {}  # stream_id -> stream_info
 
         # Przygotowanie katalogów
-        self.storage_path = config.get('system', {}).get('storage_path', 'storage')
+        self.storage_path = config.get("system", {}).get("storage_path", "storage")
         os.makedirs(self.storage_path, exist_ok=True)
 
         # Utworzenie klienta MCP
@@ -207,7 +207,12 @@ class DeviceManager(ABC):
                     process.kill()
 
             # Zatrzymanie dodatkowych procesów
-            for key in ["rtsp_process", "rtmp_process", "http_process", "nginx_process"]:
+            for key in [
+                "rtsp_process",
+                "rtmp_process",
+                "http_process",
+                "nginx_process",
+            ]:
                 proc = stream_info.get(key)
                 if proc:
                     proc.terminate()
@@ -256,7 +261,7 @@ class DeviceManager(ABC):
         while port < max_port:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.settimeout(0.1)
-            result = sock.connect_ex(('127.0.0.1', port))
+            result = sock.connect_ex(("127.0.0.1", port))
             sock.close()
 
             if result != 0:  # Port jest wolny
@@ -264,4 +269,6 @@ class DeviceManager(ABC):
 
             port += 1
 
-        raise Exception(f"Nie znaleziono wolnego portu w zakresie {start_port}-{max_port}")
+        raise Exception(
+            f"Nie znaleziono wolnego portu w zakresie {start_port}-{max_port}"
+        )

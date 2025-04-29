@@ -22,7 +22,7 @@ import sys
 # ./increment_init.py -t prealpha
 
 # Specify a custom file path
-# ./increment_init.py -f src/pifunc/__init__.py
+# ./increment_init.py -f src/rtaspi/__init__.py
 
 
 def get_version_from_file(file_path):
@@ -214,6 +214,6 @@ if __name__ == "__main__":
     sys.exit(main())
 
 
-# python increment_init.py -f src/pifunc/__init__.py
+# python increment_init.py -f src/rtaspi/__init__.py
 # python increment_setup.py
 # python changelog.py

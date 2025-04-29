@@ -4,6 +4,7 @@ Device management API facade.
 This module provides a high-level interface for managing audio/video devices,
 abstracting away the internal implementation details.
 """
+
 from typing import Optional, Dict, List, Any, Union
 import logging
 
@@ -24,7 +25,7 @@ class DeviceAPI:
     def list_devices(
         self,
         device_type: Optional[Union[DeviceType, str]] = None,
-        include_status: bool = True
+        include_status: bool = True,
     ) -> Dict[str, Dict[str, Any]]:
         """List all configured devices.
 
@@ -47,7 +48,8 @@ class DeviceAPI:
         # Apply type filter if specified
         if device_type:
             devices = {
-                name: config for name, config in devices.items()
+                name: config
+                for name, config in devices.items()
                 if DeviceType[config["type"]] == device_type
             }
 
@@ -89,7 +91,7 @@ class DeviceAPI:
         port: Optional[int] = None,
         username: Optional[str] = None,
         password: Optional[str] = None,
-        settings: Optional[Dict[str, Any]] = None
+        settings: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Add a new device.
 
@@ -168,7 +170,7 @@ class DeviceAPI:
         self,
         name: str,
         enabled: Optional[bool] = None,
-        settings: Optional[Dict[str, Any]] = None
+        settings: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Update device configuration.
 
@@ -186,10 +188,7 @@ class DeviceAPI:
         if enabled is not None:
             device["enabled"] = enabled
         if settings:
-            device["settings"] = {
-                **device.get("settings", {}),
-                **settings
-            }
+            device["settings"] = {**device.get("settings", {}), **settings}
 
         # Validate updated config
         device_config = DeviceConfig(**device)
@@ -239,9 +238,7 @@ class DeviceAPI:
         raise ValueError(f"Device not found: {name}")
 
     def discover_devices(
-        self,
-        device_type: Optional[Union[DeviceType, str]] = None,
-        timeout: float = 5.0
+        self, device_type: Optional[Union[DeviceType, str]] = None, timeout: float = 5.0
     ) -> List[Dict[str, Any]]:
         """Discover available devices.
 
@@ -269,7 +266,8 @@ class DeviceAPI:
         # Apply type filter if specified
         if device_type:
             discovered = [
-                device for device in discovered
+                device
+                for device in discovered
                 if DeviceType[device["type"]] == device_type
             ]
 

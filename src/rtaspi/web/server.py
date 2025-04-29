@@ -4,6 +4,7 @@ Web server implementation.
 This module provides the main web server class that handles HTTPS, certificates,
 and server configuration.
 """
+
 import os
 import ssl
 import logging
@@ -45,9 +46,7 @@ class WebServer:
         """Set up web server routes."""
         # Static files
         self.app.router.add_static(
-            "/static",
-            Path(__file__).parent / "static",
-            name="static"
+            "/static", Path(__file__).parent / "static", name="static"
         )
 
         # Main routes
@@ -70,7 +69,7 @@ class WebServer:
         email: Optional[str] = None,
         staging: bool = True,
         workers: int = 1,
-        debug: bool = False
+        debug: bool = False,
     ) -> None:
         """Start the web server.
 
@@ -98,9 +97,7 @@ class WebServer:
                 if needs_renewal:
                     # Generate new certificate using Let's Encrypt
                     cert_info = await self._generate_certificate(
-                        domain=domain,
-                        email=email,
-                        staging=staging
+                        domain=domain, email=email, staging=staging
                     )
                     cert_file = cert_info["cert_file"]
                     key_file = cert_info["key_file"]
@@ -115,9 +112,7 @@ class WebServer:
                 key_file = cert_info["key_file"]
 
             # Create SSL context
-            ssl_context = ssl.create_default_context(
-                purpose=ssl.Purpose.CLIENT_AUTH
-            )
+            ssl_context = ssl.create_default_context(purpose=ssl.Purpose.CLIENT_AUTH)
             ssl_context.load_cert_chain(cert_file, key_file)
 
         # Configure application
@@ -137,16 +132,12 @@ class WebServer:
         await self.runner.setup()
 
         self.site = web.TCPSite(
-            self.runner,
-            host=host,
-            port=port,
-            ssl_context=ssl_context
+            self.runner, host=host, port=port, ssl_context=ssl_context
         )
         await self.site.start()
 
         self.logger.info(
-            f"Started web server on "
-            f"{'https' if ssl else 'http'}://{host}:{port}"
+            f"Started web server on " f"{'https' if ssl else 'http'}://{host}:{port}"
         )
 
     async def stop(self) -> None:
@@ -162,10 +153,7 @@ class WebServer:
         self.logger.info("Stopped web server")
 
     async def _generate_certificate(
-        self,
-        domain: str,
-        email: str,
-        staging: bool = True
+        self, domain: str, email: str, staging: bool = True
     ) -> Dict[str, str]:
         """Generate SSL certificate using Let's Encrypt.
 
@@ -184,8 +172,7 @@ class WebServer:
         # Add challenge handler route
         self.app["acme_client"] = acme_client
         self.app.router.add_get(
-            "/.well-known/acme-challenge/{token}",
-            challenge_handler
+            "/.well-known/acme-challenge/{token}", challenge_handler
         )
 
         try:
@@ -202,8 +189,7 @@ class WebServer:
             self.app["acme_client"] = None
 
     def _generate_self_signed_certificate(
-        self,
-        domain: Optional[str] = None
+        self, domain: Optional[str] = None
     ) -> Dict[str, str]:
         """Generate self-signed SSL certificate.
 
@@ -218,15 +204,12 @@ class WebServer:
         certs_dir.mkdir(parents=True, exist_ok=True)
 
         # Generate key
-        private_key = rsa.generate_private_key(
-            public_exponent=65537,
-            key_size=2048
-        )
+        private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
 
         # Create certificate
-        subject = issuer = x509.Name([
-            x509.NameAttribute(NameOID.COMMON_NAME, domain or "localhost")
-        ])
+        subject = issuer = x509.Name(
+            [x509.NameAttribute(NameOID.COMMON_NAME, domain or "localhost")]
+        )
 
         cert = (
             x509.CertificateBuilder()
@@ -235,13 +218,9 @@ class WebServer:
             .public_key(private_key.public_key())
             .serial_number(x509.random_serial_number())
             .not_valid_before(datetime.datetime.utcnow())
-            .not_valid_after(
-                datetime.datetime.utcnow() + datetime.timedelta(days=365)
-            )
+            .not_valid_after(datetime.datetime.utcnow() + datetime.timedelta(days=365))
             .add_extension(
-                x509.SubjectAlternativeName([
-                    x509.DNSName(domain or "localhost")
-                ]),
+                x509.SubjectAlternativeName([x509.DNSName(domain or "localhost")]),
                 critical=False,
             )
             .sign(private_key, hashes.SHA256())
@@ -255,15 +234,16 @@ class WebServer:
             f.write(cert.public_bytes(serialization.Encoding.PEM))
 
         with open(key_file, "wb") as f:
-            f.write(private_key.private_bytes(
-                encoding=serialization.Encoding.PEM,
-                format=serialization.PrivateFormat.PKCS8,
-                encryption_algorithm=serialization.NoEncryption()
-            ))
+            f.write(
+                private_key.private_bytes(
+                    encoding=serialization.Encoding.PEM,
+                    format=serialization.PrivateFormat.PKCS8,
+                    encryption_algorithm=serialization.NoEncryption(),
+                )
+            )
 
         self.logger.info(
-            f"Generated self-signed certificate for "
-            f"{domain or 'localhost'}"
+            f"Generated self-signed certificate for " f"{domain or 'localhost'}"
         )
 
         return {

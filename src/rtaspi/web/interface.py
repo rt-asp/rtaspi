@@ -4,6 +4,7 @@ Web interface implementation.
 This module provides the web interface with device management, matrix view,
 and configuration controls.
 """
+
 import os
 import logging
 from pathlib import Path
@@ -34,8 +35,7 @@ class WebInterface:
         # Set up template engine
         template_dir = Path(__file__).parent / "templates"
         self.env = Environment(
-            loader=FileSystemLoader(str(template_dir)),
-            autoescape=True
+            loader=FileSystemLoader(str(template_dir)), autoescape=True
         )
 
     async def index_handler(self, request: Request) -> Response:
@@ -51,25 +51,45 @@ class WebInterface:
         devices = self.device_api.list_devices()
         device_stats = {
             "total": len(devices),
-            "online": sum(1 for d in devices.values() if d.get("status", {}).get("online", False)),
-            "cameras": sum(1 for d in devices.values() if "CAMERA" in d.get("type", "")),
-            "microphones": sum(1 for d in devices.values() if "MICROPHONE" in d.get("type", "")),
+            "online": sum(
+                1 for d in devices.values() if d.get("status", {}).get("online", False)
+            ),
+            "cameras": sum(
+                1 for d in devices.values() if "CAMERA" in d.get("type", "")
+            ),
+            "microphones": sum(
+                1 for d in devices.values() if "MICROPHONE" in d.get("type", "")
+            ),
         }
 
         # Get stream statistics
         streams = self.stream_api.list_streams()
         stream_stats = {
             "total": len(streams),
-            "active": sum(1 for s in streams.values() if s.get("status", {}).get("active", False)),
-            "video": sum(1 for s in streams.values() if s.get("source", {}).get("stream_type") in ["video", "both"]),
-            "audio": sum(1 for s in streams.values() if s.get("source", {}).get("stream_type") in ["audio", "both"]),
+            "active": sum(
+                1 for s in streams.values() if s.get("status", {}).get("active", False)
+            ),
+            "video": sum(
+                1
+                for s in streams.values()
+                if s.get("source", {}).get("stream_type") in ["video", "both"]
+            ),
+            "audio": sum(
+                1
+                for s in streams.values()
+                if s.get("source", {}).get("stream_type") in ["audio", "both"]
+            ),
         }
 
         # Get pipeline statistics
         pipelines = self.pipeline_api.list_pipelines()
         pipeline_stats = {
             "total": len(pipelines),
-            "running": sum(1 for p in pipelines.values() if p.get("status", {}).get("running", False)),
+            "running": sum(
+                1
+                for p in pipelines.values()
+                if p.get("status", {}).get("running", False)
+            ),
         }
 
         # Render template
@@ -77,7 +97,7 @@ class WebInterface:
         html = template.render(
             device_stats=device_stats,
             stream_stats=stream_stats,
-            pipeline_stats=pipeline_stats
+            pipeline_stats=pipeline_stats,
         )
 
         return web.Response(text=html, content_type="text/html")
@@ -94,7 +114,8 @@ class WebInterface:
         # Get active streams
         streams = self.stream_api.list_streams()
         active_streams = {
-            name: config for name, config in streams.items()
+            name: config
+            for name, config in streams.items()
             if config.get("status", {}).get("active", False)
         }
 
@@ -111,10 +132,7 @@ class WebInterface:
 
         # Render template
         template = self.env.get_template("matrix.html")
-        html = template.render(
-            video_streams=video_streams,
-            audio_streams=audio_streams
-        )
+        html = template.render(video_streams=video_streams, audio_streams=audio_streams)
 
         return web.Response(text=html, content_type="text/html")
 
@@ -137,9 +155,7 @@ class WebInterface:
         # Render template
         template = self.env.get_template("config.html")
         html = template.render(
-            config=server_config,
-            status=server_status,
-            tokens=tokens
+            config=server_config, status=server_status, tokens=tokens
         )
 
         return web.Response(text=html, content_type="text/html")

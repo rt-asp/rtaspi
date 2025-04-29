@@ -6,6 +6,7 @@ This module provides speech recognition capabilities using various engines:
 - Cloud recognition using Google Speech-to-Text
 - Keyword spotting
 """
+
 import json
 import wave
 import logging
@@ -15,12 +16,14 @@ import numpy as np
 
 try:
     from vosk import Model, KaldiRecognizer, SetLogLevel
+
     VOSK_AVAILABLE = True
 except ImportError:
     VOSK_AVAILABLE = False
 
 try:
     from google.cloud import speech
+
     GOOGLE_AVAILABLE = True
 except ImportError:
     GOOGLE_AVAILABLE = False
@@ -35,7 +38,7 @@ class SpeechRecognizer:
         model_path: Optional[str] = None,
         language: str = "en-US",
         credentials_path: Optional[str] = None,
-        keywords: Optional[List[str]] = None
+        keywords: Optional[List[str]] = None,
     ):
         """Initialize the speech recognizer.
 
@@ -57,7 +60,9 @@ class SpeechRecognizer:
 
             # Load Vosk model
             if not model_path:
-                model_path = str(Path(__file__).parent / "models" / "vosk-model-small-en")
+                model_path = str(
+                    Path(__file__).parent / "models" / "vosk-model-small-en"
+                )
 
             SetLogLevel(-1)  # Disable Kaldi logging
             self.model = Model(model_path)
@@ -79,10 +84,7 @@ class SpeechRecognizer:
             raise ValueError(f"Unsupported engine: {engine}")
 
     def recognize(
-        self,
-        audio: Union[np.ndarray, bytes],
-        sample_rate: int,
-        partial: bool = False
+        self, audio: Union[np.ndarray, bytes], sample_rate: int, partial: bool = False
     ) -> Dict[str, Any]:
         """Recognize speech in audio.
 
@@ -100,10 +102,7 @@ class SpeechRecognizer:
             return self._recognize_google(audio, sample_rate)
 
     def _recognize_vosk(
-        self,
-        audio: Union[np.ndarray, bytes],
-        sample_rate: int,
-        partial: bool
+        self, audio: Union[np.ndarray, bytes], sample_rate: int, partial: bool
     ) -> Dict[str, Any]:
         """Recognize speech using Vosk.
 
@@ -140,21 +139,21 @@ class SpeechRecognizer:
 
             for word in words:
                 if word.get("word", "").lower() in self.keywords:
-                    keywords_found.append({
-                        "keyword": word["word"],
-                        "start": word["start"],
-                        "end": word["end"],
-                        "confidence": word["conf"]
-                    })
+                    keywords_found.append(
+                        {
+                            "keyword": word["word"],
+                            "start": word["start"],
+                            "end": word["end"],
+                            "confidence": word["conf"],
+                        }
+                    )
 
             result["keywords"] = keywords_found
 
         return result
 
     def _recognize_google(
-        self,
-        audio: Union[np.ndarray, bytes],
-        sample_rate: int
+        self, audio: Union[np.ndarray, bytes], sample_rate: int
     ) -> Dict[str, Any]:
         """Recognize speech using Google Speech-to-Text.
 
@@ -174,7 +173,7 @@ class SpeechRecognizer:
             encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
             sample_rate_hertz=sample_rate,
             language_code=self.language,
-            enable_word_time_offsets=bool(self.keywords)
+            enable_word_time_offsets=bool(self.keywords),
         )
 
         # Create recognition audio
@@ -184,11 +183,7 @@ class SpeechRecognizer:
         response = self.client.recognize(config=config, audio=audio)
 
         # Process results
-        result = {
-            "text": "",
-            "confidence": 0.0,
-            "alternatives": []
-        }
+        result = {"text": "", "confidence": 0.0, "alternatives": []}
 
         for i, res in enumerate(response.results):
             alt = res.alternatives[0]
@@ -196,10 +191,9 @@ class SpeechRecognizer:
                 result["text"] = alt.transcript
                 result["confidence"] = alt.confidence
 
-            result["alternatives"].append({
-                "text": alt.transcript,
-                "confidence": alt.confidence
-            })
+            result["alternatives"].append(
+                {"text": alt.transcript, "confidence": alt.confidence}
+            )
 
             # Check for keywords
             if self.keywords and alt.words:
@@ -207,12 +201,14 @@ class SpeechRecognizer:
 
                 for word in alt.words:
                     if word.word.lower() in self.keywords:
-                        keywords_found.append({
-                            "keyword": word.word,
-                            "start": word.start_time.total_seconds(),
-                            "end": word.end_time.total_seconds(),
-                            "confidence": alt.confidence
-                        })
+                        keywords_found.append(
+                            {
+                                "keyword": word.word,
+                                "start": word.start_time.total_seconds(),
+                                "end": word.end_time.total_seconds(),
+                                "confidence": alt.confidence,
+                            }
+                        )
 
                 if keywords_found:
                     result.setdefault("keywords", []).extend(keywords_found)

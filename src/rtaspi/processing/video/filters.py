@@ -7,6 +7,7 @@ This module provides video filter implementations using OpenCV, including:
 - Edge detection
 - Noise reduction
 """
+
 import cv2
 import numpy as np
 from typing import Optional, Dict, Any, Tuple
@@ -17,7 +18,9 @@ from rtaspi.constants import FilterType
 class VideoFilter:
     """Base class for video filters."""
 
-    def __init__(self, filter_type: FilterType, params: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self, filter_type: FilterType, params: Optional[Dict[str, Any]] = None
+    ):
         """Initialize the video filter.
 
         Args:
@@ -96,7 +99,7 @@ class VideoFilter:
             gray,
             threshold1=threshold1,
             threshold2=threshold2,
-            apertureSize=aperture_size
+            apertureSize=aperture_size,
         )
 
         return cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
@@ -116,10 +119,7 @@ class VideoFilter:
 
         # Apply Gaussian blur
         return cv2.GaussianBlur(
-            frame,
-            ksize=(kernel_size, kernel_size),
-            sigmaX=sigma,
-            sigmaY=sigma
+            frame, ksize=(kernel_size, kernel_size), sigmaX=sigma, sigmaY=sigma
         )
 
     def _apply_sharpen(self, frame: np.ndarray) -> np.ndarray:
@@ -135,11 +135,7 @@ class VideoFilter:
         amount = self.params.get("amount", 1.0)
 
         # Create sharpening kernel
-        kernel = np.array([
-            [-1, -1, -1],
-            [-1,  9, -1],
-            [-1, -1, -1]
-        ])
+        kernel = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
 
         # Apply kernel
         sharpened = cv2.filter2D(frame, -1, kernel)
@@ -274,10 +270,9 @@ class VideoFilter:
 
         # Create lookup table
         inv_gamma = 1.0 / gamma
-        table = np.array([
-            ((i / 255.0) ** inv_gamma) * 255
-            for i in np.arange(0, 256)
-        ]).astype("uint8")
+        table = np.array(
+            [((i / 255.0) ** inv_gamma) * 255 for i in np.arange(0, 256)]
+        ).astype("uint8")
 
         # Apply gamma correction
         return cv2.LUT(frame, table)
@@ -319,19 +314,12 @@ class VideoFilter:
         strength = self.params.get("strength", 7)
 
         if method == "gaussian":
-            return cv2.GaussianBlur(
-                frame,
-                (kernel_size, kernel_size),
-                strength
-            )
+            return cv2.GaussianBlur(frame, (kernel_size, kernel_size), strength)
         elif method == "median":
             return cv2.medianBlur(frame, kernel_size)
         elif method == "bilateral":
             return cv2.bilateralFilter(
-                frame,
-                d=kernel_size,
-                sigmaColor=strength,
-                sigmaSpace=strength
+                frame, d=kernel_size, sigmaColor=strength, sigmaSpace=strength
             )
         else:
             raise ValueError(f"Unsupported noise reduction method: {method}")
