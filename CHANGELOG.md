@@ -2,6 +2,33 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.15] - 2025-04-29
+
+### Added
+- Changes in DONE.md
+- Changes in src/rtaspi/api/devices.py
+- Changes in src/rtaspi/api/pipelines.py
+- Changes in src/rtaspi/api/server.py
+- Changes in src/rtaspi/api/streams.py
+- Changes in src/rtaspi/processing/audio/filters.py
+- Changes in src/rtaspi/processing/video/detection.py
+- Changes in src/rtaspi/processing/video/filters.py
+- Changes in src/rtaspi/quick/camera.py
+- Changes in src/rtaspi/quick/microphone.py
+- Changes in src/rtaspi/quick/utils.py
+- Changes in src/rtaspi/web/__init__.py
+- Changes in src/rtaspi/web/api.py
+- Changes in src/rtaspi/web/interface.py
+- Changes in src/rtaspi/web/server.py
+
+### Changed
+- Changes in src/rtaspi/api/__init__.py
+- Changes in src/rtaspi/cli/completion/bash.sh
+- Changes in src/rtaspi/cli/completion/fish.fish
+- Changes in src/rtaspi/cli/completion/zsh.zsh
+- Changes in src/rtaspi/processing/__init__.py
+- Changes in src/rtaspi/quick/__init__.py
+
 ## [0.1.14] - 2025-04-29
 
 ### Added

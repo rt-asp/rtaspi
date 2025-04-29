@@ -103,6 +103,43 @@
   - [ ] System watchera dla plików konfiguracyjnych (hot reload)
   - [ ] Zarządzanie zasobami (CPU/pamięć) w pipeline'ach
 
+## 9. Wsparcie dla Urządzeń Embedded
+- [x] Utworzyć konfiguracje dla popularnych platform:
+  - [x] Raspberry Pi (różne modele)
+  - [x] Radxa
+  - [x] Jetson Nano
+- [x] Zautomatyzować inicjalizację i konfigurację:
+  - [x] Wykrywanie sprzętu
+  - [x] Automatyczna konfiguracja zależności
+  - [x] Optymalizacja dla ograniczonych zasobów
+- [x] Przygotować skrypty instalacyjne:
+  - [x] Obraz systemowy z prekonfigurowaną biblioteką
+  - [x] Skrypty automatyzujące instalację
+
+## 10. Testy Integracyjne
+- [x] Rozbudować system testów:
+  - [x] Testy jednostkowe dla nowych komponentów
+  - [x] Testy integracyjne dla kluczowych funkcjonalności
+  - [x] Testy wydajności streamingu
+- [x] Stworzyć środowisko testowe:
+  - [x] Symulatory urządzeń (kamery, mikrofony)
+  - [x] Wirtualne serwery RTSP/RTMP/WebRTC
+  - [x] Automacja testów w CI/CD
+
+## 11. Dokumentacja docs/
+- [x] Przygotować kompletną dokumentację:
+  - [x] Referencja API
+  - [x] Poradnik użytkownika
+  - [x] Tutoriale dla różnych poziomów zaawansowania
+- [x] Stworzyć przykłady:
+  - [x] Podstawowe przykłady użycia
+  - [x] Przykłady dla urządzeń embedded
+  - [x] Zaawansowane przykłady integracji
+- [x] Dokumentacja przetwarzania:
+  - [x] Przewodniki po dostępnych filtrach
+  - [x] Integracja z OpenCV i bibliotekami audio
+  - [x] Tworzenie własnych komponentów przetwarzania
+
 ## Oczekiwana struktura plików
 
 ```
