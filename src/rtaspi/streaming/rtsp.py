@@ -33,7 +33,10 @@ class RTSPServer:
         self.port_start = streaming_config.get('port_start', 8554)
         self.storage_path = config.get('system', {}).get('storage_path', 'storage')
         
-    def start_stream(self, device, stream_id, output_dir):
+        # Słownik aktywnych strumieni
+        self.active_streams = {}
+        
+    async def start_stream(self, device, stream_id, output_dir):
         """
         Uruchamia strumień RTSP z lokalnego urządzenia.
         
@@ -83,14 +86,14 @@ class RTSPServer:
                 "protocol": "rtsp",
                 "port": port
             }
-            
+            self.active_streams[stream_id] = stream_info
             return url
             
         except Exception as e:
             logger.error(f"Błąd podczas uruchamiania strumienia RTSP: {e}")
             return None
             
-    def proxy_stream(self, device, stream_id, source_url, output_dir, transcode=False):
+    async def proxy_stream(self, device, stream_id, source_url, output_dir, transcode=False):
         """
         Uruchamia proxy RTSP dla zdalnego strumienia.
         
@@ -154,11 +157,72 @@ class RTSPServer:
             # Utworzenie URL do strumienia
             url = f"rtsp://localhost:{port}/{stream_id}"
             
+            # Zapisz informacje o strumieniu
+            stream_info = {
+                "process": process,
+                "device_id": device.device_id,
+                "type": device.type,
+                "url": url,
+                "protocol": "rtsp",
+                "port": port
+            }
+            self.active_streams[stream_id] = stream_info
             return url
             
         except Exception as e:
-            logger.error(f"Błąd podczas uruchamiania proxy RTSP: {e}")
+            logger.error(f"Błąd podczas uruchamiania strumienia RTSP: {e}")
             return None
+            
+    async def stop_stream(self, stream_id):
+        """
+        Zatrzymuje strumień RTSP.
+        
+        Args:
+            stream_id (str): Identyfikator strumienia.
+            
+        Returns:
+            bool: True jeśli udało się zatrzymać strumień, False w przeciwnym razie.
+        """
+        try:
+            if stream_id not in self.active_streams:
+                logger.warning(f"Próba zatrzymania nieistniejącego strumienia: {stream_id}")
+                return False
+                
+            stream_info = self.active_streams[stream_id]
+            process = stream_info["process"]
+            
+            # Zatrzymaj proces FFmpeg
+            process.terminate()
+            process.wait(timeout=5)
+            
+            # Usuń informacje o strumieniu
+            del self.active_streams[stream_id]
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"Błąd podczas zatrzymywania strumienia RTSP: {e}")
+            return False
+            
+    def get_stream_status(self, stream_id):
+        """
+        Sprawdza status strumienia.
+        
+        Args:
+            stream_id (str): Identyfikator strumienia.
+            
+        Returns:
+            str: Status strumienia ('running', 'stopped', 'not_found')
+        """
+        if stream_id not in self.active_streams:
+            return 'not_found'
+            
+        stream_info = self.active_streams[stream_id]
+        process = stream_info["process"]
+        
+        if process.poll() is None:
+            return 'running'
+        return 'stopped'
             
     def _prepare_input_args(self, device):
         """

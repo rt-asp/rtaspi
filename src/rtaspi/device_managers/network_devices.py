@@ -131,7 +131,7 @@ class NetworkDevicesManager:
 
     def _publish_devices_info(self):
         """Publikuje informacje o urządzeniach."""
-        devices_dict = {device_id: device.to_dict() for device_id, device in self.devices.items()}
+        devices_dict = {device_id: device.to_dict() for device_id, device in self.devices.items() if isinstance(device, NetworkDevice)}
         self.mcp_client.publish("network_devices/devices", devices_dict)
 
     def _publish_stream_stopped(self, stream_id, stream_info):
@@ -193,11 +193,12 @@ class NetworkDevicesManager:
             devices_data = []
 
             for device_id, device in self.devices.items():
-                # Utworzenie słownika z danymi urządzenia
-                device_data = device.to_dict()
-                device_data['username'] = device.username
-                device_data['password'] = device.password
-                devices_data.append(device_data)
+                if isinstance(device, NetworkDevice):
+                    # Utworzenie słownika z danymi urządzenia
+                    device_data = device.to_dict()
+                    device_data['username'] = device.username
+                    device_data['password'] = device.password
+                    devices_data.append(device_data)
 
             # Zapisanie do pliku
             with open(self.devices_file, 'w') as f:
@@ -212,7 +213,8 @@ class NetworkDevicesManager:
         """Skanuje zdalne urządzenia."""
         # Sprawdzenie stanu znanych urządzeń
         for device_id, device in list(self.devices.items()):
-            self._check_device_status(device)
+            if isinstance(device, NetworkDevice):
+                self._check_device_status(device)
 
         # Wykrywanie nowych urządzeń
         if self.discovery_enabled:
@@ -274,9 +276,7 @@ class NetworkDevicesManager:
                     # Add discovered network devices
                     self._process_discovered_devices(discovered_devices)
 
-            # Discover local media devices
-            local_devices = self._discover_local_media_devices()
-            self._process_discovered_devices(local_devices)
+            # Network devices manager only handles network devices
 
         except Exception as e:
             logger.error(f"Błąd podczas wykrywania urządzeń: {e}")
@@ -292,15 +292,16 @@ class NetworkDevicesManager:
 
                 device_exists = False
                 for device in self.devices.values():
-                    if device.ip == ip and device.port == port:
-                        # For network devices, check IP and port
-                        if device_index is None:
-                            device_exists = True
-                            break
-                        # For local devices, also check device index
-                        elif hasattr(device, 'device_index') and device.device_index == device_index:
-                            device_exists = True
-                            break
+                    if isinstance(device, NetworkDevice):
+                        if device.ip == ip and device.port == port:
+                            # For network devices, check IP and port
+                            if device_index is None:
+                                device_exists = True
+                                break
+                            # For local devices, also check device index
+                            elif hasattr(device, 'device_index') and device.device_index == device_index:
+                                device_exists = True
+                                break
 
                 if not device_exists:
                     # Add new device
@@ -320,106 +321,6 @@ class NetworkDevicesManager:
                     )
             except Exception as e:
                 logger.error(f"Błąd podczas przetwarzania wykrytego urządzenia: {e}")
-
-    def _discover_local_media_devices(self):
-        """Discover local media devices connected to the system."""
-        logger.info("Wykrywanie lokalnych urządzeń audio/wideo...")
-
-        discovered = []
-
-        try:
-            # Try to import necessary libraries
-            import pyaudio
-            import cv2
-
-            # Discover audio devices using PyAudio
-            try:
-                p = pyaudio.PyAudio()
-                info = p.get_host_api_info_by_index(0)
-                num_devices = info.get('deviceCount')
-
-                for i in range(num_devices):
-                    device_info = p.get_device_info_by_index(i)
-
-                    # Check if it's input (microphone) or output (speaker) device
-                    is_input = device_info.get('maxInputChannels') > 0
-                    is_output = device_info.get('maxOutputChannels') > 0
-
-                    if is_input:
-                        discovered.append({
-                            'name': f"Mikrofon: {device_info.get('name')}",
-                            'ip': '127.0.0.1',
-                            'port': 0,
-                            'type': 'audio',
-                            'protocol': 'local',
-                            'device_index': i,
-                            'is_input': True
-                        })
-
-                    if is_output:
-                        discovered.append({
-                            'name': f"Głośnik: {device_info.get('name')}",
-                            'ip': '127.0.0.1',
-                            'port': 0,
-                            'type': 'audio',
-                            'protocol': 'local',
-                            'device_index': i,
-                            'is_output': True
-                        })
-
-                p.terminate()
-            except Exception as e:
-                logger.warning(f"Nie udało się wykryć urządzeń audio: {e}")
-
-            # Discover camera devices using OpenCV
-            try:
-                # On Linux, check /dev/video* devices
-                if platform.system() == 'Linux':
-                    import glob
-                    video_devices = glob.glob('/dev/video*')
-
-                    for i, device_path in enumerate(video_devices):
-                        try:
-                            # Try to open the device to check if it's a camera
-                            cap = cv2.VideoCapture(i)
-                            if cap.isOpened():
-                                discovered.append({
-                                    'name': f"Kamera: {device_path}",
-                                    'ip': '127.0.0.1',
-                                    'port': 0,
-                                    'type': 'video',
-                                    'protocol': 'local',
-                                    'device_index': i,
-                                    'device_path': device_path
-                                })
-                                cap.release()
-                        except:
-                            pass
-                else:
-                    # For other platforms, try the first few indexes
-                    for i in range(5):  # Try first 5 possible cameras
-                        try:
-                            cap = cv2.VideoCapture(i)
-                            if cap.isOpened():
-                                discovered.append({
-                                    'name': f"Kamera {i}",
-                                    'ip': '127.0.0.1',
-                                    'port': 0,
-                                    'type': 'video',
-                                    'protocol': 'local',
-                                    'device_index': i
-                                })
-                                cap.release()
-                        except:
-                            pass
-            except Exception as e:
-                logger.warning(f"Nie udało się wykryć kamer: {e}")
-
-        except ImportError as e:
-            logger.warning(f"Nie można importować bibliotek do wykrywania lokalnych urządzeń: {e}")
-
-        logger.info(f"Wykryto {len(discovered)} lokalnych urządzeń audio/wideo")
-        return discovered
 
     def add_device(self, name, ip, port, username="", password="",
                    type="video", protocol="rtsp", paths=None,

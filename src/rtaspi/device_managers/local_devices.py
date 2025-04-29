@@ -58,10 +58,35 @@ class LocalDevicesManager(DeviceManager):
             'video': {},  # device_id -> LocalDevice
             'audio': {}  # device_id -> LocalDevice
         }
+        self.streams = {}  # stream_id -> stream_info
 
         # Przygotowanie katalogów
         self.local_streams_path = os.path.join(self.storage_path, 'local_streams')
         os.makedirs(self.local_streams_path, exist_ok=True)
+
+    async def initialize(self):
+        """Inicjalizuje menedżera lokalnych urządzeń."""
+        # Skanowanie urządzeń
+        self._scan_devices()
+
+        # Automatyczne uruchamianie strumieni
+        if self.auto_start:
+            await self._auto_start_streams()
+
+    def update_device_status(self, device_id, status):
+        """
+        Aktualizuje status urządzenia.
+
+        Args:
+            device_id (str): Identyfikator urządzenia.
+            status (str): Nowy status urządzenia.
+        """
+        # Sprawdź w obu słownikach urządzeń
+        for devices in [self.devices['video'], self.devices['audio']]:
+            if device_id in devices:
+                devices[device_id].status = status
+                self._publish_devices_info()
+                return
 
     def _get_client_id(self):
         """
@@ -362,6 +387,11 @@ class LocalDevicesManager(DeviceManager):
                     video_devices[device_id] = device
                     self.devices['video'][device_id] = device
 
+                    # Dodanie formatów i rozdzielczości
+                    device.formats = formats
+                    device.resolutions = resolutions
+                    device.status = 'online'
+
         except Exception as e:
             logger.error(f"Błąd podczas skanowania urządzeń wideo w systemie macOS: {e}")
 
@@ -488,39 +518,42 @@ class LocalDevicesManager(DeviceManager):
         except Exception as e:
             logger.error(f"Błąd podczas skanowania urządzeń audio w systemie Windows: {e}")
 
-    def _auto_start_streams(self):
+    async def _auto_start_streams(self):
         """Automatycznie uruchamia strumienie dla wykrytych urządzeń."""
-        # Automatyczne uruchamianie strumieni wideo
-        if self.enable_video:
-            for device_id, device in self.devices['video'].items():
-                # Sprawdzenie, czy strumień już istnieje
-                device_has_stream = False
-                for stream_info in self.streams.values():
-                    if stream_info["device_id"] == device_id:
-                        device_has_stream = True
-                        break
+        try:
+            # Automatyczne uruchamianie strumieni wideo
+            if self.enable_video:
+                for device_id, device in self.devices['video'].items():
+                    # Sprawdzenie, czy strumień już istnieje
+                    device_has_stream = False
+                    for stream_info in self.streams.values():
+                        if stream_info["device_id"] == device_id:
+                            device_has_stream = True
+                            break
 
-                # Uruchomienie strumienia RTSP, jeśli nie istnieje
-                if not device_has_stream:
-                    logger.info(f"Automatyczne uruchamianie strumienia dla urządzenia wideo {device_id}")
-                    self.start_stream(device_id, protocol="rtsp")
+                    # Uruchomienie strumienia RTSP, jeśli nie istnieje
+                    if not device_has_stream:
+                        logger.info(f"Automatyczne uruchamianie strumienia dla urządzenia wideo {device_id}")
+                        await self.start_stream(device_id, protocol="rtsp")
 
-        # Automatyczne uruchamianie strumieni audio
-        if self.enable_audio:
-            for device_id, device in self.devices['audio'].items():
-                # Sprawdzenie, czy strumień już istnieje
-                device_has_stream = False
-                for stream_info in self.streams.values():
-                    if stream_info["device_id"] == device_id:
-                        device_has_stream = True
-                        break
+            # Automatyczne uruchamianie strumieni audio
+            if self.enable_audio:
+                for device_id, device in self.devices['audio'].items():
+                    # Sprawdzenie, czy strumień już istnieje
+                    device_has_stream = False
+                    for stream_info in self.streams.values():
+                        if stream_info["device_id"] == device_id:
+                            device_has_stream = True
+                            break
 
-                # Uruchomienie strumienia RTSP, jeśli nie istnieje
-                if not device_has_stream:
-                    logger.info(f"Automatyczne uruchamianie strumienia dla urządzenia audio {device_id}")
-                    self.start_stream(device_id, protocol="rtsp")
+                    # Uruchomienie strumienia RTSP, jeśli nie istnieje
+                    if not device_has_stream:
+                        logger.info(f"Automatyczne uruchamianie strumienia dla urządzenia audio {device_id}")
+                        await self.start_stream(device_id, protocol="rtsp")
+        except Exception as e:
+            logger.error(f"Błąd podczas automatycznego uruchamiania strumieni: {e}")
 
-    def start_stream(self, device_id, protocol='rtsp'):
+    async def start_stream(self, device_id, protocol='rtsp'):
         """
         Uruchamia strumień z lokalnego urządzenia.
 
@@ -562,11 +595,11 @@ class LocalDevicesManager(DeviceManager):
         try:
             # Uruchomienie odpowiedniego serwera streamingu
             if protocol == 'rtsp':
-                url = self.rtsp_server.start_stream(device, stream_id, output_dir)
+                url = await self.rtsp_server.start_stream(device, stream_id, output_dir)
             elif protocol == 'rtmp':
-                url = self.rtmp_server.start_stream(device, stream_id, output_dir)
+                url = await self.rtmp_server.start_stream(device, stream_id, output_dir)
             elif protocol == 'webrtc':
-                url = self.webrtc_server.start_stream(device, stream_id, output_dir)
+                url = await self.webrtc_server.start_stream(device, stream_id, output_dir)
             else:
                 logger.error(f"Nieobsługiwany protokół: {protocol}")
                 return None
@@ -583,14 +616,62 @@ class LocalDevicesManager(DeviceManager):
                     "url": url
                 })
 
+                # Store stream info
+                stream_info = {
+                    "stream_id": stream_id,
+                    "device_id": device_id,
+                    "type": device_type,
+                    "protocol": protocol,
+                    "url": url
+                }
+                self.streams[stream_id] = stream_info
                 return url
             else:
                 logger.error(f"Nie można uruchomić strumienia {protocol} dla urządzenia {device_id}")
                 return None
-
         except Exception as e:
             logger.error(f"Błąd podczas uruchamiania strumienia {protocol} dla urządzenia {device_id}: {e}")
             return None
+            
+    async def stop_stream(self, stream_id):
+        """
+        Zatrzymuje strumień.
+
+        Args:
+            stream_id (str): Identyfikator strumienia.
+
+        Returns:
+            bool: True jeśli udało się zatrzymać strumień, False w przeciwnym razie.
+        """
+        if stream_id not in self.streams:
+            logger.warning(f"Próba zatrzymania nieistniejącego strumienia: {stream_id}")
+            return False
+
+        stream_info = self.streams[stream_id]
+        protocol = stream_info["protocol"]
+
+        try:
+            # Stop the stream based on protocol
+            if protocol == 'rtsp':
+                success = await self.rtsp_server.stop_stream(stream_id)
+            elif protocol == 'rtmp':
+                success = await self.rtmp_server.stop_stream(stream_id)
+            elif protocol == 'webrtc':
+                success = await self.webrtc_server.stop_stream(stream_id)
+            else:
+                logger.error(f"Nieobsługiwany protokół: {protocol}")
+                return False
+
+            if success:
+                # Remove stream info and publish event
+                del self.streams[stream_id]
+                self._publish_stream_stopped(stream_id, stream_info)
+                return True
+            return False
+
+        except Exception as e:
+            logger.error(f"Błąd podczas zatrzymywania strumienia: {e}")
+            return False
 
     def _handle_command(self, topic, message):
         """
