@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.14] - 2025-04-29
+
+### Added
+- Changes in src/rtaspi/api/__init__.py
+- Changes in src/rtaspi/cli/__init__.py
+- Changes in src/rtaspi/cli/commands/__init__.py
+- Changes in src/rtaspi/cli/commands/config.py
+- Changes in src/rtaspi/cli/commands/devices.py
+- Changes in src/rtaspi/cli/completion/bash.sh
+- Changes in src/rtaspi/cli/completion/fish.fish
+- Changes in src/rtaspi/cli/completion/zsh.zsh
+- Changes in src/rtaspi/cli/shell.py
+- Changes in src/rtaspi/constants/__init__.py
+- Changes in src/rtaspi/constants/devices.py
+- Changes in src/rtaspi/constants/filters.py
+- Changes in src/rtaspi/constants/outputs.py
+- Changes in src/rtaspi/constants/protocols.py
+- Changes in src/rtaspi/processing/__init__.py
+- Changes in src/rtaspi/quick/__init__.py
+- Changes in src/rtaspi/schemas/__init__.py
+- Changes in src/rtaspi/schemas/device.py
+- Changes in src/rtaspi/schemas/pipeline.py
+- Changes in src/rtaspi/schemas/stream.py
+
 ## [0.1.13] - 2025-04-29
 
 ## [0.1.12] - 2025-04-29

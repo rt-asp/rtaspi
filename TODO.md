@@ -1,25 +1,24 @@
 # TODO - Lista Zadań 
 
-
 ## 1. Refaktoryzacja i Struktura Kodu
 - [ ] Utworzenie nowej struktury katalogów:
   - [ ] Stworzyć nowe katalogi: `api/`, `cli/`, `constants/`, `quick/`, `processing/`, `schemas/`
-  - [ ] Przeorganizować istniejące katalogi: `device_managers/`, `streaming/`
-  - [ ] Przygotować pliki `__init__.py` dla wszystkich modułów
+  - [x] Przeorganizować istniejące katalogi: `device_managers/`, `streaming/`
+  - [x] Przygotować pliki `__init__.py` dla wszystkich modułów
 - [ ] Implementacja centralnego systemu stałych i enumeracji:
   - [ ] Stworzyć `constants/filters.py` z `FilterType` (GRAYSCALE, EDGE_DETECTION, FACE_DETECTION, itd.)
   - [ ] Stworzyć `constants/devices.py` z `DeviceType` (CAMERA, MICROPHONE, NETWORK_CAMERA, itd.)
   - [ ] Stworzyć `constants/outputs.py` z `OutputType` (RTSP, RTMP, FILE, EVENT, itd.)
   - [ ] Stworzyć `constants/protocols.py` z `ProtocolType` (HTTP, RTSP, RTMP, WEBRTC, itd.)
 - [ ] Podział dużych plików na mniejsze moduły:
-  - [ ] Podzielić pliki większe niż 300 linii kodu
+  - [ ] Podzielić pliki większe niż 400 linii kodu
   - [ ] Wydzielić wspólne funkcjonalności do klas bazowych i modułów pomocniczych
   - [ ] Zapewnić kompatybilność wsteczną
 
 ## 2. System Konfiguracji
-- [ ] Zaimplementować hierarchiczny system konfiguracji:
-  - [ ] Domyślna konfiguracja w kodzie (`src/rtaspi/core/defaults.py`)
-  - [ ] Globalna konfiguracja (`rtaspi.config.yaml`)
+- [x] Zaimplementować hierarchiczny system konfiguracji:
+  - [x] Domyślna konfiguracja w kodzie (`src/rtaspi/core/defaults.py`)
+  - [x] Globalna konfiguracja (`rtaspi.config.yaml`)
   - [ ] Konfiguracja użytkownika (`~/.config/rtaspi/config.yaml`)
   - [ ] Konfiguracja projektu (`.rtaspi/config.yaml`)
   - [ ] Obsługa zmiennych środowiskowych (`.env`)
@@ -105,45 +104,43 @@
   - [ ] Zarządzanie zasobami (CPU/pamięć) w pipeline'ach
 
 ## 9. Wsparcie dla Urządzeń Embedded
-- [ ] Utworzyć konfiguracje dla popularnych platform:
-  - [ ] Raspberry Pi (różne modele)
-  - [ ] Radxa
-  - [ ] Jetson Nano
-- [ ] Zautomatyzować inicjalizację i konfigurację:
-  - [ ] Wykrywanie sprzętu
-  - [ ] Automatyczna konfiguracja zależności
-  - [ ] Optymalizacja dla ograniczonych zasobów
-- [ ] Przygotować skrypty instalacyjne:
-  - [ ] Obraz systemowy z prekonfigurowaną biblioteką
-  - [ ] Skrypty automatyzujące instalację
+- [x] Utworzyć konfiguracje dla popularnych platform:
+  - [x] Raspberry Pi (różne modele)
+  - [x] Radxa
+  - [x] Jetson Nano
+- [x] Zautomatyzować inicjalizację i konfigurację:
+  - [x] Wykrywanie sprzętu
+  - [x] Automatyczna konfiguracja zależności
+  - [x] Optymalizacja dla ograniczonych zasobów
+- [x] Przygotować skrypty instalacyjne:
+  - [x] Obraz systemowy z prekonfigurowaną biblioteką
+  - [x] Skrypty automatyzujące instalację
 
 ## 10. Testy Integracyjne
-- [ ] Rozbudować system testów:
-  - [ ] Testy jednostkowe dla nowych komponentów
-  - [ ] Testy integracyjne dla kluczowych funkcjonalności
-  - [ ] Testy wydajności streamingu
-- [ ] Stworzyć środowisko testowe:
-  - [ ] Symulatory urządzeń (kamery, mikrofony)
-  - [ ] Wirtualne serwery RTSP/RTMP/WebRTC
-  - [ ] Automacja testów w CI/CD
+- [x] Rozbudować system testów:
+  - [x] Testy jednostkowe dla nowych komponentów
+  - [x] Testy integracyjne dla kluczowych funkcjonalności
+  - [x] Testy wydajności streamingu
+- [x] Stworzyć środowisko testowe:
+  - [x] Symulatory urządzeń (kamery, mikrofony)
+  - [x] Wirtualne serwery RTSP/RTMP/WebRTC
+  - [x] Automacja testów w CI/CD
 
 ## 11. Dokumentacja docs/
-- [ ] Przygotować kompletną dokumentację:
-  - [ ] Referencja API
-  - [ ] Poradnik użytkownika
-  - [ ] Tutoriale dla różnych poziomów zaawansowania
-- [ ] Stworzyć przykłady:
-  - [ ] Podstawowe przykłady użycia
-  - [ ] Przykłady dla urządzeń embedded
-  - [ ] Zaawansowane przykłady integracji
-- [ ] Dokumentacja przetwarzania:
-  - [ ] Przewodniki po dostępnych filtrach
-  - [ ] Integracja z OpenCV i bibliotekami audio
-  - [ ] Tworzenie własnych komponentów przetwarzania
+- [x] Przygotować kompletną dokumentację:
+  - [x] Referencja API
+  - [x] Poradnik użytkownika
+  - [x] Tutoriale dla różnych poziomów zaawansowania
+- [x] Stworzyć przykłady:
+  - [x] Podstawowe przykłady użycia
+  - [x] Przykłady dla urządzeń embedded
+  - [x] Zaawansowane przykłady integracji
+- [x] Dokumentacja przetwarzania:
+  - [x] Przewodniki po dostępnych filtrach
+  - [x] Integracja z OpenCV i bibliotekami audio
+  - [x] Tworzenie własnych komponentów przetwarzania
 
-
-
-## Oczekiwana struktura plikow
+## Oczekiwana struktura plików
 
 ```
 .
@@ -340,7 +337,6 @@
     │   └── test_camera.py
     └── test_streaming.py
 ```
-
 
 ## Plan
 
