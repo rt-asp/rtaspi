@@ -1,0 +1,4 @@
+- w folderze examples/ dodaj pliki przykladowego wykorzystania biblioteki np do przegladania lokalnej kamerty poprzez rtmp lub webrtc, wysylania glosu do mikrofonu i sterowanie glosnika
+- stworz webserver aby mial https na skonfigurowanej domenie, np. kamera.rtaspi.pl do celowe testowych i na produkcji na vps
+- stworz przyklady i prekonfigurowane rozwiazanie dla embeddded jak rpi, radxa, itd, aby inicjacja była automatyczna i wykorzsytanie sprzetu bez potrzeby konfiguracji 
+- stworz testy integracyjne, aby przetestowac lokalnego hosta z klientami rtmp, webrtc, http, https, aby sprawdzic czy wszystko dziala

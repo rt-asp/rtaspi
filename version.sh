@@ -20,7 +20,10 @@ fi
 
 pip install -r requirements.txt
 
+# Uninstall and reinstall to be safe
+pip uninstall -y rtaspi
 pip install -e .
+
 python version/src.py -f src/rtaspi/__init__.py
 python version/src.py -f src/rtaspi/_version.py
 python version/project.py

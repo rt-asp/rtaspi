@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.7] - 2025-04-29
+
+### Added
+- Changes in .pre-commit-config.yaml
+- Changes in TODO.md
+- Changes in setup.cfg
+- Changes in tests/conftest.py
+
+### Fixed
+- Changes in tests/test_discovery.py
+- Changes in tests/test_local_devices.py
+- Changes in tests/test_network_devices.py
+- Changes in tests/test_streaming.py
+
 ## [0.1.6] - 2025-04-28
 
 ## [0.1.5] - 2025-04-28
