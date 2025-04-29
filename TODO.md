@@ -3,22 +3,22 @@
 ## 1. Refaktoryzacja i Struktura Kodu
 - [ ] Utworzenie nowej struktury katalogów:
   - [ ] Stworzyć nowe katalogi: `api/`, `cli/`, `constants/`, `quick/`, `processing/`, `schemas/`
-  - [x] Przeorganizować istniejące katalogi: `device_managers/`, `streaming/`
-  - [x] Przygotować pliki `__init__.py` dla wszystkich modułów
+  - [ ] Przeorganizować istniejące katalogi: `device_managers/`, `streaming/`
+  - [ ] Przygotować pliki `__init__.py` dla wszystkich modułów
 - [ ] Implementacja centralnego systemu stałych i enumeracji:
   - [ ] Stworzyć `constants/filters.py` z `FilterType` (GRAYSCALE, EDGE_DETECTION, FACE_DETECTION, itd.)
   - [ ] Stworzyć `constants/devices.py` z `DeviceType` (CAMERA, MICROPHONE, NETWORK_CAMERA, itd.)
   - [ ] Stworzyć `constants/outputs.py` z `OutputType` (RTSP, RTMP, FILE, EVENT, itd.)
   - [ ] Stworzyć `constants/protocols.py` z `ProtocolType` (HTTP, RTSP, RTMP, WEBRTC, itd.)
 - [ ] Podział dużych plików na mniejsze moduły:
-  - [ ] Podzielić pliki większe niż 400 linii kodu
+  - [ ] Podzielić pliki większe niż 300 linii kodu
   - [ ] Wydzielić wspólne funkcjonalności do klas bazowych i modułów pomocniczych
   - [ ] Zapewnić kompatybilność wsteczną
 
 ## 2. System Konfiguracji
-- [x] Zaimplementować hierarchiczny system konfiguracji:
-  - [x] Domyślna konfiguracja w kodzie (`src/rtaspi/core/defaults.py`)
-  - [x] Globalna konfiguracja (`rtaspi.config.yaml`)
+- [ ] Zaimplementować hierarchiczny system konfiguracji:
+  - [ ] Domyślna konfiguracja w kodzie (`src/rtaspi/core/defaults.py`)
+  - [ ] Globalna konfiguracja (`rtaspi.config.yaml`)
   - [ ] Konfiguracja użytkownika (`~/.config/rtaspi/config.yaml`)
   - [ ] Konfiguracja projektu (`.rtaspi/config.yaml`)
   - [ ] Obsługa zmiennych środowiskowych (`.env`)
@@ -102,6 +102,61 @@
   - [ ] Parsery YAML/JSON z walidacją schematów
   - [ ] System watchera dla plików konfiguracyjnych (hot reload)
   - [ ] Zarządzanie zasobami (CPU/pamięć) w pipeline'ach
+
+## 9. Wsparcie dla Urządzeń Embedded
+- [ ] Utworzyć konfiguracje dla popularnych platform:
+  - [ ] Raspberry Pi (różne modele)
+  - [ ] Radxa
+  - [ ] Jetson Nano
+- [ ] Zautomatyzować inicjalizację i konfigurację:
+  - [ ] Wykrywanie sprzętu
+  - [ ] Automatyczna konfiguracja zależności
+  - [ ] Optymalizacja dla ograniczonych zasobów
+- [ ] Przygotować skrypty instalacyjne:
+  - [ ] Obraz systemowy z prekonfigurowaną biblioteką
+  - [ ] Skrypty automatyzujące instalację
+
+## 10. Testy Integracyjne
+- [ ] Rozbudować system testów:
+  - [ ] Testy jednostkowe dla nowych komponentów
+  - [ ] Testy integracyjne dla kluczowych funkcjonalności
+  - [ ] Testy wydajności streamingu
+- [ ] Stworzyć środowisko testowe:
+  - [ ] Symulatory urządzeń (kamery, mikrofony)
+  - [ ] Wirtualne serwery RTSP/RTMP/WebRTC
+  - [ ] Automacja testów w CI/CD
+
+## 11. Wirtualne Urządzenia i Integracja z Przeglądarkę
+- [ ] Implementacja wirtualnych urządzeń z zewnętrznych źródeł:
+  - [ ] Stworzyć moduł `virtual_devices/` do zarządzania wirtualnymi urządzeniami
+  - [ ] Funkcja montowania strumieni RTSP/RTMP/WebRTC jako wirtualnych urządzeń lokalnych
+  - [ ] Obsługa prezentacji zdalnych kamer jako lokalne urządzenia widoczne w przeglądarce
+  - [ ] Implementacja V4L2 loopback dla Linuxa
+  - [ ] Implementacja DirectShow/Media Foundation dla Windows
+  - [ ] Implementacja AVFoundation dla macOS
+- [ ] Integracja z interfejsem przeglądarki:
+  - [ ] Funkcja `mount_as_local_device(stream_url, device_name)` w API
+  - [ ] Implementacja CLI: `rtaspi devices mount rtsp://example.com/stream`
+  - [ ] Automatyczne wykrywanie zamontowanych urządzeń wirtualnych
+  - [ ] Obsługa przełączania między rzeczywistym urządzeniem a zamontowanym wirtualnym
+- [ ] Testowanie kompatybilności:
+  - [ ] Weryfikacja widoczności wirtualnych urządzeń w popularnych przeglądarkach
+  - [ ] Testy kompatybilności z aplikacjami komunikacyjnymi (Zoom, Teams, itp.)
+  - [ ] Benchmark wydajności i opóźnień dla różnych protokołów
+
+## 12. Dokumentacja
+- [ ] Przygotować kompletną dokumentację:
+  - [ ] Referencja API
+  - [ ] Poradnik użytkownika
+  - [ ] Tutoriale dla różnych poziomów zaawansowania
+- [ ] Stworzyć przykłady:
+  - [ ] Podstawowe przykłady użycia
+  - [ ] Przykłady dla urządzeń embedded
+  - [ ] Zaawansowane przykłady integracji
+- [ ] Dokumentacja przetwarzania:
+  - [ ] Przewodniki po dostępnych filtrach
+  - [ ] Integracja z OpenCV i bibliotekami audio
+  - [ ] Tworzenie własnych komponentów przetwarzania
 
 ## Oczekiwana struktura plików
 
@@ -199,6 +254,7 @@
 │       │   └── protocols.py    # Typy protokołów (ProtocolType)
 │       ├── core                # Podstawowe komponenty
 │       │   ├── config.py       # Zarządzanie konfiguracją
+│       │   ├── defaults.py     # Domyślne wartości konfiguracji
 │       │   ├── __init__.py
 │       │   ├── logging.py      # System logowania
 │       │   ├── mcp.py          # Broker komunikacji (MCP)
@@ -272,6 +328,19 @@
 │       │   ├── __init__.py
 │       │   ├── network.py      # Funkcje sieciowe
 │       │   └── process.py      # Zarządzanie procesami
+│       ├── virtual_devices     # Moduł urządzeń wirtualnych
+│       │   ├── __init__.py
+│       │   ├── linux           # Wsparcie dla Linux (V4L2)
+│       │   │   ├── __init__.py
+│       │   │   └── v4l2loopback.py
+│       │   ├── macos           # Wsparcie dla macOS (AVFoundation)
+│       │   │   ├── avfoundation.py
+│       │   │   └── __init__.py
+│       │   ├── manager.py      # Manager wirtualnych urządzeń
+│       │   └── windows         # Wsparcie dla Windows
+│       │       ├── directshow.py
+│       │       ├── __init__.py
+│       │       └── mediafoundation.py
 │       └── _version.py         # Wersja biblioteki
 ├── storage                     # Katalog przechowywania danych
 │   ├── local_streams
@@ -298,7 +367,11 @@
     │   └── test_video.py
     ├── test_quick              # Testy uproszczonego API
     │   └── test_camera.py
-    └── test_streaming.py
+    ├── test_streaming.py
+    └── test_virtual_devices    # Testy urządzeń wirtualnych
+        ├── test_linux.py
+        ├── test_macos.py
+        └── test_windows.py
 ```
 
 ## Plan

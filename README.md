@@ -1,5 +1,5 @@
 
-# rtaspi - Real-Time Annotation and Stream Processing [<span style='font-size:20px;'>&#x270D;</span>](git@github.com:rt-asp/rtaspi/edit/main/docs/README.md)
+# [RTASPI - Real-Time Annotation and Stream Processing Interface](http://rt-asp.github.io/rtaspi/) [<span style='font-size:20px;'>&#x270D;</span>](git@github.com:rt-asp/rtaspi/edit/main/docs/README.md)
 
 rtaspi to system do wykrywania, zarządzania i streamowania z lokalnych oraz zdalnych urządzeń audio i wideo. Umożliwia łatwe udostępnianie strumieni z kamer i mikrofonów w różnych protokołach (RTSP, RTMP, WebRTC).
 

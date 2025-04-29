@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.16] - 2025-04-29
+
+### Added
+- Changes in TODO.txt
+- Changes in docs/POST/PL/1.md
+- Changes in src/rtaspi/dsl/__init__.py
+- Changes in src/rtaspi/dsl/executor.py
+- Changes in src/rtaspi/dsl/lexer.py
+- Changes in src/rtaspi/dsl/parser.py
+- Changes in src/rtaspi/processing/audio/speech.py
+- Changes in src/rtaspi/processing/pipeline_executor.py
+
+### Changed
+- Changes in src/rtaspi/processing/audio/filters.py
+
 ## [0.1.15] - 2025-04-29
 
 ### Added
