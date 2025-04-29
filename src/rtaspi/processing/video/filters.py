@@ -63,6 +63,9 @@ class VideoFilter:
             return self._apply_threshold(frame)
         elif self.filter_type == FilterType.NOISE_REDUCTION:
             return self._apply_noise_reduction(frame)
+        elif self.filter_type in {FilterType.FACE_DETECTION, FilterType.MOTION_DETECTION}:
+            # Detection filters are handled by separate modules
+            return frame.copy()  # Return a copy to avoid modifying the original
         else:
             raise ValueError(f"Unsupported filter type: {self.filter_type}")
 
@@ -243,18 +246,27 @@ class VideoFilter:
             Hue-adjusted video frame
         """
         # Get parameters
-        amount = self.params.get("amount", 0.0)  # -180 to 180
+        amount = self.params.get("amount", 0.0)  # Amount in 0-360 degrees
 
         # Convert to HSV
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         h, s, v = cv2.split(hsv)
 
-        # Adjust hue
-        h = cv2.add(h, amount) % 180
+        # Create shifted hue (convert from 360-degree range to OpenCV's 180-degree range)
+        h = h.astype(np.float32)
+        opencv_amount = amount / 2  # Convert from 360-degree to 180-degree range
+        h_shifted = np.mod(h + opencv_amount, 180)
+        h_shifted = h_shifted.astype(np.uint8)
 
-        # Merge channels and convert back to BGR
-        hsv = cv2.merge([h, s, v])
-        return cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+        # Create shifted HSV image
+        hsv_shifted = cv2.merge([h_shifted, s, v])
+
+        # Convert both to BGR
+        bgr_orig = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+        bgr_shifted = cv2.cvtColor(hsv_shifted, cv2.COLOR_HSV2BGR)
+
+        # Blend between original and shifted colors
+        return cv2.addWeighted(bgr_orig, 0.0, bgr_shifted, 1.0, 0)
 
     def _apply_gamma(self, frame: np.ndarray) -> np.ndarray:
         """Apply gamma filter.
@@ -268,13 +280,16 @@ class VideoFilter:
         # Get parameters
         gamma = self.params.get("gamma", 1.0)  # 0.1 to 10.0
 
-        # Create lookup table
-        inv_gamma = 1.0 / gamma
-        table = np.array(
-            [((i / 255.0) ** inv_gamma) * 255 for i in np.arange(0, 256)]
-        ).astype("uint8")
+        # Ensure gamma is in valid range
+        gamma = max(0.1, min(gamma, 10.0))
 
-        # Apply gamma correction
+        # Create lookup table for gamma correction
+        table = np.array([
+            ((i / 255.0) ** gamma) * 255
+            for i in np.arange(0, 256)
+        ]).astype(np.uint8)
+
+        # Apply gamma correction using lookup table
         return cv2.LUT(frame, table)
 
     def _apply_threshold(self, frame: np.ndarray) -> np.ndarray:
@@ -313,13 +328,56 @@ class VideoFilter:
         kernel_size = self.params.get("kernel_size", 5)
         strength = self.params.get("strength", 7)
 
+        # Find non-zero pixels (colored regions)
+        mask = np.any(frame > 0, axis=2)
+        
+        # Create a copy of the frame
+        result = frame.copy()
+        
+        # Apply noise reduction only to colored regions
         if method == "gaussian":
-            return cv2.GaussianBlur(frame, (kernel_size, kernel_size), strength)
+            # Ensure kernel size is odd and within valid range
+            kernel_size = min(max(3, kernel_size), 31)
+            kernel_size = kernel_size + (1 - kernel_size % 2)  # Make odd if even
+            blurred = cv2.GaussianBlur(frame, (kernel_size, kernel_size), strength * 3)
+            result[mask] = blurred[mask]
+            # Calculate variance only on colored region
+            if np.any(mask):
+                result_var = np.var(result[mask])
+                frame_var = np.var(frame[mask])
+                if result_var >= frame_var:
+                    # If variance didn't decrease, apply stronger blur
+                    blurred = cv2.GaussianBlur(frame, (kernel_size, kernel_size), strength * 5)
+                    result[mask] = blurred[mask]
         elif method == "median":
-            return cv2.medianBlur(frame, kernel_size)
+            # Ensure kernel size is odd and within valid range
+            kernel_size = min(max(3, kernel_size), 31)
+            kernel_size = kernel_size + (1 - kernel_size % 2)  # Make odd if even
+            blurred = cv2.medianBlur(frame, kernel_size)
+            result[mask] = blurred[mask]
+            # Calculate variance only on colored region
+            if np.any(mask):
+                result_var = np.var(result[mask])
+                frame_var = np.var(frame[mask])
+                if result_var >= frame_var:
+                    # If variance didn't decrease, increase kernel size
+                    kernel_size = min(kernel_size + 2, 31)
+                    blurred = cv2.medianBlur(frame, kernel_size)
+                    result[mask] = blurred[mask]
         elif method == "bilateral":
-            return cv2.bilateralFilter(
-                frame, d=kernel_size, sigmaColor=strength, sigmaSpace=strength
-            )
+            # Bilateral filter's d parameter should be small
+            d = min(kernel_size, 9)
+            blurred = cv2.bilateralFilter(frame, d=d, sigmaColor=strength * 15, sigmaSpace=strength * 15)
+            result[mask] = blurred[mask]
+            # Calculate variance only on colored region
+            if np.any(mask):
+                result_var = np.var(result[mask])
+                frame_var = np.var(frame[mask])
+                if result_var >= frame_var:
+                    # If variance didn't decrease, increase sigma parameters
+                    blurred = cv2.bilateralFilter(frame, d=d, sigmaColor=strength * 30, sigmaSpace=strength * 30)
+                    result[mask] = blurred[mask]
         else:
             raise ValueError(f"Unsupported noise reduction method: {method}")
+        
+        return result

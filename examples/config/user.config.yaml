@@ -1,0 +1,44 @@
+# User configuration file (~/.config/rtaspi/config.yaml)
+# This file contains user-specific settings that override global settings
+
+system:
+  storage_path: ~/rtaspi/storage  # Override global storage path
+  log_level: DEBUG  # More verbose logging for development
+
+web:
+  port: 8080  # Custom port for development
+  enable_https: true
+  cert_path: ~/.config/rtaspi/certs/cert.pem
+  key_path: ~/.config/rtaspi/certs/key.pem
+
+local_devices:
+  enable_video: true
+  enable_audio: true
+  auto_start: true
+  scan_interval: 30  # More frequent scanning
+
+network_devices:
+  discovery_enabled: true
+  discovery_methods: 
+    - onvif
+    - upnp
+  scan_interval: 60
+
+streaming:
+  rtsp:
+    port_start: 9554  # Different port range to avoid conflicts
+  rtmp:
+    port_start: 2935
+  webrtc:
+    stun_server: stun://stun.l.google.com:19302
+    turn_server: turn://turn.example.com:3478
+    turn_username: ${RTASPI_TURN_USERNAME}  # Use environment variable
+    turn_password: ${RTASPI_TURN_PASSWORD}
+
+processing:
+  video:
+    default_resolution: 1920x1080  # Higher resolution
+    default_fps: 60  # Higher framerate
+  audio:
+    default_sample_rate: 48000  # Higher sample rate
+    default_channels: 2

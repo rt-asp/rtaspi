@@ -1,4 +1,6 @@
-# Zaktualizowana Lista Zadań (TODO)
+do tasks from TODO.md and check if done, set [x] if DONE
+
+# TODO - Lista Zadań 
 
 
 ## 2. System Konfiguracji
@@ -103,7 +105,7 @@
   - [ ] Testy kompatybilności z aplikacjami komunikacyjnymi (Zoom, Teams, itp.)
   - [ ] Benchmark wydajności i opóźnień dla różnych protokołów
 
-# Czy wszystkei pliki istniej?
+# Czy wszystkei pliki istnieja?
 .
 ├── CHANGELOG.md
 ├── config.yaml                  # Główny plik konfiguracyjny projektu

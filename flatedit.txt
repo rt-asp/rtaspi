@@ -1,9 +1,9 @@
 docs/README.md
-docs/TREE.md
+docs/EXAMPLES.md
 docs/INSTALL.md
 docs/CONCEPTS.md
 docs/CLI.md
 docs/API.md
 docs/CONFIGURATION.md
-docs/EXAMPLES.md
 docs/DEVELOPMENT.md
+docs/TREE.md

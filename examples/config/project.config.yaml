@@ -1,0 +1,112 @@
+# Project configuration file (.rtaspi/config.yaml)
+# This file contains project-specific settings that override global and user settings
+
+system:
+  storage_path: .rtaspi/storage  # Project-specific storage
+  log_level: INFO
+
+local_devices:
+  enable_video: true
+  enable_audio: false  # Audio disabled for this project
+  auto_start: true
+  scan_interval: 15  # Very frequent scanning for development
+
+# Project-specific device configurations
+devices:
+  - id: main_camera
+    name: Main Camera
+    type: camera
+    protocol: v4l2
+    enabled: true
+    path: /dev/video0
+    preferred_resolution: 1920x1080
+    preferred_framerate: 30
+
+  - id: backup_camera
+    name: Backup Camera
+    type: camera
+    protocol: rtsp
+    enabled: true
+    path: rtsp://192.168.1.100:554/stream
+    auth:
+      username: admin
+      password: ${RTASPI_CAMERA_PASSWORD}
+      method: basic
+
+# Project-specific stream configurations
+streams:
+  - id: main_stream
+    name: Main Stream
+    type: video
+    enabled: true
+    source_device: main_camera
+    source_format: h264
+    outputs:
+      - protocol: rtsp
+        path: /live/main
+        format: h264
+        quality:
+          resolution: 1920x1080
+          framerate: 30
+          bitrate: 4000000
+
+  - id: backup_stream
+    name: Backup Stream
+    type: video
+    enabled: true
+    source_device: backup_camera
+    source_format: h264
+    outputs:
+      - protocol: rtsp
+        path: /live/backup
+        format: h264
+        quality:
+          resolution: 1280x720
+          framerate: 15
+          bitrate: 2000000
+
+# Project-specific pipeline configurations
+pipelines:
+  - id: motion_detection
+    name: Motion Detection Pipeline
+    type: detection
+    enabled: true
+    input_streams: 
+      - main_stream
+    stages:
+      - name: preprocessing
+        enabled: true
+        filters:
+          - type: resize
+            parameters:
+              width: 640
+              height: 480
+          - type: denoise
+            parameters:
+              strength: 0.5
+      - name: detection
+        enabled: true
+        filters:
+          - type: motion_detection
+            parameters:
+              sensitivity: 0.8
+              min_area: 100
+    save_results: true
+    results_path: .rtaspi/results/motion
+
+# Project-specific processing settings
+processing:
+  video:
+    default_resolution: 1920x1080
+    default_fps: 30
+    default_format: h264
+  audio:
+    default_sample_rate: 44100
+    default_channels: 2
+    default_format: aac
+
+# Project-specific web interface settings
+web:
+  enable: true
+  port: 8000
+  enable_https: false  # HTTPS disabled for local development

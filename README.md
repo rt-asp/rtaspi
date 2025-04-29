@@ -99,189 +99,456 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](../LIC
 
 We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
 
-# Project Structure [<span style='font-size:20px;'>&#x270D;</span>](git@github.com:rt-asp/rtaspi/edit/main/docs/TREE.md)
+# Usage Examples and Tutorials [<span style='font-size:20px;'>&#x270D;</span>](git@github.com:rt-asp/rtaspi/edit/main/docs/EXAMPLES.md)
 
-This document provides an overview of RTASPI's directory structure and organization.
+This document provides practical examples and tutorials for common RTASPI use cases.
 
-## Root Directory
+## Basic Examples
 
-```
-rtaspi/
-├── docs/               # Documentation
-├── examples/           # Example configurations and scripts
-├── install/            # Installation scripts and guides
-├── scripts/           # Maintenance and setup scripts
-├── service/           # System service scripts
-├── src/               # Source code
-├── tests/             # Test suite
-└── update/            # Update and maintenance tools
-```
+### 1. Stream from USB Webcam
 
-## Source Code Structure
+```bash
+# Start RTASPI
+rtaspi start
 
-```
-src/rtaspi/
-├── api/               # REST API implementation
-│   ├── devices.py     # Device management endpoints
-│   ├── pipelines.py   # Pipeline management endpoints
-│   ├── server.py      # API server implementation
-│   └── streams.py     # Stream management endpoints
-│
-├── cli/               # Command-line interface
-│   ├── commands/      # CLI command implementations
-│   ├── completion/    # Shell completion scripts
-│   └── shell.py       # CLI shell implementation
-│
-├── core/              # Core functionality
-│   ├── config.py      # Configuration management
-│   ├── logging.py     # Logging system
-│   ├── mcp.py         # Module Communication Protocol
-│   └── utils.py       # Utility functions
-│
-├── device_managers/   # Device management
-│   ├── base.py        # Base device manager class
-│   ├── local_devices.py    # Local device management
-│   ├── network_devices.py  # Network device management
-│   └── utils/        # Device management utilities
-│
-├── dsl/               # Domain Specific Language
-│   ├── executor.py    # DSL execution engine
-│   ├── lexer.py       # DSL lexical analyzer
-│   └── parser.py      # DSL parser
-│
-├── processing/        # Stream processing
-│   ├── audio/        # Audio processing
-│   │   ├── filters.py   # Audio filters
-│   │   └── speech.py    # Speech recognition
-│   ├── video/        # Video processing
-│   │   ├── detection.py # Object detection
-│   │   └── filters.py   # Video filters
-│   └── pipeline_executor.py  # Processing pipeline
-│
-├── quick/            # Quick access utilities
-│   ├── camera.py     # Camera utilities
-│   ├── microphone.py # Microphone utilities
-│   └── utils.py      # Quick access helpers
-│
-├── schemas/          # Data models and validation
-│   ├── device.py     # Device schemas
-│   ├── pipeline.py   # Pipeline schemas
-│   └── stream.py     # Stream schemas
-│
-├── streaming/        # Streaming protocols
-│   ├── rtmp.py       # RTMP implementation
-│   ├── rtsp.py       # RTSP implementation
-│   ├── webrtc.py     # WebRTC implementation
-│   └── utils.py      # Streaming utilities
-│
-└── web/             # Web interface
-    ├── acme.py       # ACME protocol support
-    ├── api.py        # Web API implementation
-    ├── interface.py  # Web interface
-    └── server.py     # Web server
+# List available devices
+rtaspi devices list
+
+# Start RTSP stream from webcam
+rtaspi streams start \
+  --device video0 \
+  --protocol rtsp \
+  --path /webcam \
+  --video-codec h264 \
+  --video-bitrate 2M
 ```
 
-## Documentation Structure
+Access the stream at: `rtsp://localhost:8554/webcam`
 
-```
-docs/
-├── API.md            # REST API reference
-├── CLI.md            # Command-line interface guide
-├── CONCEPTS.md       # Architecture and core concepts
-├── CONFIGURATION.md  # Configuration guide
-├── DEVELOPMENT.md    # Development guide
-├── EXAMPLES.md       # Usage examples and tutorials
-├── INSTALL.md        # Installation guide
-├── README.md         # Project overview
-└── TREE.md          # This file
-```
+### 2. Connect IP Camera
 
-## Scripts and Tools
+```bash
+# Add network camera
+rtaspi devices add \
+  --type network \
+  --protocol rtsp \
+  --address 192.168.1.100 \
+  --port 554 \
+  --username admin \
+  --password secret
 
-```
-scripts/
-├── configure_hardware.sh  # Hardware configuration
-├── install_models.sh      # ML model installation
-├── optimize_rpi.sh        # Raspberry Pi optimization
-├── publish.sh            # Package publishing
-├── setup_service.sh      # Service setup
-└── upgrade.sh            # System upgrade
-
-service/
-├── start.sh             # Service start script
-└── stop.sh              # Service stop script
-
-update/
-├── requirements.py      # Dependencies update
-└── versions.py         # Version management
+# Start WebRTC stream
+rtaspi streams start \
+  --device ipcam1 \
+  --protocol webrtc \
+  --path /camera1
 ```
 
-## Configuration Files
+Access the stream at: `http://localhost:8080/webrtc/camera1`
 
+### 3. Record Audio from Microphone
+
+```bash
+# Start RTMP stream from microphone
+rtaspi streams start \
+  --device audio0 \
+  --protocol rtmp \
+  --path /mic \
+  --audio-codec aac \
+  --audio-bitrate 128k
+
+# Record stream
+rtaspi pipelines create \
+  --input mic_stream \
+  --config - <<EOF
+output:
+  - type: "record"
+    format: "mp3"
+    path: "recordings/"
+EOF
 ```
-rtaspi/
-├── rtaspi.config.yaml    # Main configuration
-├── rtaspi.devices.yaml   # Device configuration
-├── rtaspi.pipeline.yaml  # Pipeline configuration
-├── rtaspi.secrets.yaml   # Sensitive information
-└── rtaspi.streams.yaml   # Stream configuration
+
+## Advanced Examples
+
+### 1. Motion Detection Pipeline
+
+Create a pipeline that detects motion and sends notifications:
+
+```yaml
+# motion_detection.yaml
+pipelines:
+  - id: "security_cam"
+    input:
+      stream_id: "camera1"
+    
+    stages:
+      - type: "motion_detector"
+        sensitivity: 0.8
+        region: [0, 0, 1920, 1080]
+        min_area: 1000
+      
+      - type: "object_detector"
+        model: "yolov3"
+        confidence: 0.5
+        classes: ["person", "car"]
+      
+      - type: "event_trigger"
+        conditions:
+          - type: "motion"
+            duration: 5
+          - type: "object"
+            classes: ["person"]
+    
+    output:
+      - type: "webhook"
+        url: "http://localhost:8000/alerts"
+      
+      - type: "record"
+        format: "mp4"
+        duration: 30
+        pre_buffer: 5
 ```
 
-## Development Files
-
-```
-rtaspi/
-├── pyproject.toml       # Project metadata
-├── setup.cfg           # Package configuration
-├── setup.py            # Package setup
-├── requirements.txt    # Dependencies
-├── MANIFEST.in         # Package manifest
-└── Makefile           # Build automation
+```bash
+# Start the pipeline
+rtaspi pipelines create --config motion_detection.yaml
 ```
 
-## Key Directories
+### 2. Multi-Camera Setup
 
-- **src/rtaspi/**: Main source code
-  - Core functionality and implementations
-  - Modular architecture with clear separation of concerns
-  - Each module focuses on specific functionality
+Stream from multiple cameras with different configurations:
 
-- **docs/**: Documentation
-  - Comprehensive guides and references
-  - Examples and tutorials
-  - Architecture documentation
+```yaml
+# multi_camera.yaml
+streams:
+  - id: "entrance_cam"
+    device_id: "ipcam1"
+    protocol: "rtsp"
+    path: "/entrance"
+    settings:
+      video:
+        codec: "h264"
+        bitrate: "2M"
+        framerate: 30
+      audio:
+        enabled: false
+  
+  - id: "parking_cam"
+    device_id: "ipcam2"
+    protocol: "rtmp"
+    path: "/parking"
+    settings:
+      video:
+        codec: "h264"
+        bitrate: "1M"
+        framerate: 15
+      audio:
+        enabled: false
+  
+  - id: "reception_cam"
+    device_id: "video0"
+    protocol: "webrtc"
+    path: "/reception"
+    settings:
+      video:
+        codec: "vp8"
+        bitrate: "1.5M"
+      audio:
+        enabled: true
+        codec: "opus"
+```
 
-- **tests/**: Test suite
-  - Unit tests
-  - Integration tests
-  - Test fixtures and utilities
+```bash
+# Start all streams
+rtaspi streams start --config multi_camera.yaml
+```
 
-- **scripts/**: Utility scripts
-  - Installation and setup
-  - System optimization
-  - Maintenance tools
+### 3. Video Processing Pipeline
 
-- **service/**: System service
-  - Service management scripts
-  - System integration
+Create a pipeline for real-time video processing:
 
-## File Organization
+```yaml
+# video_processing.yaml
+pipelines:
+  - id: "video_effects"
+    input:
+      stream_id: "webcam_stream"
+    
+    stages:
+      - type: "resize"
+        width: 1280
+        height: 720
+      
+      - type: "color_correction"
+        brightness: 1.2
+        contrast: 1.1
+        saturation: 1.1
+      
+      - type: "overlay"
+        text: "%timestamp%"
+        position: [10, 10]
+        font: "Arial"
+        size: 24
+      
+      - type: "face_detection"
+        model: "face_detection_v1"
+        blur_faces: true
+    
+    output:
+      - type: "rtmp"
+        url: "rtmp://localhost/live/processed"
+      
+      - type: "webrtc"
+        path: "/processed"
+```
 
-The project follows a modular structure where:
+```bash
+# Start the processing pipeline
+rtaspi pipelines create --config video_processing.yaml
+```
 
-1. Each major feature has its own directory
-2. Related functionality is grouped together
-3. Common utilities are centralized
-4. Configuration is separated from code
-5. Documentation is comprehensive and organized
+### 4. Audio Processing Pipeline
 
-This structure enables:
+Create a pipeline for audio processing:
 
-- Easy navigation
-- Clear separation of concerns
-- Modular development
-- Simple maintenance
-- Straightforward testing
+```yaml
+# audio_processing.yaml
+pipelines:
+  - id: "audio_effects"
+    input:
+      stream_id: "mic_stream"
+    
+    stages:
+      - type: "noise_reduction"
+        strength: 0.7
+      
+      - type: "equalizer"
+        bands:
+          - frequency: 100
+            gain: -3
+          - frequency: 1000
+            gain: 2
+          - frequency: 8000
+            gain: 1
+      
+      - type: "compressor"
+        threshold: -20
+        ratio: 4
+        attack: 5
+        release: 50
+      
+      - type: "speech_detection"
+        language: "en"
+        output_format: "srt"
+    
+    output:
+      - type: "rtmp"
+        url: "rtmp://localhost/live/processed_audio"
+      
+      - type: "file"
+        path: "subtitles.srt"
+```
+
+```bash
+# Start the audio processing pipeline
+rtaspi pipelines create --config audio_processing.yaml
+```
+
+## Integration Examples
+
+### 1. Web Application Integration
+
+```javascript
+// Connect to WebSocket API
+const ws = new WebSocket('ws://localhost:8081/api/ws');
+
+// Subscribe to events
+ws.send(JSON.stringify({
+  type: 'subscribe',
+  topics: ['devices/status', 'streams/status']
+}));
+
+// Handle events
+ws.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+  switch(data.type) {
+    case 'device_status':
+      updateDeviceStatus(data);
+      break;
+    case 'stream_status':
+      updateStreamStatus(data);
+      break;
+  }
+};
+
+// Start WebRTC stream
+async function startStream(deviceId) {
+  const response = await fetch('http://localhost:8081/api/streams', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + token
+    },
+    body: JSON.stringify({
+      device_id: deviceId,
+      protocol: 'webrtc',
+      path: '/stream1'
+    })
+  });
+  
+  const data = await response.json();
+  const player = new RTCPeerConnection();
+  // ... WebRTC setup code ...
+}
+```
+
+### 2. REST API Integration
+
+Python example using requests:
+
+```python
+import requests
+
+class RTASPIClient:
+    def __init__(self, base_url, token):
+        self.base_url = base_url
+        self.headers = {'Authorization': f'Bearer {token}'}
+    
+    def list_devices(self):
+        response = requests.get(
+            f'{self.base_url}/api/devices',
+            headers=self.headers
+        )
+        return response.json()
+    
+    def start_stream(self, device_id, protocol, path):
+        response = requests.post(
+            f'{self.base_url}/api/streams',
+            headers=self.headers,
+            json={
+                'device_id': device_id,
+                'protocol': protocol,
+                'path': path
+            }
+        )
+        return response.json()
+    
+    def create_pipeline(self, config):
+        response = requests.post(
+            f'{self.base_url}/api/pipelines',
+            headers=self.headers,
+            json=config
+        )
+        return response.json()
+
+# Usage example
+client = RTASPIClient('http://localhost:8081', 'your-token')
+
+# List devices
+devices = client.list_devices()
+
+# Start stream
+stream = client.start_stream('video0', 'rtsp', '/webcam')
+
+# Create pipeline
+pipeline = client.create_pipeline({
+    'id': 'motion_detection',
+    'input': {'stream_id': stream['id']},
+    'stages': [
+        {
+            'type': 'motion_detector',
+            'sensitivity': 0.8
+        }
+    ],
+    'output': [
+        {
+            'type': 'webhook',
+            'url': 'http://localhost:8000/events'
+        }
+    ]
+})
+```
+
+### 3. System Service Integration
+
+Create a systemd service for automatic startup:
+
+1. Create service file `/etc/systemd/system/rtaspi.service`:
+```ini
+[Unit]
+Description=RTASPI Service
+After=network.target
+
+[Service]
+Type=simple
+User=rtaspi
+Environment=RTASPI_CONFIG=/etc/rtaspi/config.yaml
+ExecStart=/usr/local/bin/rtaspi start
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+
+2. Create configuration in `/etc/rtaspi/config.yaml`:
+```yaml
+system:
+  storage_path: "/var/lib/rtaspi"
+  log_level: "INFO"
+
+local_devices:
+  enable_video: true
+  enable_audio: true
+  auto_start: true
+
+streaming:
+  rtsp:
+    port_start: 8554
+  rtmp:
+    port_start: 1935
+  webrtc:
+    port_start: 8080
+```
+
+3. Setup and start service:
+```bash
+# Create rtaspi user
+sudo useradd -r rtaspi
+
+# Create directories
+sudo mkdir -p /etc/rtaspi /var/lib/rtaspi
+sudo chown -R rtaspi:rtaspi /etc/rtaspi /var/lib/rtaspi
+
+# Enable and start service
+sudo systemctl enable rtaspi
+sudo systemctl start rtaspi
+```
+
+## Best Practices
+
+1. **Resource Management**
+   - Monitor system resources
+   - Use appropriate video quality settings
+   - Clean up unused streams and pipelines
+
+2. **Security**
+   - Use strong passwords
+   - Enable SSL/TLS
+   - Implement access control
+   - Monitor access logs
+
+3. **Performance**
+   - Choose appropriate codecs
+   - Set reasonable bitrates
+   - Monitor network bandwidth
+   - Use hardware acceleration when available
+
+4. **Reliability**
+   - Implement error handling
+   - Set up automatic recovery
+   - Monitor system health
+   - Keep logs for troubleshooting
 
 # Installation Guide [<span style='font-size:20px;'>&#x270D;</span>](git@github.com:rt-asp/rtaspi/edit/main/docs/INSTALL.md)
 
@@ -1879,457 +2146,6 @@ api:
    - Monitor resource usage
    - Regular validation of configuration files
 
-# Usage Examples and Tutorials [<span style='font-size:20px;'>&#x270D;</span>](git@github.com:rt-asp/rtaspi/edit/main/docs/EXAMPLES.md)
-
-This document provides practical examples and tutorials for common RTASPI use cases.
-
-## Basic Examples
-
-### 1. Stream from USB Webcam
-
-```bash
-# Start RTASPI
-rtaspi start
-
-# List available devices
-rtaspi devices list
-
-# Start RTSP stream from webcam
-rtaspi streams start \
-  --device video0 \
-  --protocol rtsp \
-  --path /webcam \
-  --video-codec h264 \
-  --video-bitrate 2M
-```
-
-Access the stream at: `rtsp://localhost:8554/webcam`
-
-### 2. Connect IP Camera
-
-```bash
-# Add network camera
-rtaspi devices add \
-  --type network \
-  --protocol rtsp \
-  --address 192.168.1.100 \
-  --port 554 \
-  --username admin \
-  --password secret
-
-# Start WebRTC stream
-rtaspi streams start \
-  --device ipcam1 \
-  --protocol webrtc \
-  --path /camera1
-```
-
-Access the stream at: `http://localhost:8080/webrtc/camera1`
-
-### 3. Record Audio from Microphone
-
-```bash
-# Start RTMP stream from microphone
-rtaspi streams start \
-  --device audio0 \
-  --protocol rtmp \
-  --path /mic \
-  --audio-codec aac \
-  --audio-bitrate 128k
-
-# Record stream
-rtaspi pipelines create \
-  --input mic_stream \
-  --config - <<EOF
-output:
-  - type: "record"
-    format: "mp3"
-    path: "recordings/"
-EOF
-```
-
-## Advanced Examples
-
-### 1. Motion Detection Pipeline
-
-Create a pipeline that detects motion and sends notifications:
-
-```yaml
-# motion_detection.yaml
-pipelines:
-  - id: "security_cam"
-    input:
-      stream_id: "camera1"
-    
-    stages:
-      - type: "motion_detector"
-        sensitivity: 0.8
-        region: [0, 0, 1920, 1080]
-        min_area: 1000
-      
-      - type: "object_detector"
-        model: "yolov3"
-        confidence: 0.5
-        classes: ["person", "car"]
-      
-      - type: "event_trigger"
-        conditions:
-          - type: "motion"
-            duration: 5
-          - type: "object"
-            classes: ["person"]
-    
-    output:
-      - type: "webhook"
-        url: "http://localhost:8000/alerts"
-      
-      - type: "record"
-        format: "mp4"
-        duration: 30
-        pre_buffer: 5
-```
-
-```bash
-# Start the pipeline
-rtaspi pipelines create --config motion_detection.yaml
-```
-
-### 2. Multi-Camera Setup
-
-Stream from multiple cameras with different configurations:
-
-```yaml
-# multi_camera.yaml
-streams:
-  - id: "entrance_cam"
-    device_id: "ipcam1"
-    protocol: "rtsp"
-    path: "/entrance"
-    settings:
-      video:
-        codec: "h264"
-        bitrate: "2M"
-        framerate: 30
-      audio:
-        enabled: false
-  
-  - id: "parking_cam"
-    device_id: "ipcam2"
-    protocol: "rtmp"
-    path: "/parking"
-    settings:
-      video:
-        codec: "h264"
-        bitrate: "1M"
-        framerate: 15
-      audio:
-        enabled: false
-  
-  - id: "reception_cam"
-    device_id: "video0"
-    protocol: "webrtc"
-    path: "/reception"
-    settings:
-      video:
-        codec: "vp8"
-        bitrate: "1.5M"
-      audio:
-        enabled: true
-        codec: "opus"
-```
-
-```bash
-# Start all streams
-rtaspi streams start --config multi_camera.yaml
-```
-
-### 3. Video Processing Pipeline
-
-Create a pipeline for real-time video processing:
-
-```yaml
-# video_processing.yaml
-pipelines:
-  - id: "video_effects"
-    input:
-      stream_id: "webcam_stream"
-    
-    stages:
-      - type: "resize"
-        width: 1280
-        height: 720
-      
-      - type: "color_correction"
-        brightness: 1.2
-        contrast: 1.1
-        saturation: 1.1
-      
-      - type: "overlay"
-        text: "%timestamp%"
-        position: [10, 10]
-        font: "Arial"
-        size: 24
-      
-      - type: "face_detection"
-        model: "face_detection_v1"
-        blur_faces: true
-    
-    output:
-      - type: "rtmp"
-        url: "rtmp://localhost/live/processed"
-      
-      - type: "webrtc"
-        path: "/processed"
-```
-
-```bash
-# Start the processing pipeline
-rtaspi pipelines create --config video_processing.yaml
-```
-
-### 4. Audio Processing Pipeline
-
-Create a pipeline for audio processing:
-
-```yaml
-# audio_processing.yaml
-pipelines:
-  - id: "audio_effects"
-    input:
-      stream_id: "mic_stream"
-    
-    stages:
-      - type: "noise_reduction"
-        strength: 0.7
-      
-      - type: "equalizer"
-        bands:
-          - frequency: 100
-            gain: -3
-          - frequency: 1000
-            gain: 2
-          - frequency: 8000
-            gain: 1
-      
-      - type: "compressor"
-        threshold: -20
-        ratio: 4
-        attack: 5
-        release: 50
-      
-      - type: "speech_detection"
-        language: "en"
-        output_format: "srt"
-    
-    output:
-      - type: "rtmp"
-        url: "rtmp://localhost/live/processed_audio"
-      
-      - type: "file"
-        path: "subtitles.srt"
-```
-
-```bash
-# Start the audio processing pipeline
-rtaspi pipelines create --config audio_processing.yaml
-```
-
-## Integration Examples
-
-### 1. Web Application Integration
-
-```javascript
-// Connect to WebSocket API
-const ws = new WebSocket('ws://localhost:8081/api/ws');
-
-// Subscribe to events
-ws.send(JSON.stringify({
-  type: 'subscribe',
-  topics: ['devices/status', 'streams/status']
-}));
-
-// Handle events
-ws.onmessage = (event) => {
-  const data = JSON.parse(event.data);
-  switch(data.type) {
-    case 'device_status':
-      updateDeviceStatus(data);
-      break;
-    case 'stream_status':
-      updateStreamStatus(data);
-      break;
-  }
-};
-
-// Start WebRTC stream
-async function startStream(deviceId) {
-  const response = await fetch('http://localhost:8081/api/streams', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + token
-    },
-    body: JSON.stringify({
-      device_id: deviceId,
-      protocol: 'webrtc',
-      path: '/stream1'
-    })
-  });
-  
-  const data = await response.json();
-  const player = new RTCPeerConnection();
-  // ... WebRTC setup code ...
-}
-```
-
-### 2. REST API Integration
-
-Python example using requests:
-
-```python
-import requests
-
-class RTASPIClient:
-    def __init__(self, base_url, token):
-        self.base_url = base_url
-        self.headers = {'Authorization': f'Bearer {token}'}
-    
-    def list_devices(self):
-        response = requests.get(
-            f'{self.base_url}/api/devices',
-            headers=self.headers
-        )
-        return response.json()
-    
-    def start_stream(self, device_id, protocol, path):
-        response = requests.post(
-            f'{self.base_url}/api/streams',
-            headers=self.headers,
-            json={
-                'device_id': device_id,
-                'protocol': protocol,
-                'path': path
-            }
-        )
-        return response.json()
-    
-    def create_pipeline(self, config):
-        response = requests.post(
-            f'{self.base_url}/api/pipelines',
-            headers=self.headers,
-            json=config
-        )
-        return response.json()
-
-# Usage example
-client = RTASPIClient('http://localhost:8081', 'your-token')
-
-# List devices
-devices = client.list_devices()
-
-# Start stream
-stream = client.start_stream('video0', 'rtsp', '/webcam')
-
-# Create pipeline
-pipeline = client.create_pipeline({
-    'id': 'motion_detection',
-    'input': {'stream_id': stream['id']},
-    'stages': [
-        {
-            'type': 'motion_detector',
-            'sensitivity': 0.8
-        }
-    ],
-    'output': [
-        {
-            'type': 'webhook',
-            'url': 'http://localhost:8000/events'
-        }
-    ]
-})
-```
-
-### 3. System Service Integration
-
-Create a systemd service for automatic startup:
-
-1. Create service file `/etc/systemd/system/rtaspi.service`:
-```ini
-[Unit]
-Description=RTASPI Service
-After=network.target
-
-[Service]
-Type=simple
-User=rtaspi
-Environment=RTASPI_CONFIG=/etc/rtaspi/config.yaml
-ExecStart=/usr/local/bin/rtaspi start
-Restart=always
-RestartSec=5
-
-[Install]
-WantedBy=multi-user.target
-```
-
-2. Create configuration in `/etc/rtaspi/config.yaml`:
-```yaml
-system:
-  storage_path: "/var/lib/rtaspi"
-  log_level: "INFO"
-
-local_devices:
-  enable_video: true
-  enable_audio: true
-  auto_start: true
-
-streaming:
-  rtsp:
-    port_start: 8554
-  rtmp:
-    port_start: 1935
-  webrtc:
-    port_start: 8080
-```
-
-3. Setup and start service:
-```bash
-# Create rtaspi user
-sudo useradd -r rtaspi
-
-# Create directories
-sudo mkdir -p /etc/rtaspi /var/lib/rtaspi
-sudo chown -R rtaspi:rtaspi /etc/rtaspi /var/lib/rtaspi
-
-# Enable and start service
-sudo systemctl enable rtaspi
-sudo systemctl start rtaspi
-```
-
-## Best Practices
-
-1. **Resource Management**
-   - Monitor system resources
-   - Use appropriate video quality settings
-   - Clean up unused streams and pipelines
-
-2. **Security**
-   - Use strong passwords
-   - Enable SSL/TLS
-   - Implement access control
-   - Monitor access logs
-
-3. **Performance**
-   - Choose appropriate codecs
-   - Set reasonable bitrates
-   - Monitor network bandwidth
-   - Use hardware acceleration when available
-
-4. **Reliability**
-   - Implement error handling
-   - Set up automatic recovery
-   - Monitor system health
-   - Keep logs for troubleshooting
-
 # Development Guide [<span style='font-size:20px;'>&#x270D;</span>](git@github.com:rt-asp/rtaspi/edit/main/docs/DEVELOPMENT.md)
 
 This guide provides information for developers who want to contribute to RTASPI or extend its functionality.
@@ -2797,6 +2613,190 @@ rtaspi dev monitor
 - Keep documentation updated
 - Review and update dependencies
 - Monitor system health
+
+# Project Structure [<span style='font-size:20px;'>&#x270D;</span>](git@github.com:rt-asp/rtaspi/edit/main/docs/TREE.md)
+
+This document provides an overview of RTASPI's directory structure and organization.
+
+## Root Directory
+
+```
+rtaspi/
+├── docs/               # Documentation
+├── examples/           # Example configurations and scripts
+├── install/            # Installation scripts and guides
+├── scripts/           # Maintenance and setup scripts
+├── service/           # System service scripts
+├── src/               # Source code
+├── tests/             # Test suite
+└── update/            # Update and maintenance tools
+```
+
+## Source Code Structure
+
+```
+src/rtaspi/
+├── api/               # REST API implementation
+│   ├── devices.py     # Device management endpoints
+│   ├── pipelines.py   # Pipeline management endpoints
+│   ├── server.py      # API server implementation
+│   └── streams.py     # Stream management endpoints
+│
+├── cli/               # Command-line interface
+│   ├── commands/      # CLI command implementations
+│   ├── completion/    # Shell completion scripts
+│   └── shell.py       # CLI shell implementation
+│
+├── core/              # Core functionality
+│   ├── config.py      # Configuration management
+│   ├── logging.py     # Logging system
+│   ├── mcp.py         # Module Communication Protocol
+│   └── utils.py       # Utility functions
+│
+├── device_managers/   # Device management
+│   ├── base.py        # Base device manager class
+│   ├── local_devices.py    # Local device management
+│   ├── network_devices.py  # Network device management
+│   └── utils/        # Device management utilities
+│
+├── dsl/               # Domain Specific Language
+│   ├── executor.py    # DSL execution engine
+│   ├── lexer.py       # DSL lexical analyzer
+│   └── parser.py      # DSL parser
+│
+├── processing/        # Stream processing
+│   ├── audio/        # Audio processing
+│   │   ├── filters.py   # Audio filters
+│   │   └── speech.py    # Speech recognition
+│   ├── video/        # Video processing
+│   │   ├── detection.py # Object detection
+│   │   └── filters.py   # Video filters
+│   └── pipeline_executor.py  # Processing pipeline
+│
+├── quick/            # Quick access utilities
+│   ├── camera.py     # Camera utilities
+│   ├── microphone.py # Microphone utilities
+│   └── utils.py      # Quick access helpers
+│
+├── schemas/          # Data models and validation
+│   ├── device.py     # Device schemas
+│   ├── pipeline.py   # Pipeline schemas
+│   └── stream.py     # Stream schemas
+│
+├── streaming/        # Streaming protocols
+│   ├── rtmp.py       # RTMP implementation
+│   ├── rtsp.py       # RTSP implementation
+│   ├── webrtc.py     # WebRTC implementation
+│   └── utils.py      # Streaming utilities
+│
+└── web/             # Web interface
+    ├── acme.py       # ACME protocol support
+    ├── api.py        # Web API implementation
+    ├── interface.py  # Web interface
+    └── server.py     # Web server
+```
+
+## Documentation Structure
+
+```
+docs/
+├── API.md            # REST API reference
+├── CLI.md            # Command-line interface guide
+├── CONCEPTS.md       # Architecture and core concepts
+├── CONFIGURATION.md  # Configuration guide
+├── DEVELOPMENT.md    # Development guide
+├── EXAMPLES.md       # Usage examples and tutorials
+├── INSTALL.md        # Installation guide
+├── README.md         # Project overview
+└── TREE.md          # This file
+```
+
+## Scripts and Tools
+
+```
+scripts/
+├── configure_hardware.sh  # Hardware configuration
+├── install_models.sh      # ML model installation
+├── optimize_rpi.sh        # Raspberry Pi optimization
+├── publish.sh            # Package publishing
+├── setup_service.sh      # Service setup
+└── upgrade.sh            # System upgrade
+
+service/
+├── start.sh             # Service start script
+└── stop.sh              # Service stop script
+
+update/
+├── requirements.py      # Dependencies update
+└── versions.py         # Version management
+```
+
+## Configuration Files
+
+```
+rtaspi/
+├── rtaspi.config.yaml    # Main configuration
+├── rtaspi.devices.yaml   # Device configuration
+├── rtaspi.pipeline.yaml  # Pipeline configuration
+├── rtaspi.secrets.yaml   # Sensitive information
+└── rtaspi.streams.yaml   # Stream configuration
+```
+
+## Development Files
+
+```
+rtaspi/
+├── pyproject.toml       # Project metadata
+├── setup.cfg           # Package configuration
+├── setup.py            # Package setup
+├── requirements.txt    # Dependencies
+├── MANIFEST.in         # Package manifest
+└── Makefile           # Build automation
+```
+
+## Key Directories
+
+- **src/rtaspi/**: Main source code
+  - Core functionality and implementations
+  - Modular architecture with clear separation of concerns
+  - Each module focuses on specific functionality
+
+- **docs/**: Documentation
+  - Comprehensive guides and references
+  - Examples and tutorials
+  - Architecture documentation
+
+- **tests/**: Test suite
+  - Unit tests
+  - Integration tests
+  - Test fixtures and utilities
+
+- **scripts/**: Utility scripts
+  - Installation and setup
+  - System optimization
+  - Maintenance tools
+
+- **service/**: System service
+  - Service management scripts
+  - System integration
+
+## File Organization
+
+The project follows a modular structure where:
+
+1. Each major feature has its own directory
+2. Related functionality is grouped together
+3. Common utilities are centralized
+4. Configuration is separated from code
+5. Documentation is comprehensive and organized
+
+This structure enables:
+
+- Easy navigation
+- Clear separation of concerns
+- Modular development
+- Simple maintenance
+- Straightforward testing
 
 ---
 + Modular Documentation made possible by the [FlatEdit](http://www.flatedit.com) project.

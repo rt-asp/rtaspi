@@ -1,203 +1,202 @@
 """
-Schema definitions for processing pipeline configurations.
-
-This module provides Pydantic models for validating processing pipeline configurations,
-including pipeline stages, connections, and execution settings.
+pipeline.py - Pipeline configuration schemas
 """
 
-from typing import Optional, Dict, Any, List, Union
-from pydantic import BaseModel, Field, validator, root_validator
-from rtaspi.constants import FilterType
+from typing import List, Optional, Union, Dict, Any
+from pydantic import BaseModel, Field, field_validator, model_validator
+from enum import Enum
+
+
+class PipelineType(str, Enum):
+    """Pipeline types supported by rtaspi."""
+    VIDEO = "video"
+    AUDIO = "audio"
+    MIXED = "mixed"
+    DETECTION = "detection"
+    ANALYSIS = "analysis"
+
+
+class FilterType(str, Enum):
+    """Supported filter types."""
+    # Video filters
+    RESIZE = "resize"
+    CROP = "crop"
+    ROTATE = "rotate"
+    FLIP = "flip"
+    BRIGHTNESS = "brightness"
+    CONTRAST = "contrast"
+    SATURATION = "saturation"
+    HUE = "hue"
+    DENOISE = "denoise"
+    SHARPEN = "sharpen"
+    BLUR = "blur"
+    
+    # Audio filters
+    VOLUME = "volume"
+    EQUALIZER = "equalizer"
+    NOISE_REDUCTION = "noise_reduction"
+    COMPRESSOR = "compressor"
+    NORMALIZER = "normalizer"
+    
+    # Detection filters
+    FACE_DETECTION = "face_detection"
+    OBJECT_DETECTION = "object_detection"
+    MOTION_DETECTION = "motion_detection"
+    AUDIO_DETECTION = "audio_detection"
+    
+    # Analysis filters
+    SCENE_ANALYSIS = "scene_analysis"
+    AUDIO_ANALYSIS = "audio_analysis"
+    METADATA_ANALYSIS = "metadata_analysis"
+
+
+class FilterConfig(BaseModel):
+    """Filter configuration."""
+    type: FilterType
+    enabled: bool = True
+    parameters: Dict[str, Any] = Field(default_factory=dict)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
 class PipelineStage(BaseModel):
-    """Configuration for a pipeline processing stage."""
+    """Pipeline stage configuration."""
+    name: str
+    enabled: bool = True
+    filters: List[FilterConfig] = Field(default_factory=list)
+    parallel: bool = False
+    timeout: Optional[float] = None
+    retry_count: int = 0
+    error_handling: str = "stop"  # stop, skip, retry
+    metadata: Dict[str, Any] = Field(default_factory=dict)
 
-    name: str = Field(..., description="Unique name for this stage")
-    type: str = Field(..., description="Type of processing stage")
-    enabled: bool = Field(True, description="Whether this stage is enabled")
-    filters: List[FilterType] = Field(
-        default_factory=list, description="Filters to apply in this stage"
-    )
-    params: Dict[str, Any] = Field(
-        default_factory=dict, description="Stage-specific parameters"
-    )
-    inputs: List[str] = Field(
-        default_factory=list, description="Names of stages that feed into this stage"
-    )
-    outputs: List[str] = Field(
-        default_factory=list, description="Names of stages that this stage feeds into"
-    )
+    @field_validator("timeout")
+    def validate_timeout(cls, v, info):
+        """Validate timeout is positive."""
+        if v is not None and v <= 0:
+            raise ValueError("Timeout must be positive")
+        return v
 
-    @validator("type")
-    def validate_type(cls, v):
-        """Ensure stage type is valid."""
-        valid_types = ["source", "filter", "transform", "merge", "split", "output"]
-        if v not in valid_types:
-            raise ValueError(f"Stage type must be one of {valid_types}")
+    @field_validator("retry_count")
+    def validate_retry_count(cls, v, info):
+        """Validate retry count is non-negative."""
+        if v < 0:
+            raise ValueError("Retry count must be non-negative")
+        return v
+
+    @field_validator("error_handling")
+    def validate_error_handling(cls, v, info):
+        """Validate error handling strategy."""
+        valid_strategies = {"stop", "skip", "retry"}
+        if v not in valid_strategies:
+            raise ValueError(f"Error handling must be one of: {valid_strategies}")
         return v
 
 
 class ResourceLimits(BaseModel):
-    """Resource limits for pipeline execution."""
+    """Resource limits configuration."""
+    max_memory: Optional[int] = None  # in MB
+    max_cpu: Optional[float] = None  # percentage (0-100)
+    max_gpu: Optional[float] = None  # percentage (0-100)
+    max_threads: Optional[int] = None
+    priority: int = 0  # -20 to 19, lower is higher priority
 
-    max_memory_mb: Optional[int] = Field(
-        None, description="Maximum memory usage in megabytes"
-    )
-    max_cpu_percent: Optional[int] = Field(
-        None, description="Maximum CPU usage percentage"
-    )
-    max_gpu_memory_mb: Optional[int] = Field(
-        None, description="Maximum GPU memory usage in megabytes"
-    )
-    max_threads: Optional[int] = Field(
-        None, description="Maximum number of threads to use"
-    )
-
-    @validator("max_cpu_percent")
-    def validate_cpu_percent(cls, v):
-        """Ensure CPU percentage is valid."""
-        if v is not None and not 0 <= v <= 100:
-            raise ValueError("CPU percentage must be between 0 and 100")
+    @field_validator("max_memory", "max_threads")
+    def validate_positive(cls, v, info):
+        """Validate numeric fields are positive."""
+        if v is not None and v <= 0:
+            raise ValueError("Resource limit must be positive")
         return v
 
+    @field_validator("max_cpu", "max_gpu")
+    def validate_percentage(cls, v, info):
+        """Validate percentage is between 0 and 100."""
+        if v is not None and (v < 0 or v > 100):
+            raise ValueError("Percentage must be between 0 and 100")
+        return v
 
-class ExecutionSettings(BaseModel):
-    """Settings for pipeline execution."""
-
-    parallel_execution: bool = Field(
-        True, description="Whether stages can execute in parallel"
-    )
-    buffer_size: int = Field(1024, description="Size of inter-stage buffers")
-    timeout_ms: Optional[int] = Field(
-        None, description="Stage execution timeout in milliseconds"
-    )
-    retry_count: int = Field(3, description="Number of times to retry failed stages")
-    retry_delay_ms: int = Field(
-        1000, description="Delay between retries in milliseconds"
-    )
-
-
-class ErrorHandling(BaseModel):
-    """Error handling configuration for the pipeline."""
-
-    on_error: str = Field(
-        "stop", description="Action to take on error (stop, continue, retry)"
-    )
-    error_outputs: List[str] = Field(
-        default_factory=list, description="Stage names to output errors to"
-    )
-    log_errors: bool = Field(True, description="Whether to log errors")
-
-    @validator("on_error")
-    def validate_on_error(cls, v):
-        """Ensure error action is valid."""
-        valid_actions = ["stop", "continue", "retry"]
-        if v not in valid_actions:
-            raise ValueError(f"Error action must be one of {valid_actions}")
+    @field_validator("priority")
+    def validate_priority(cls, v, info):
+        """Validate priority is in valid range."""
+        if v < -20 or v > 19:
+            raise ValueError("Priority must be between -20 and 19")
         return v
 
 
 class PipelineConfig(BaseModel):
-    """Complete pipeline configuration schema."""
+    """Pipeline configuration schema."""
+    id: str = Field(..., description="Unique pipeline identifier")
+    name: str = Field(..., description="Human-readable pipeline name")
+    type: PipelineType = Field(..., description="Type of pipeline")
+    enabled: bool = True
+    
+    # Input configuration
+    input_streams: List[str] = Field(..., description="List of input stream IDs")
+    
+    # Processing configuration
+    stages: List[PipelineStage] = Field(..., description="Pipeline processing stages")
+    
+    # Output configuration
+    output_streams: List[str] = Field(default_factory=list, description="List of output stream IDs")
+    save_results: bool = False
+    results_path: Optional[str] = None
+    
+    # Resource management
+    resource_limits: ResourceLimits = Field(default_factory=ResourceLimits)
+    
+    # Error handling
+    error_handling: str = "stop"  # stop, skip, retry
+    max_retries: int = 3
+    retry_delay: float = 1.0
+    
+    # Additional settings
+    buffer_size: Optional[int] = None
+    metadata: Dict[str, Any] = Field(default_factory=dict)
 
-    name: str = Field(..., description="Unique name to identify the pipeline")
-    enabled: bool = Field(True, description="Whether the pipeline is enabled")
-    description: Optional[str] = Field(
-        None, description="Description of what the pipeline does"
-    )
-    stages: List[PipelineStage] = Field(
-        ..., description="List of pipeline processing stages"
-    )
-    resource_limits: Optional[ResourceLimits] = Field(
-        None, description="Resource usage limits"
-    )
-    execution_settings: ExecutionSettings = Field(
-        default_factory=ExecutionSettings, description="Pipeline execution settings"
-    )
-    error_handling: ErrorHandling = Field(
-        default_factory=ErrorHandling, description="Error handling configuration"
-    )
-    metadata: Dict[str, Any] = Field(
-        default_factory=dict, description="Additional pipeline metadata"
-    )
+    @field_validator("max_retries")
+    def validate_max_retries(cls, v, info):
+        """Validate max retries is non-negative."""
+        if v < 0:
+            raise ValueError("Max retries must be non-negative")
+        return v
 
-    @root_validator
-    def validate_pipeline(cls, values):
-        """Validate the complete pipeline configuration."""
-        if "stages" in values:
-            stages = values["stages"]
-            stage_names = set()
+    @field_validator("retry_delay")
+    def validate_retry_delay(cls, v, info):
+        """Validate retry delay is positive."""
+        if v <= 0:
+            raise ValueError("Retry delay must be positive")
+        return v
 
-            # Check for duplicate stage names
-            for stage in stages:
-                if stage.name in stage_names:
-                    raise ValueError(f"Duplicate stage name: {stage.name}")
-                stage_names.add(stage.name)
+    @field_validator("buffer_size")
+    def validate_buffer_size(cls, v, info):
+        """Validate buffer size is positive."""
+        if v is not None and v <= 0:
+            raise ValueError("Buffer size must be positive")
+        return v
 
-            # Validate stage connections
-            for stage in stages:
-                # Check input connections
-                for input_name in stage.inputs:
-                    if input_name not in stage_names:
-                        raise ValueError(
-                            f"Stage {stage.name} references non-existent input stage: {input_name}"
-                        )
-
-                # Check output connections
-                for output_name in stage.outputs:
-                    if output_name not in stage_names:
-                        raise ValueError(
-                            f"Stage {stage.name} references non-existent output stage: {output_name}"
-                        )
-
-            # Check for cycles
-            cls._check_for_cycles(stages)
-
-        return values
-
-    @classmethod
-    def _check_for_cycles(cls, stages: List[PipelineStage]):
-        """Check for cycles in the pipeline graph."""
-
-        def visit(stage_name: str, visited: set, path: set) -> None:
-            if stage_name in path:
-                raise ValueError(
-                    f"Cycle detected in pipeline involving stage: {stage_name}"
-                )
-            if stage_name in visited:
-                return
-
-            visited.add(stage_name)
-            path.add(stage_name)
-
-            stage = next(s for s in stages if s.name == stage_name)
-            for output in stage.outputs:
-                visit(output, visited, path)
-
-            path.remove(stage_name)
-
-        visited = set()
-        for stage in stages:
-            if stage.name not in visited:
-                visit(stage.name, visited, set())
+    @model_validator(mode='after')
+    def validate_pipeline(self) -> 'PipelineConfig':
+        """Validate pipeline configuration."""
+        if self.type and self.stages:
+            # Validate filter types match pipeline type
+            for stage in self.stages:
+                for filter_config in stage.filters:
+                    if self.type == PipelineType.VIDEO:
+                        if filter_config.type.value.endswith(("_detection", "_analysis")):
+                            continue
+                        if not any(filter_config.type.value.startswith(prefix) 
+                                 for prefix in ["resize", "crop", "rotate", "flip", 
+                                              "brightness", "contrast", "saturation", 
+                                              "hue", "denoise", "sharpen", "blur"]):
+                            raise ValueError(f"Invalid filter type {filter_config.type} for video pipeline")
+                    elif self.type == PipelineType.AUDIO:
+                        if not any(filter_config.type.value.startswith(prefix) 
+                                 for prefix in ["volume", "equalizer", "noise_reduction", 
+                                              "compressor", "normalizer"]):
+                            raise ValueError(f"Invalid filter type {filter_config.type} for audio pipeline")
+        
+        return self
 
 
-class PipelineStatus(BaseModel):
-    """Current status of a pipeline."""
-
-    running: bool = Field(
-        False, description="Whether the pipeline is currently running"
-    )
-    error: Optional[str] = Field(
-        None, description="Error message if pipeline is in error state"
-    )
-    start_time: Optional[str] = Field(
-        None, description="ISO timestamp when pipeline started"
-    )
-    stage_statuses: Dict[str, str] = Field(
-        default_factory=dict, description="Status of each pipeline stage"
-    )
-    stats: Dict[str, Any] = Field(
-        default_factory=dict, description="Pipeline-specific statistics"
-    )
+class PipelineList(BaseModel):
+    """List of pipeline configurations."""
+    pipelines: List[PipelineConfig] = Field(default_factory=list)

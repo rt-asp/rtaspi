@@ -1,195 +1,217 @@
 """
-config.py
-"""
-
-# !/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-rtaspi - Real-Time Annotation and Stream Processing
-Moduł obsługi konfiguracji
+config.py - Configuration management for rtaspi
 """
 
 import os
 import logging
 import yaml
 from pathlib import Path
+from typing import Dict, Any, Optional
+from .defaults import DEFAULT_CONFIG, ENV_VARIABLE_MAP
 
 logger = logging.getLogger("Config")
 
 
 class ConfigManager:
-    """Klasa zarządzająca konfiguracją systemu."""
+    """Manages hierarchical configuration system."""
 
-    def __init__(self, config_path=None):
-        """
-        Inicjalizacja menedżera konfiguracji.
-
-        Args:
-            config_path (str, optional): Ścieżka do pliku konfiguracyjnego.
-        """
-        self.config_path = config_path or os.environ.get("rtaspi_CONFIG", "config.yaml")
-        self.config = self.load_config()
-
-    def load_config(self):
-        """
-        Ładuje konfigurację z pliku.
-
-        Returns:
-            dict: Słownik konfiguracji.
-        """
-        # Domyślna konfiguracja
-        default_config = {
-            "system": {"storage_path": "storage", "log_level": "INFO"},
-            "local_devices": {
-                "enable_video": True,
-                "enable_audio": True,
-                "auto_start": False,
-                "scan_interval": 60,
-                "rtsp_port_start": 8554,
-                "rtmp_port_start": 1935,
-                "webrtc_port_start": 8080,
-            },
-            "network_devices": {
-                "enable": True,
-                "scan_interval": 60,
-                "discovery_enabled": True,
-                "discovery_methods": ["onvif", "upnp", "mdns"],
-                "rtsp_port_start": 8654,
-                "rtmp_port_start": 2935,
-                "webrtc_port_start": 9080,
-            },
-            "streaming": {
-                "rtsp": {"port_start": 8554},
-                "rtmp": {"port_start": 1935},
-                "webrtc": {
-                    "port_start": 8080,
-                    "stun_server": "stun://stun.l.google.com:19302",
-                    "turn_server": "",
-                    "turn_username": "",
-                    "turn_password": "",
-                },
-            },
+    def __init__(self):
+        """Initialize the configuration manager with hierarchical config support."""
+        self.config_levels = {
+            "defaults": DEFAULT_CONFIG,
+            "global": self._expand_path("/etc/rtaspi/config.yaml"),
+            "user": self._expand_path("~/.config/rtaspi/config.yaml"),
+            "project": ".rtaspi/config.yaml"
         }
+        self.config = self._load_hierarchical_config()
 
-        config = default_config.copy()
+    def _expand_path(self, path: str) -> str:
+        """Expand user and environment variables in path."""
+        return os.path.expanduser(os.path.expandvars(path))
 
-        try:
-            # Sprawdź, czy plik konfiguracyjny istnieje
-            if os.path.exists(self.config_path):
-                with open(self.config_path, "r") as f:
-                    loaded_config = yaml.safe_load(f)
+    def _load_hierarchical_config(self) -> Dict[str, Any]:
+        """Load configuration from all sources in order of precedence."""
+        config = DEFAULT_CONFIG.copy()
 
-                # Aktualizacja konfiguracji
-                if loaded_config:
-                    self._update_dict(config, loaded_config)
+        # Load from files in order
+        for level, path in self.config_levels.items():
+            if level == "defaults":
+                continue
+            try:
+                if os.path.exists(path):
+                    with open(path, "r") as f:
+                        loaded_config = yaml.safe_load(f)
+                        if loaded_config:
+                            self._update_dict(config, loaded_config)
+                            logger.info(f"Loaded {level} configuration from {path}")
+            except Exception as e:
+                logger.error(f"Error loading {level} configuration from {path}: {e}")
 
-                logger.info(f"Załadowano konfigurację z pliku: {self.config_path}")
-            else:
-                logger.warning(
-                    f"Nie znaleziono pliku konfiguracyjnego: {self.config_path}, używam domyślnej konfiguracji"
-                )
-
-                # Zapisz domyślną konfigurację
-                self.save_config(config)
-
-        except Exception as e:
-            logger.error(f"Błąd podczas ładowania konfiguracji: {e}")
+        # Apply environment variables last (highest precedence)
+        self._apply_env_variables(config)
 
         return config
 
-    def save_config(self, config=None):
+    def _apply_env_variables(self, config: Dict[str, Any]) -> None:
+        """Apply environment variables to configuration."""
+        for env_var, config_path in ENV_VARIABLE_MAP.items():
+            value = os.environ.get(env_var)
+            if value is not None:
+                try:
+                    # Convert string value to appropriate type
+                    if value.lower() in ('true', 'false'):
+                        value = value.lower() == 'true'
+                    elif value.isdigit():
+                        value = int(value)
+                    elif value.replace('.', '').isdigit() and value.count('.') == 1:
+                        value = float(value)
+
+                    self.set(config_path, value, "env")
+                except Exception as e:
+                    logger.error(f"Error applying environment variable {env_var}: {e}")
+
+    def save_config(self, level: str = "project") -> bool:
         """
-        Zapisuje konfigurację do pliku.
+        Save current configuration to specified level.
 
         Args:
-            config (dict, optional): Konfiguracja do zapisania. Jeśli None, używa bieżącej konfiguracji.
+            level (str): Configuration level to save to ('global', 'user', or 'project')
 
         Returns:
-            bool: True jeśli zapisano pomyślnie, False w przeciwnym razie.
+            bool: True if saved successfully, False otherwise
         """
-        try:
-            # Użyj bieżącej konfiguracji, jeśli nie podano innej
-            config = config or self.config
-
-            # Utwórz katalogi, jeśli nie istnieją
-            os.makedirs(
-                os.path.dirname(os.path.abspath(self.config_path)), exist_ok=True
-            )
-
-            # Zapisz konfigurację do pliku
-            with open(self.config_path, "w") as f:
-                yaml.dump(config, f, default_flow_style=False)
-
-            logger.info(f"Zapisano konfigurację do pliku: {self.config_path}")
-            return True
-
-        except Exception as e:
-            logger.error(f"Błąd podczas zapisywania konfiguracji: {e}")
+        if level not in self.config_levels or level == "defaults":
+            logger.error(f"Invalid configuration level: {level}")
             return False
 
-    def get(self, key, default=None):
+        path = self.config_levels[level]
+        try:
+            os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
+            with open(path, "w") as f:
+                yaml.dump(self.config, f, default_flow_style=False)
+            logger.info(f"Saved configuration to {level} level at {path}")
+            return True
+        except Exception as e:
+            logger.error(f"Error saving configuration to {path}: {e}")
+            return False
+
+    def get_config(self, section: str, key: str, default: Any = None) -> Any:
         """
-        Pobiera wartość z konfiguracji.
+        Get configuration value with dot notation.
 
         Args:
-            key (str): Klucz konfiguracji, może zawierać kropki dla zagnieżdżonych słowników.
-            default: Wartość domyślna, jeśli klucz nie istnieje.
+            section (str): Configuration section
+            key (str): Configuration key
+            default: Default value if not found
 
         Returns:
-            Wartość konfiguracji lub default, jeśli klucz nie istnieje.
+            Configuration value or default if not found
+        """
+        return self.get(f"{section}.{key}", default)
+
+    def get(self, key: str, default: Any = None) -> Any:
+        """
+        Get configuration value using dot notation.
+
+        Args:
+            key (str): Configuration key with dot notation
+            default: Default value if not found
+
+        Returns:
+            Configuration value or default if not found
         """
         value = self.config
-
-        # Obsługa zagnieżdżonych słowników
         for part in key.split("."):
             if isinstance(value, dict) and part in value:
                 value = value[part]
             else:
                 return default
-
         return value
 
-    def set(self, key, value):
+    def set_config(self, section: str, key: str, value: Any, level: str = "project") -> bool:
         """
-        Ustawia wartość w konfiguracji.
+        Set configuration value with section and key.
 
         Args:
-            key (str): Klucz konfiguracji, może zawierać kropki dla zagnieżdżonych słowników.
-            value: Wartość do ustawienia.
+            section (str): Configuration section
+            key (str): Configuration key
+            value: Value to set
+            level (str): Configuration level to save to
 
         Returns:
-            bool: True jeśli ustawiono pomyślnie, False w przeciwnym razie.
+            bool: True if set successfully, False otherwise
         """
+        return self.set(f"{section}.{key}", value, level)
+
+    def set(self, key: str, value: Any, level: str = "project") -> bool:
+        """
+        Set configuration value using dot notation.
+
+        Args:
+            key (str): Configuration key with dot notation
+            value: Value to set
+            level (str): Configuration level to save to
+
+        Returns:
+            bool: True if set successfully, False otherwise
+        """
+        if level not in self.config_levels:
+            logger.error(f"Invalid configuration level: {level}")
+            return False
+
         try:
-            # Obsługa zagnieżdżonych słowników
             parts = key.split(".")
             current = self.config
 
-            # Przejdź do odpowiedniego zagnieżdżenia
+            # Navigate to the correct nesting level
             for part in parts[:-1]:
                 if part not in current:
                     current[part] = {}
                 current = current[part]
 
-            # Ustaw wartość
+            # Set the value
             current[parts[-1]] = value
 
-            return True
+            # Save to the specified configuration level
+            return self.save_config(level)
 
         except Exception as e:
-            logger.error(f"Błąd podczas ustawiania konfiguracji: {e}")
+            logger.error(f"Error setting configuration value: {e}")
             return False
 
-    def _update_dict(self, dest, source):
+    def _update_dict(self, dest: Dict[str, Any], source: Dict[str, Any]) -> None:
         """
-        Aktualizuje słownik docelowy wartościami ze słownika źródłowego.
+        Update destination dictionary with source values recursively.
 
         Args:
-            dest (dict): Słownik docelowy.
-            source (dict): Słownik źródłowy.
+            dest (dict): Destination dictionary
+            source (dict): Source dictionary
         """
         for key, value in source.items():
             if key in dest and isinstance(dest[key], dict) and isinstance(value, dict):
                 self._update_dict(dest[key], value)
             else:
                 dest[key] = value
+
+    def load_config_file(self, path: str) -> bool:
+        """
+        Load configuration from a specific file.
+
+        Args:
+            path (str): Path to configuration file
+
+        Returns:
+            bool: True if loaded successfully, False otherwise
+        """
+        try:
+            if os.path.exists(path):
+                with open(path, "r") as f:
+                    loaded_config = yaml.safe_load(f)
+                    if loaded_config:
+                        self._update_dict(self.config, loaded_config)
+                        logger.info(f"Loaded configuration from {path}")
+                        return True
+            return False
+        except Exception as e:
+            logger.error(f"Error loading configuration from {path}: {e}")
+            return False

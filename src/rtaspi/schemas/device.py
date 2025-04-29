@@ -1,129 +1,125 @@
 """
-Schema definitions for device configurations.
-
-This module provides Pydantic models for validating device configurations,
-ensuring that all required fields are present and have the correct types.
+device.py - Device configuration schemas
 """
 
-from typing import Optional, Dict, Any, List
-from pydantic import BaseModel, Field, validator
-from rtaspi.constants import DeviceType, ProtocolType
+from typing import List, Optional, Union
+from pydantic import BaseModel, Field, field_validator
+from enum import Enum
+
+
+class DeviceType(str, Enum):
+    """Device types supported by rtaspi."""
+    CAMERA = "camera"
+    MICROPHONE = "microphone"
+    VIRTUAL_CAMERA = "virtual_camera"
+    VIRTUAL_MICROPHONE = "virtual_microphone"
+
+
+class DeviceProtocol(str, Enum):
+    """Supported device protocols."""
+    V4L2 = "v4l2"  # Linux video devices
+    ALSA = "alsa"  # Linux audio devices
+    DSHOW = "dshow"  # Windows DirectShow
+    AVFOUNDATION = "avfoundation"  # macOS AVFoundation
+    RTSP = "rtsp"  # Network RTSP devices
+    ONVIF = "onvif"  # Network ONVIF devices
+    VIRTUAL = "virtual"  # Virtual devices
 
 
 class DeviceAuth(BaseModel):
-    """Authentication configuration for devices that require it."""
-
-    protocol: ProtocolType = Field(..., description="Authentication protocol to use")
-    username: Optional[str] = Field(None, description="Username for authentication")
-    password: Optional[str] = Field(None, description="Password for authentication")
-    token: Optional[str] = Field(
-        None, description="Authentication token (for OAuth2, JWT, etc.)"
-    )
-    key_file: Optional[str] = Field(
-        None, description="Path to key file (for SSH, etc.)"
-    )
-
-    @validator("protocol")
-    def validate_protocol(cls, v):
-        """Ensure the protocol is an authentication protocol."""
-        if not v.is_auth_protocol():
-            raise ValueError(f"Protocol {v} is not an authentication protocol")
-        return v
-
-
-class DeviceConnection(BaseModel):
-    """Connection configuration for network devices."""
-
-    host: str = Field(..., description="Hostname or IP address of the device")
-    port: Optional[int] = Field(None, description="Port number for the connection")
-    protocol: ProtocolType = Field(..., description="Protocol to use for communication")
-    path: Optional[str] = Field(None, description="URL path or resource identifier")
-    auth: Optional[DeviceAuth] = Field(
-        None, description="Authentication configuration if required"
-    )
-
-    @validator("port")
-    def validate_port(cls, v):
-        """Ensure port number is valid if provided."""
-        if v is not None and not 1 <= v <= 65535:
-            raise ValueError("Port number must be between 1 and 65535")
-        return v
+    """Device authentication configuration."""
+    username: Optional[str] = None
+    password: Optional[str] = None
+    token: Optional[str] = None
+    method: str = "basic"  # basic, digest, token
 
 
 class DeviceCapabilities(BaseModel):
-    """Device capabilities and features."""
-
-    supports_video: bool = Field(
-        False, description="Whether the device supports video capture"
-    )
-    supports_audio: bool = Field(
-        False, description="Whether the device supports audio capture"
-    )
-    video_formats: Optional[List[str]] = Field(
-        None, description="Supported video formats (e.g., H264, MJPEG)"
-    )
-    audio_formats: Optional[List[str]] = Field(
-        None, description="Supported audio formats (e.g., AAC, PCM)"
-    )
-    resolutions: Optional[List[str]] = Field(
-        None, description="Supported video resolutions"
-    )
-    frame_rates: Optional[List[float]] = Field(
-        None, description="Supported frame rates"
-    )
-    ptz_supported: bool = Field(
-        False, description="Whether the device supports PTZ controls"
-    )
+    """Device capabilities configuration."""
+    video: bool = False
+    audio: bool = False
+    ptz: bool = False
+    infrared: bool = False
+    motion_detection: bool = False
+    audio_detection: bool = False
+    formats: List[str] = Field(default_factory=list)
+    resolutions: List[str] = Field(default_factory=list)
+    framerates: List[int] = Field(default_factory=list)
+    audio_formats: List[str] = Field(default_factory=list)
+    audio_rates: List[int] = Field(default_factory=list)
+    audio_channels: List[int] = Field(default_factory=list)
 
 
 class DeviceConfig(BaseModel):
-    """Complete device configuration schema."""
+    """Device configuration schema."""
+    id: str = Field(..., description="Unique device identifier")
+    name: str = Field(..., description="Human-readable device name")
+    type: DeviceType = Field(..., description="Type of device")
+    protocol: DeviceProtocol = Field(..., description="Device protocol")
+    enabled: bool = True
+    path: Optional[str] = Field(None, description="Device path or URL")
+    index: Optional[int] = Field(None, description="Device index for local devices")
+    
+    # Authentication
+    auth: Optional[DeviceAuth] = None
+    
+    # Capabilities and settings
+    capabilities: DeviceCapabilities = Field(default_factory=DeviceCapabilities)
+    preferred_format: Optional[str] = None
+    preferred_resolution: Optional[str] = None
+    preferred_framerate: Optional[int] = None
+    preferred_audio_format: Optional[str] = None
+    preferred_audio_rate: Optional[int] = None
+    preferred_audio_channels: Optional[int] = None
+    
+    # Network device specific
+    host: Optional[str] = None
+    port: Optional[int] = None
+    discovery_info: Optional[dict] = None
+    
+    # Virtual device specific
+    source_device: Optional[str] = None
+    virtual_type: Optional[str] = None
+    
+    # Additional settings
+    settings: dict = Field(default_factory=dict)
+    metadata: dict = Field(default_factory=dict)
 
-    name: str = Field(..., description="Unique name to identify the device")
-    type: DeviceType = Field(..., description="Type of the device")
-    enabled: bool = Field(True, description="Whether the device is enabled")
-    connection: Optional[DeviceConnection] = Field(
-        None, description="Connection details for network devices"
-    )
-    capabilities: DeviceCapabilities = Field(
-        default_factory=DeviceCapabilities,
-        description="Device capabilities and features",
-    )
-    settings: Dict[str, Any] = Field(
-        default_factory=dict, description="Device-specific settings"
-    )
-
-    @validator("connection", always=True)
-    def validate_connection(cls, v, values):
-        """Ensure connection details are present for network devices."""
-        device_type = values.get("type")
-        if device_type and device_type.is_network_device() and not v:
-            raise ValueError("Connection details required for network devices")
+    @field_validator("preferred_resolution")
+    def validate_resolution(cls, v, info):
+        """Validate resolution format (e.g., '1920x1080')."""
+        if v is not None:
+            try:
+                width, height = map(int, v.split("x"))
+                if width <= 0 or height <= 0:
+                    raise ValueError
+                return v
+            except (ValueError, AttributeError):
+                raise ValueError("Resolution must be in format 'WIDTHxHEIGHT'")
         return v
 
-    @validator("capabilities", always=True)
-    def validate_capabilities(cls, v, values):
-        """Set default capabilities based on device type."""
-        device_type = values.get("type")
-        if device_type:
-            v.supports_video = device_type.is_video_device()
-            v.supports_audio = device_type.is_audio_device()
+    @field_validator("preferred_framerate")
+    def validate_framerate(cls, v, info):
+        """Validate framerate is positive."""
+        if v is not None and v <= 0:
+            raise ValueError("Framerate must be positive")
+        return v
+
+    @field_validator("preferred_audio_rate")
+    def validate_audio_rate(cls, v, info):
+        """Validate audio sample rate is positive."""
+        if v is not None and v <= 0:
+            raise ValueError("Audio sample rate must be positive")
+        return v
+
+    @field_validator("preferred_audio_channels")
+    def validate_audio_channels(cls, v, info):
+        """Validate audio channels is positive."""
+        if v is not None and v <= 0:
+            raise ValueError("Audio channels must be positive")
         return v
 
 
-class DeviceStatus(BaseModel):
-    """Current status of a device."""
-
-    online: bool = Field(False, description="Whether the device is currently online")
-    connected: bool = Field(
-        False, description="Whether the device is currently connected"
-    )
-    error: Optional[str] = Field(
-        None, description="Error message if device is in error state"
-    )
-    last_seen: Optional[str] = Field(
-        None, description="ISO timestamp of last successful connection"
-    )
-    stats: Dict[str, Any] = Field(
-        default_factory=dict, description="Device-specific statistics"
-    )
+class DeviceList(BaseModel):
+    """List of device configurations."""
+    devices: List[DeviceConfig] = Field(default_factory=list)

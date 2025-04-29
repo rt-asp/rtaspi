@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.22] - 2025-04-29
+
+### Added
+- Changes in TODO2.md
+- Changes in examples/config/README.md
+- Changes in examples/config/project.config.yaml
+- Changes in examples/config/rtaspi.config.yaml
+- Changes in examples/config/user.config.yaml
+- Changes in src/rtaspi/core/defaults.py
+- Changes in src/rtaspi/device_managers/remote_desktop/__init__.py
+- Changes in src/rtaspi/device_managers/remote_desktop/base.py
+- Changes in src/rtaspi/device_managers/remote_desktop/rdp.py
+
+### Changed
+- Changes in src/rtaspi/core/config.py
+- Changes in src/rtaspi/schemas/__init__.py
+- Changes in src/rtaspi/schemas/device.py
+- Changes in src/rtaspi/schemas/stream.py
+
+### Fixed
+- Changes in src/rtaspi/schemas/pipeline.py
+
 ## [0.1.21] - 2025-04-29
 
 ### Added
