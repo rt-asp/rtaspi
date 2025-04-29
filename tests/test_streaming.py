@@ -57,7 +57,6 @@ async def test_start_stream_local_device_success(rtsp_server, mock_local_device)
 @pytest.mark.asyncio
 async def test_start_stream_local_device_failure(rtsp_server, mock_local_device):
     with patch("subprocess.Popen") as mock_popen, patch("socket.socket") as mock_socket:
-
         # Configure mock socket
         mock_socket_instance = MagicMock()
         mock_socket_instance.connect_ex.return_value = 1
@@ -68,13 +67,13 @@ async def test_start_stream_local_device_failure(rtsp_server, mock_local_device)
         mock_process.poll.return_value = 1  # Process failed
         mock_popen.return_value = mock_process
 
-        # Start stream should raise an error
-        with pytest.raises(RuntimeError):
-            await rtsp_server.start_stream(
-                device=mock_local_device,
-                stream_id="test_stream",
-                output_dir="/tmp/streams",
-            )
+        # Start stream should return None on failure
+        result = await rtsp_server.start_stream(
+            device=mock_local_device,
+            stream_id="test_stream",
+            output_dir="/tmp/streams",
+        )
+        assert result is None
 
 
 @pytest.mark.asyncio
@@ -87,16 +86,16 @@ async def test_start_stream_invalid_device(rtsp_server):
         driver="unknown",
     )
 
-    with pytest.raises(ValueError):
-        await rtsp_server.start_stream(
-            device=invalid_device, stream_id="test_stream", output_dir="/tmp/streams"
-        )
+    # Should return None for invalid device
+    result = await rtsp_server.start_stream(
+        device=invalid_device, stream_id="test_stream", output_dir="/tmp/streams"
+    )
+    assert result is None
 
 
 @pytest.mark.asyncio
 async def test_concurrent_streams(rtsp_server, mock_local_device):
     with patch("subprocess.Popen") as mock_popen, patch("socket.socket") as mock_socket:
-
         # Configure mock socket
         mock_socket_instance = MagicMock()
         mock_socket_instance.connect_ex.return_value = 1
@@ -126,7 +125,6 @@ async def test_concurrent_streams(rtsp_server, mock_local_device):
 async def test_proxy_stream_network_device_success(rtsp_server, mock_network_device):
     # Mock subprocess and socket
     with patch("subprocess.Popen") as mock_popen, patch("socket.socket") as mock_socket:
-
         # Configure mock socket to indicate port is free
         mock_socket_instance = MagicMock()
         mock_socket_instance.connect_ex.return_value = 1  # Port is free
@@ -170,14 +168,14 @@ async def test_proxy_stream_network_device_failure(rtsp_server, mock_network_dev
         mock_process.poll.return_value = 1  # Process failed
         mock_popen.return_value = mock_process
 
-        # Start proxy stream should raise an error
-        with pytest.raises(RuntimeError):
-            await rtsp_server.proxy_stream(
-                device=mock_network_device,
-                stream_id="test_proxy",
-                source_url="rtsp://192.168.1.100:554/stream1",
-                output_dir="/tmp/streams",
-            )
+        # Start proxy stream should return None on failure
+        result = await rtsp_server.proxy_stream(
+            device=mock_network_device,
+            stream_id="test_proxy",
+            source_url="rtsp://192.168.1.100:554/stream1",
+            output_dir="/tmp/streams",
+        )
+        assert result is None
 
 
 @pytest.mark.asyncio

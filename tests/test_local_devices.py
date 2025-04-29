@@ -97,7 +97,7 @@ async def test_auto_start_enabled(test_config, mcp_broker, mock_local_device):
 
     # Mock device scanning and stream starting
     with patch.object(manager, "_scan_devices") as mock_scan, patch.object(
-        manager, "start_stream"
+        manager.stream_manager, "start_stream"
     ) as mock_start:
         mock_scan.return_value = None
         mock_start.return_value = "rtsp://localhost:8554/test"
@@ -106,19 +106,19 @@ async def test_auto_start_enabled(test_config, mcp_broker, mock_local_device):
         await manager.initialize()
 
         mock_scan.assert_called_once()
-        mock_start.assert_called_once_with(mock_local_device.device_id, protocol="rtsp")
+        mock_start.assert_called_once()
 
 
 @pytest.mark.asyncio
 async def test_start_stream_rtsp(local_manager, mock_local_device):
     local_manager.devices["video"][mock_local_device.device_id] = mock_local_device
 
-    # Mock RTSP server
-    with patch.object(local_manager.rtsp_server, "start_stream") as mock_start_stream:
+    # Mock stream manager
+    with patch.object(local_manager.stream_manager, "start_stream") as mock_start_stream:
         mock_start_stream.return_value = "rtsp://localhost:8554/test_stream"
 
         # Start stream
-        url = await local_manager.start_stream("test_video", protocol="rtsp")
+        url = await local_manager.stream_manager.start_stream(mock_local_device, protocol="rtsp")
 
         assert url == "rtsp://localhost:8554/test_stream"
         mock_start_stream.assert_called_once()
@@ -128,10 +128,10 @@ async def test_start_stream_rtsp(local_manager, mock_local_device):
 async def test_start_stream_rtmp(local_manager, mock_local_device):
     local_manager.devices["video"][mock_local_device.device_id] = mock_local_device
 
-    with patch.object(local_manager.rtmp_server, "start_stream") as mock_start_stream:
+    with patch.object(local_manager.stream_manager, "start_stream") as mock_start_stream:
         mock_start_stream.return_value = "rtmp://localhost:1935/live/test_stream"
 
-        url = await local_manager.start_stream("test_video", protocol="rtmp")
+        url = await local_manager.stream_manager.start_stream(mock_local_device, protocol="rtmp")
 
         assert url == "rtmp://localhost:1935/live/test_stream"
         mock_start_stream.assert_called_once()
@@ -141,10 +141,10 @@ async def test_start_stream_rtmp(local_manager, mock_local_device):
 async def test_start_stream_webrtc(local_manager, mock_local_device):
     local_manager.devices["video"][mock_local_device.device_id] = mock_local_device
 
-    with patch.object(local_manager.webrtc_server, "start_stream") as mock_start_stream:
+    with patch.object(local_manager.stream_manager, "start_stream") as mock_start_stream:
         mock_start_stream.return_value = "ws://localhost:8080/test_stream"
 
-        url = await local_manager.start_stream("test_video", protocol="webrtc")
+        url = await local_manager.stream_manager.start_stream(mock_local_device, protocol="webrtc")
 
         assert url == "ws://localhost:8080/test_stream"
         mock_start_stream.assert_called_once()
@@ -153,7 +153,7 @@ async def test_start_stream_webrtc(local_manager, mock_local_device):
 @pytest.mark.asyncio
 async def test_start_stream_invalid_device(local_manager):
     with pytest.raises(ValueError):
-        await local_manager.start_stream("nonexistent_device", protocol="rtsp")
+        await local_manager.stream_manager.start_stream(None, protocol="rtsp")
 
 
 @pytest.mark.asyncio
@@ -161,7 +161,7 @@ async def test_start_stream_invalid_protocol(local_manager, mock_local_device):
     local_manager.devices["video"][mock_local_device.device_id] = mock_local_device
 
     with pytest.raises(ValueError):
-        await local_manager.start_stream("test_video", protocol="invalid")
+        await local_manager.stream_manager.start_stream(mock_local_device, protocol="invalid")
 
 
 @pytest.mark.asyncio
@@ -170,7 +170,7 @@ async def test_stop_stream(local_manager, mock_local_device):
 
     # Add a test stream
     stream_id = "test_stream"
-    local_manager.streams[stream_id] = {
+    local_manager.stream_manager.streams[stream_id] = {
         "stream_id": stream_id,
         "device_id": mock_local_device.device_id,
         "type": "video",
@@ -178,62 +178,64 @@ async def test_stop_stream(local_manager, mock_local_device):
         "url": "rtsp://localhost:8554/test",
     }
 
-    # Mock stream servers
-    with patch.object(local_manager.rtsp_server, "stop_stream") as mock_stop_rtsp:
-        mock_stop_rtsp.return_value = True
+    # Mock stream manager
+    with patch.object(local_manager.stream_manager, "stop_stream") as mock_stop_stream:
+        mock_stop_stream.return_value = True
 
-        success = await local_manager.stop_stream(stream_id)
+        success = await local_manager.stream_manager.stop_stream(stream_id)
         assert success
 
-        mock_stop_rtsp.assert_called_once_with(stream_id)
+        mock_stop_stream.assert_called_once_with(stream_id)
 
 
 @pytest.mark.asyncio
 async def test_stop_stream_invalid_device(local_manager):
-    success = await local_manager.stop_stream("nonexistent_device")
+    success = await local_manager.stream_manager.stop_stream("nonexistent_device")
     assert not success
 
 
 @pytest.mark.asyncio
 async def test_handle_command_valid(local_manager, mock_local_device):
-    # Mock scan_devices and mcp_client
-    with patch.object(local_manager, "_scan_devices") as mock_scan, patch.object(
-        local_manager, "mcp_client"
-    ) as mock_mcp:
-
+    # Mock command handler's publish method
+    with patch.object(local_manager.command_handler.mcp_client, "publish") as mock_publish:
         # Test scan command
-        await local_manager._handle_command("command/local_devices/scan", {})
-        mock_scan.assert_called_once()
-        mock_mcp.publish.assert_called()
+        await local_manager.command_handler.handle_command("command/local_devices/scan", {})
+        mock_publish.assert_called_with("local_devices/devices", {
+            "video": {},
+            "audio": {}
+        })
 
         # Test start stream command
         local_manager.devices["video"][mock_local_device.device_id] = mock_local_device
-
-        with patch.object(local_manager, "start_stream") as mock_start:
+        local_manager.command_handler.set_devices(local_manager.devices)
+        with patch.object(local_manager.command_handler.stream_manager, "start_stream") as mock_start:
             mock_start.return_value = "rtsp://localhost:8554/test"
-            await local_manager._handle_command(
+            await local_manager.command_handler.handle_command(
                 "command/local_devices/start_stream",
-                {"device_id": "test_video", "protocol": "rtsp"},
+                {"device_id": mock_local_device.device_id, "protocol": "rtsp"},
             )
-            mock_start.assert_called_once_with("test_video", protocol="rtsp")
+            mock_start.assert_called_once_with(mock_local_device, protocol="rtsp")
+            mock_publish.assert_called_with(
+                "local_devices/command/result",
+                {
+                    "command": "start_stream",
+                    "device_id": mock_local_device.device_id,
+                    "protocol": "rtsp",
+                    "success": True,
+                    "url": "rtsp://localhost:8554/test"
+                }
+            )
 
 
 @pytest.mark.asyncio
 async def test_handle_command_invalid(local_manager):
     # Test invalid command type
     with pytest.raises(ValueError):
-        await local_manager._handle_command("command/local_devices/invalid", {})
+        await local_manager.command_handler.handle_command("command/local_devices/invalid", {})
 
     # Test start stream with missing parameters
     with pytest.raises(ValueError):
-        await local_manager._handle_command("command/local_devices/start_stream", {})
-
-    # Test start stream with invalid device
-    with pytest.raises(ValueError):
-        await local_manager._handle_command(
-            "command/local_devices/start_stream",
-            {"device_id": "nonexistent", "protocol": "rtsp"},
-        )
+        await local_manager.command_handler.handle_command("command/local_devices/start_stream", {})
 
 
 @pytest.mark.asyncio

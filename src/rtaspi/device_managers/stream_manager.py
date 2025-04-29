@@ -60,9 +60,13 @@ class StreamManager:
             Optional[str]: Stream URL if successful, None otherwise.
 
         Raises:
-            ValueError: If protocol is not supported.
+            ValueError: If protocol is not supported or device is invalid.
             RuntimeError: If stream cannot be started.
         """
+        # Validate device
+        if not device or not isinstance(device, LocalDevice):
+            raise ValueError("Invalid device")
+
         # Validate protocol
         if protocol not in ["rtsp", "rtmp", "webrtc"]:
             raise ValueError(f"Unsupported protocol: {protocol}")

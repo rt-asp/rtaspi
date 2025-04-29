@@ -152,12 +152,29 @@ class NetworkDevicesManager(DeviceManager):
             raise ValueError("Name and IP address are required")
         if not isinstance(name, str) or not isinstance(ip, str):
             raise ValueError("Name and IP address must be strings")
-        if port and not isinstance(port, int):
-            raise ValueError("Port must be an integer")
+        if port:
+            if not isinstance(port, int):
+                raise ValueError("Port must be an integer")
+            if port < 1 or port > 65535:
+                raise ValueError("Port must be between 1 and 65535")
         if type and type not in ["video", "audio"]:
             raise ValueError("Type must be 'video' or 'audio'")
         if protocol and protocol not in ["rtsp", "rtmp", "http"]:
             raise ValueError("Protocol must be 'rtsp', 'rtmp', or 'http'")
+
+        # Validate IP address format
+        import re
+
+        ip_pattern = r"^(\d{1,3}\.){3}\d{1,3}$"
+        if not re.match(ip_pattern, ip):
+            raise ValueError("Invalid IP address format")
+        
+        # Validate each octet is between 0 and 255
+        octets = ip.split('.')
+        for octet in octets:
+            value = int(octet)
+            if value < 0 or value > 255:
+                raise ValueError("Invalid IP address: octets must be between 0 and 255")
 
         port = port or 554
         device_id = f"{ip}:{port}"
@@ -199,7 +216,7 @@ class NetworkDevicesManager(DeviceManager):
         """
         if device_id not in self.devices:
             raise ValueError(f"Device {device_id} not found")
-        
+
         del self.devices[device_id]
         self._save_devices()
         return True

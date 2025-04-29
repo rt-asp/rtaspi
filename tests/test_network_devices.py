@@ -53,7 +53,7 @@ def test_add_device_invalid_data(network_manager):
     # Empty strings
     with pytest.raises(ValueError):
         network_manager.add_device(name="", ip="192.168.1.100")
-    
+
     with pytest.raises(ValueError):
         network_manager.add_device(name="Test Camera", ip="")
 

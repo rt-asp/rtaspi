@@ -1,19 +1,21 @@
 # TODO - Lista Zadań 
 
+
 ## 1. Refaktoryzacja i Struktura Kodu
-- [ ] Utworzenie nowej struktury katalogów:
-  - [ ] Stworzyć nowe katalogi: `api/`, `cli/`, `constants/`, `quick/`, `processing/`, `schemas/`
+- [x] Utworzenie nowej struktury katalogów:
+  - [x] Stworzyć nowe katalogi: `api/`, `cli/`, `constants/`, `quick/`, `processing/`, `schemas/`
   - [x] Przeorganizować istniejące katalogi: `device_managers/`, `streaming/`
   - [x] Przygotować pliki `__init__.py` dla wszystkich modułów
-- [ ] Implementacja centralnego systemu stałych i enumeracji:
-  - [ ] Stworzyć `constants/filters.py` z `FilterType` (GRAYSCALE, EDGE_DETECTION, FACE_DETECTION, itd.)
-  - [ ] Stworzyć `constants/devices.py` z `DeviceType` (CAMERA, MICROPHONE, NETWORK_CAMERA, itd.)
-  - [ ] Stworzyć `constants/outputs.py` z `OutputType` (RTSP, RTMP, FILE, EVENT, itd.)
-  - [ ] Stworzyć `constants/protocols.py` z `ProtocolType` (HTTP, RTSP, RTMP, WEBRTC, itd.)
-- [ ] Podział dużych plików na mniejsze moduły:
-  - [ ] Podzielić pliki większe niż 400 linii kodu
-  - [ ] Wydzielić wspólne funkcjonalności do klas bazowych i modułów pomocniczych
-  - [ ] Zapewnić kompatybilność wsteczną
+- [x] Implementacja centralnego systemu stałych i enumeracji:
+  - [x] Stworzyć `constants/filters.py` z `FilterType` (GRAYSCALE, EDGE_DETECTION, FACE_DETECTION, itd.)
+  - [x] Stworzyć `constants/devices.py` z `DeviceType` (CAMERA, MICROPHONE, NETWORK_CAMERA, itd.)
+  - [x] Stworzyć `constants/outputs.py` z `OutputType` (RTSP, RTMP, FILE, EVENT, itd.)
+  - [x] Stworzyć `constants/protocols.py` z `ProtocolType` (HTTP, RTSP, RTMP, WEBRTC, itd.)
+- [x] Podział dużych plików na mniejsze moduły:
+  - [x] Podzielić pliki większe niż 300 linii kodu
+  - [x] Wydzielić wspólne funkcjonalności do klas bazowych i modułów pomocniczych
+  - [x] Zapewnić kompatybilność wsteczną
+
 
 ## 2. System Konfiguracji
 - [x] Zaimplementować hierarchiczny system konfiguracji:
@@ -32,21 +34,23 @@
   - [ ] `load_config_file(path)`
   - [ ] `save_config_file(path, level='user')`
 
+
 ## 3. Interfejs Wiersza Poleceń (CLI)
-- [ ] Zaimplementować główny szkielet CLI:
-  - [ ] Utworzyć klasę `RTASPIShell` w `src/rtaspi/cli/shell.py`
-  - [ ] Zintegrować z biblioteką `click` do obsługi parametrów
-  - [ ] Dodać obsługę globalnych opcji (--config, --verbose, --help)
-- [ ] Implementacja podkomend dla CLI:
-  - [ ] `cli/commands/config.py` - zarządzanie konfiguracją
-  - [ ] `cli/commands/devices.py` - zarządzanie urządzeniami
-  - [ ] `cli/commands/streams.py` - zarządzanie strumieniami
-  - [ ] `cli/commands/pipelines.py` - zarządzanie pipelinami
-  - [ ] `cli/commands/server.py` - zarządzanie serwerem
-- [ ] Dodanie autouzupełniania dla powłok:
-  - [ ] Bash completion
-  - [ ] Zsh completion
-  - [ ] Fish completion
+- [x] Zaimplementować główny szkielet CLI:
+  - [x] Utworzyć klasę `RTASPIShell` w `src/rtaspi/cli/shell.py`
+  - [x] Zintegrować z biblioteką `click` do obsługi parametrów
+  - [x] Dodać obsługę globalnych opcji (--config, --verbose, --help)
+- [x] Implementacja podkomend dla CLI:
+  - [x] `cli/commands/config.py` - zarządzanie konfiguracją
+  - [x] `cli/commands/devices.py` - zarządzanie urządzeniami
+  - [x] `cli/commands/streams.py` - zarządzanie strumieniami
+  - [x] `cli/commands/pipelines.py` - zarządzanie pipelinami
+  - [x] `cli/commands/server.py` - zarządzanie serwerem
+- [x] Dodanie autouzupełniania dla powłok:
+  - [x] Bash completion
+  - [x] Zsh completion
+  - [x] Fish completion
+
 
 ## 4. API Biblioteki
 - [ ] Zaimplementować publiczne API biblioteki:
@@ -80,18 +84,18 @@
   - [ ] Kontrolki do konfiguracji i sterowania
 
 ## 7. Przetwarzanie Obrazu i Dźwięku
-- [ ] Zaimplementować moduł przetwarzania obrazu:
-  - [ ] Integracja z OpenCV w `processing/video/filters.py`
-  - [ ] Implementacja podstawowych filtrów (`processing/video/filters.py`)
-  - [ ] Detekcja obiektów/twarzy (`processing/video/detection.py`)
-- [ ] Zaimplementować moduł przetwarzania dźwięku:
-  - [ ] Integracja z bibliotekami audio w `processing/audio/filters.py`
-  - [ ] Implementacja filtrów dźwięku (EQ, redukcja szumów)
-  - [ ] Rozpoznawanie mowy (`processing/audio/speech.py`)
-- [ ] System wykonywania pipeline'ów:
-  - [ ] Implementacja `PipelineExecutor` w `processing/pipeline_executor.py`
-  - [ ] Obsługa wielu źródeł danych
-  - [ ] Dynamiczne ładowanie komponentów
+- [x] Zaimplementować moduł przetwarzania obrazu:
+  - [x] Integracja z OpenCV w `processing/video/filters.py`
+  - [x] Implementacja podstawowych filtrów (`processing/video/filters.py`)
+  - [x] Detekcja obiektów/twarzy (`processing/video/detection.py`)
+- [x] Zaimplementować moduł przetwarzania dźwięku:
+  - [x] Integracja z bibliotekami audio w `processing/audio/filters.py`
+  - [x] Implementacja filtrów dźwięku (EQ, redukcja szumów)
+  - [x] Rozpoznawanie mowy (`processing/audio/speech.py`)
+- [x] System wykonywania pipeline'ów:
+  - [x] Implementacja `PipelineExecutor` w `processing/pipeline_executor.py`
+  - [x] Obsługa wielu źródeł danych
+  - [x] Dynamiczne ładowanie komponentów
 
 ## 8. DSL i Konfiguracja Pipelinów
 - [ ] Zaimplementować prosty DSL do definiowania pipeline'ów:
@@ -126,7 +130,7 @@
   - [x] Wirtualne serwery RTSP/RTMP/WebRTC
   - [x] Automacja testów w CI/CD
 
-## 11. Dokumentacja docs/
+## 12. Dokumentacja
 - [x] Przygotować kompletną dokumentację:
   - [x] Referencja API
   - [x] Poradnik użytkownika
@@ -139,6 +143,7 @@
   - [x] Przewodniki po dostępnych filtrach
   - [x] Integracja z OpenCV i bibliotekami audio
   - [x] Tworzenie własnych komponentów przetwarzania
+
 
 ## Oczekiwana struktura plików
 
