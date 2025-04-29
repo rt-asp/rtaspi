@@ -4,7 +4,7 @@ import logging
 import threading
 import queue
 import time
-from typing import Optional, Dict, List, Callable
+from typing import Optional, Dict, List, Callable, Any
 import numpy as np
 import torch
 import whisper

@@ -273,6 +273,45 @@ class FeedbackSuppressionFilter(AudioFilter):
         return output
 
 
+class NormalizationFilter(AudioFilter):
+    """Audio normalization filter."""
+
+    def __init__(self, target_peak: float = 0.9):
+        """Initialize normalization filter.
+        
+        Args:
+            target_peak: Target peak amplitude (0.0 to 1.0)
+        """
+        super().__init__()
+        self.target_peak = target_peak
+
+    def process(self, audio_data: np.ndarray, sample_rate: Optional[int] = None) -> np.ndarray:
+        """Process audio data.
+        
+        Args:
+            audio_data: Audio samples as numpy array
+            sample_rate: Sample rate (optional, for verification)
+            
+        Returns:
+            np.ndarray: Processed audio samples
+        """
+        if not super().process(audio_data, sample_rate).any():
+            return audio_data
+
+        # Convert to float32 if needed
+        if audio_data.dtype != np.float32:
+            audio_data = audio_data.astype(np.float32)
+
+        # Calculate peak amplitude
+        peak = np.max(np.abs(audio_data))
+        if peak < 1e-10:
+            return audio_data
+
+        # Apply normalization
+        scale = self.target_peak / peak
+        return audio_data * scale
+
+
 class GainControlFilter(AudioFilter):
     """Automatic gain control."""
 

@@ -142,10 +142,4 @@
 6. Zachować niskie opóźnienia dla funkcji interaktywnych (sterowanie zdalne, rozpoznawanie mowy)
 7. Dbać o dokumentację API i przykłady użycia dla nowych funkcji
 
-## Terminy dla nowych zadań
-
-- Priorytet 1: Zadania 6.1, 6.2, 7.1 i 7.2 - do połowy przyszłego kwartału
-- Priorytet 2: Zadania 8.1, 9.1 i 10.2 - do końca przyszłego kwartału
-- Priorytet 3: Pozostałe zadania - do połowy przyszłego roku
-
 Powyższe zadania znacznie rozszerzą możliwości biblioteki rtaspi, umożliwiając jej wykorzystanie nie tylko do strumieniowania multimediów, ale również jako kompleksowej platformy do zdalnego sterowania, automatyzacji i integracji różnorodnych systemów komunikacji.

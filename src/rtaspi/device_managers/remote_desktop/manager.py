@@ -11,7 +11,6 @@ from ..base import DeviceManager
 from .base import RemoteDesktopDevice
 from .rdp import RDPDevice
 from .vnc import VNCDevice
-from ...core.logging import get_logger
 from ...constants.devices import (
     DEVICE_TYPE_REMOTE_DESKTOP,
     DEVICE_SUBTYPE_RDP,
@@ -20,7 +19,7 @@ from ...constants.devices import (
     DEVICE_PROTOCOL_VNC
 )
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 class RemoteDesktopManager(DeviceManager):
     """Manager for remote desktop devices."""

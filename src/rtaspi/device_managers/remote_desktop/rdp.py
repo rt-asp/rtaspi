@@ -10,9 +10,8 @@ import tempfile
 
 from .base import RemoteDesktopDevice
 from .capture import WindowCapture
-from ...core.logging import get_logger
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 class RDPDevice(RemoteDesktopDevice):
     """RDP device implementation using FreeRDP as backend."""

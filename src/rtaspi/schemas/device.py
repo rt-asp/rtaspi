@@ -1,7 +1,46 @@
 """Device configuration schema."""
 
+from enum import Enum, auto
 from typing import Dict, Any, Optional, List
 from pydantic import BaseModel, Field, validator
+
+class DeviceType(Enum):
+    """Device type enumeration."""
+    CAMERA = auto()
+    MICROPHONE = auto()
+    SCREEN = auto()
+    REMOTE_DESKTOP = auto()
+
+class DeviceProtocol(Enum):
+    """Device protocol enumeration."""
+    RTSP = auto()
+    ONVIF = auto()
+    RDP = auto()
+    VNC = auto()
+    WEBRTC = auto()
+    RTMP = auto()
+    HLS = auto()
+    DASH = auto()
+
+class DeviceAuth(Enum):
+    """Device authentication enumeration."""
+    NONE = auto()
+    BASIC = auto()
+    DIGEST = auto()
+    TOKEN = auto()
+    CERTIFICATE = auto()
+    KERBEROS = auto()
+    NTLM = auto()
+
+class DeviceCapabilities(Enum):
+    """Device capabilities enumeration."""
+    VIDEO = auto()
+    AUDIO = auto()
+    PTZ = auto()
+    MOTION = auto()
+    REMOTE_CONTROL = auto()
+    KEYBOARD = auto()
+    MOUSE = auto()
 
 from ..constants.devices import (
     DEVICE_TYPE_CAMERA, DEVICE_TYPE_MICROPHONE, DEVICE_TYPE_SCREEN, DEVICE_TYPE_REMOTE_DESKTOP,
@@ -105,3 +144,9 @@ class DeviceConfig(BaseModel):
         """Pydantic configuration."""
         
         extra = "allow"  # Allow extra fields
+
+
+class DeviceList(BaseModel):
+    """List of device configurations."""
+    
+    devices: List[DeviceConfig] = Field(default_factory=list, description="List of device configurations")

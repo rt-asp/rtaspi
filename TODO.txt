@@ -1,2 +1,4 @@
 execute tasks from TODO.md and check if they are done, set [x] if it is DONE
 sprawdz, ktore zadania zostaly wykonane i wykonaj kolejne zadania do wykonania:
+zaktualizuj requirements.txt
+zaktualizuj requirements-dev.txt

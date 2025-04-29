@@ -17,6 +17,18 @@ import logging.handlers
 from datetime import datetime
 
 
+def get_logger(name: str) -> logging.Logger:
+    """Get a logger instance for the given name.
+    
+    Args:
+        name: Logger name (usually __name__)
+        
+    Returns:
+        logging.Logger: Logger instance
+    """
+    return logging.getLogger(name)
+
+
 def setup_logging(config):
     """
     Set up logging configuration for the rtaspi package.
