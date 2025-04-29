@@ -8,37 +8,30 @@ Ten przykład pokazuje podstawowe użycie RTASPI do:
 3. Udostępnienia podglądu przez przeglądarkę
 """
 
-from rtaspi.core import rtaspi
+from rtaspi.core.rtaspi import RTASPI
 from rtaspi.device_managers.local_devices import LocalDevicesManager
 import time
 
 def main():
     # Inicjalizacja RTASPI
-    app = rtaspi()
+    app = RTASPI()
 
-    # Utworzenie menedżera urządzeń lokalnych
-    local_manager = LocalDevicesManager(app.config, app.mcp_broker)
-    local_manager.start()
-
-    # Krótkie opóźnienie na wykrycie urządzeń
+    # Wykrywanie urządzeń wideo
     print("Wykrywanie urządzeń wideo...")
-    time.sleep(2)
-
-    # Pobierz listę urządzeń wideo
-    video_devices = local_manager.get_devices_by_type("video")
+    video_devices = app.devices.list(type="video")
     
     if not video_devices:
         print("Nie znaleziono żadnej kamery!")
         return
     
     # Użyj pierwszej dostępnej kamery
-    camera = next(iter(video_devices.values()))
-    print(f"Znaleziono kamerę: {camera.name}")
+    camera = video_devices[0]
+    print(f"Znaleziono kamerę: {camera['name']}")
 
     # Konfiguracja prostego pipeline'u
     pipeline_config = {
         "input": {
-            "device_id": camera.device_id
+            "device_id": camera['id']
         },
         "stages": [
             # Możemy dodać filtry obrazu, np.:
@@ -59,7 +52,8 @@ def main():
     }
 
     # Utworzenie i uruchomienie pipeline'u
-    pipeline_id = app.create_pipeline(pipeline_config)
+    pipeline_id = app.pipelines.create(pipeline_config)
+    app.pipelines.start(pipeline_id)
     print(f"Pipeline utworzony z ID: {pipeline_id}")
     print(f"Podgląd dostępny na: http://localhost:8081/camera")
 
@@ -70,7 +64,7 @@ def main():
     except KeyboardInterrupt:
         print("\nZatrzymywanie strumienia...")
     finally:
-        app.stop()
+        app.cleanup()
 
 if __name__ == "__main__":
     main()

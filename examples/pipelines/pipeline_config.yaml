@@ -1,0 +1,25 @@
+input:
+  source: camera0
+  format: mjpeg
+  resolution: 1920x1080
+  fps: 30
+
+processing:
+  - name: face_detection
+    model: yolov5
+    confidence: 0.85
+    device: cuda
+    
+  - name: object_tracking
+    algorithm: deep_sort
+    max_objects: 10
+    
+  - name: motion_analysis
+    sensitivity: 0.7
+    blur: 5
+
+output:
+  - type: rtsp
+    port: 8554
+  - type: file
+    path: processed.mp4

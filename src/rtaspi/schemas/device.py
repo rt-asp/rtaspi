@@ -170,6 +170,28 @@ class DeviceConfig(BaseModel):
         extra = "allow"  # Allow extra fields
 
 
+class DeviceConnection(BaseModel):
+    """Device connection information."""
+
+    host: str = Field(..., description="Device hostname/IP")
+    port: Optional[int] = Field(None, description="Device port")
+    protocol: Optional[str] = Field(None, description="Connection protocol")
+    auth: Optional[Dict[str, Any]] = Field(None, description="Authentication details")
+    options: Dict[str, Any] = Field(
+        default_factory=dict, description="Connection options"
+    )
+
+
+class DeviceStatus(BaseModel):
+    """Device status information."""
+
+    connected: bool = Field(False, description="Whether device is connected")
+    active: bool = Field(False, description="Whether device is actively streaming")
+    error: Optional[str] = Field(None, description="Last error message if any")
+    last_seen: Optional[float] = Field(None, description="Timestamp of last contact")
+    stats: Dict[str, Any] = Field(default_factory=dict, description="Device statistics")
+
+
 class DeviceList(BaseModel):
     """List of device configurations."""
 

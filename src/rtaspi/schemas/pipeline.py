@@ -230,6 +230,88 @@ class PipelineConfig(BaseModel):
         return self
 
 
+class ExecutionSettings(BaseModel):
+    """Pipeline execution settings."""
+
+    parallel_execution: bool = True
+    max_retries: int = 3
+    retry_delay: float = 1.0
+    timeout: Optional[float] = None
+
+    @field_validator("max_retries")
+    def validate_max_retries(cls, v):
+        """Validate max retries is non-negative."""
+        if v < 0:
+            raise ValueError("Max retries must be non-negative")
+        return v
+
+    @field_validator("retry_delay")
+    def validate_retry_delay(cls, v):
+        """Validate retry delay is positive."""
+        if v <= 0:
+            raise ValueError("Retry delay must be positive")
+        return v
+
+    @field_validator("timeout")
+    def validate_timeout(cls, v):
+        """Validate timeout is positive."""
+        if v is not None and v <= 0:
+            raise ValueError("Timeout must be positive")
+        return v
+
+
+class ErrorHandling(BaseModel):
+    """Pipeline error handling configuration."""
+
+    strategy: str = "stop"  # stop, skip, retry
+    max_retries: int = 3
+    retry_delay: float = 1.0
+    error_threshold: Optional[float] = None
+
+    @field_validator("strategy")
+    def validate_strategy(cls, v):
+        """Validate error handling strategy."""
+        valid_strategies = {"stop", "skip", "retry"}
+        if v not in valid_strategies:
+            raise ValueError(f"Strategy must be one of: {valid_strategies}")
+        return v
+
+    @field_validator("max_retries")
+    def validate_max_retries(cls, v):
+        """Validate max retries is non-negative."""
+        if v < 0:
+            raise ValueError("Max retries must be non-negative")
+        return v
+
+    @field_validator("retry_delay")
+    def validate_retry_delay(cls, v):
+        """Validate retry delay is positive."""
+        if v <= 0:
+            raise ValueError("Retry delay must be positive")
+        return v
+
+    @field_validator("error_threshold")
+    def validate_error_threshold(cls, v):
+        """Validate error threshold is between 0 and 1."""
+        if v is not None and (v < 0 or v > 1):
+            raise ValueError("Error threshold must be between 0 and 1")
+        return v
+
+
+class PipelineStatus(BaseModel):
+    """Pipeline status information."""
+
+    running: bool = Field(False, description="Whether pipeline is running")
+    error: Optional[str] = Field(None, description="Last error message if any")
+    start_time: Optional[float] = Field(None, description="Pipeline start time")
+    duration: Optional[float] = Field(None, description="Pipeline duration in seconds")
+    processed_frames: int = Field(0, description="Number of frames processed")
+    dropped_frames: int = Field(0, description="Number of frames dropped")
+    stats: Dict[str, Any] = Field(
+        default_factory=dict, description="Pipeline statistics"
+    )
+
+
 class PipelineList(BaseModel):
     """List of pipeline configurations."""
 

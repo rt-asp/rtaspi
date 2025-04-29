@@ -75,44 +75,28 @@ def parse_args() -> argparse.Namespace:
     
     return parser.parse_args()
 
-def setup_camera(args: argparse.Namespace) -> Optional[camera.Camera]:
-    """Initialize and configure the camera."""
+def setup_streaming(args: argparse.Namespace) -> Optional[str]:
+    """Initialize and configure the camera streaming."""
     try:
         # Parse resolution
         width, height = map(int, args.resolution.split("x"))
         
-        # Start camera
-        cam = camera.start_camera(
-            device=args.device,
-            width=width,
-            height=height,
-            fps=args.fps
-        )
+        # Configure RTSP URL
+        rtsp_url = f"rtsp://localhost:{args.rtsp_port}/camera"
         
-        # Add video filters
-        if args.brightness != 1.0:
-            cam.add_filter("brightness", value=args.brightness)
-        if args.contrast != 1.0:
-            cam.add_filter("contrast", value=args.contrast)
-            
-        # Configure outputs
-        cam.add_output(
-            "rtsp",
-            port=args.rtsp_port,
-            path="/camera"
+        # Start camera stream
+        stream_name = camera.start_camera(
+            name=args.device,
+            resolution=f"{width}x{height}",
+            framerate=args.fps,
+            rtsp_url=rtsp_url,
+            rtmp_url=args.save_file if args.save_file else None
         )
-        
-        if args.save_file:
-            cam.add_output(
-                "file",
-                path=args.save_file,
-                format="mp4"
-            )
             
-        return cam
+        return stream_name
     
     except Exception as e:
-        logger.error(f"Failed to setup camera: {e}")
+        logger.error(f"Failed to setup camera streaming: {e}")
         return None
 
 def main() -> int:
@@ -120,19 +104,21 @@ def main() -> int:
     args = parse_args()
     
     # Configure logging
-    log_level = logging.DEBUG if args.verbose else logging.INFO
-    rtaspi_logging.setup_logging(level=log_level)
+    log_level = "DEBUG" if args.verbose else "INFO"
+    logging_config = {
+        "system": {
+            "log_level": log_level,
+            "storage_path": "storage"
+        }
+    }
+    rtaspi_logging.setup_logging(logging_config)
     
-    # Initialize camera
-    cam = setup_camera(args)
-    if not cam:
+    # Initialize streaming
+    stream_name = setup_streaming(args)
+    if not stream_name:
         return 1
     
     try:
-        # Start streaming
-        logger.info("Starting camera stream...")
-        cam.start()
-        
         # Print stream URLs
         rtsp_url = f"rtsp://localhost:{args.rtsp_port}/camera"
         logger.info(f"RTSP stream available at: {rtsp_url}")
@@ -155,8 +141,8 @@ def main() -> int:
     finally:
         # Cleanup
         logger.info("Stopping stream...")
-        if cam:
-            cam.stop()
+        if stream_name:
+            camera.stop_camera(stream_name)
     
     return 0
 

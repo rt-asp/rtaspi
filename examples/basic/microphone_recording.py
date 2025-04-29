@@ -88,36 +88,25 @@ def parse_args() -> argparse.Namespace:
     
     return parser.parse_args()
 
-def setup_microphone(args: argparse.Namespace) -> Optional[microphone.Microphone]:
-    """Initialize and configure the microphone."""
+def setup_recording(args: argparse.Namespace) -> Optional[str]:
+    """Initialize and configure the microphone recording."""
     try:
-        # Start microphone
-        mic = microphone.start_microphone(
-            device=args.device,
-            rate=args.rate,
-            channels=args.channels
-        )
+        # Configure RTMP URL for file output
+        rtmp_url = f"file://{args.output}"
         
-        # Add audio filters
-        if args.gain != 1.0:
-            mic.add_filter("gain", value=args.gain)
-        if args.noise_reduction:
-            mic.add_filter("noise_reduction")
-            
-        # Configure outputs
-        mic.add_output(
-            "file",
-            path=args.output,
-            format=args.format
+        # Start microphone stream
+        stream_name = microphone.start_microphone(
+            name=args.device,
+            type="USB_MICROPHONE",
+            sample_rate=args.rate,
+            channels=args.channels,
+            rtmp_url=rtmp_url
         )
-        
-        if args.monitor:
-            mic.add_output("monitor")
             
-        return mic
+        return stream_name
     
     except Exception as e:
-        logger.error(f"Failed to setup microphone: {e}")
+        logger.error(f"Failed to setup microphone recording: {e}")
         return None
 
 def main() -> int:
@@ -125,19 +114,22 @@ def main() -> int:
     args = parse_args()
     
     # Configure logging
-    log_level = logging.DEBUG if args.verbose else logging.INFO
-    rtaspi_logging.setup_logging(level=log_level)
+    log_level = "DEBUG" if args.verbose else "INFO"
+    logging_config = {
+        "system": {
+            "log_level": log_level,
+            "storage_path": "storage"
+        }
+    }
+    rtaspi_logging.setup_logging(logging_config)
     
-    # Initialize microphone
-    mic = setup_microphone(args)
-    if not mic:
+    # Initialize recording
+    stream_name = setup_recording(args)
+    if not stream_name:
         return 1
     
     try:
-        # Start recording
-        logger.info("Starting audio recording...")
-        mic.start()
-        
+        # Print recording info
         logger.info(f"Recording to: {args.output}")
         if args.duration:
             logger.info(f"Recording will stop after {args.duration} seconds")
@@ -158,8 +150,8 @@ def main() -> int:
     finally:
         # Cleanup
         logger.info("Stopping recording...")
-        if mic:
-            mic.stop()
+        if stream_name:
+            microphone.stop_microphone(stream_name)
             logger.info(f"Recording saved to: {args.output}")
     
     return 0

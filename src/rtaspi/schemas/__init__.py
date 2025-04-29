@@ -8,6 +8,8 @@ from .device import (
     DeviceAuth,
     DeviceCapabilities,
     DeviceConfig,
+    DeviceStatus,
+    DeviceConnection,
     DeviceList,
 )
 
@@ -20,6 +22,9 @@ from .stream import (
     StreamOutput,
     StreamConfig,
     StreamList,
+    StreamStatus,
+    StreamSource,
+    StreamFilter,
 )
 
 from .pipeline import (
@@ -30,6 +35,9 @@ from .pipeline import (
     ResourceLimits,
     PipelineConfig,
     PipelineList,
+    PipelineStatus,
+    ExecutionSettings,
+    ErrorHandling,
 )
 
 __all__ = [
@@ -39,6 +47,8 @@ __all__ = [
     "DeviceAuth",
     "DeviceCapabilities",
     "DeviceConfig",
+    "DeviceStatus",
+    "DeviceConnection",
     "DeviceList",
     # Stream schemas
     "StreamType",
@@ -49,6 +59,9 @@ __all__ = [
     "StreamOutput",
     "StreamConfig",
     "StreamList",
+    "StreamStatus",
+    "StreamSource",
+    "StreamFilter",
     # Pipeline schemas
     "PipelineType",
     "FilterType",
@@ -57,4 +70,7 @@ __all__ = [
     "ResourceLimits",
     "PipelineConfig",
     "PipelineList",
+    "PipelineStatus",
+    "ExecutionSettings",
+    "ErrorHandling",
 ]

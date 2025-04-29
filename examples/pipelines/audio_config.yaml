@@ -1,0 +1,20 @@
+input:
+  device: mic0
+  rate: 44100
+  channels: 2
+
+filters:
+  - name: noise_reduction
+    strength: 0.8
+  - name: equalizer
+    bands:
+      - freq: 100
+        gain: -3
+      - freq: 1000
+        gain: 2
+
+analysis:
+  - type: feature_extraction
+    window: 1024
+  - type: classification
+    model: yamnet

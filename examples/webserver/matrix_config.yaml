@@ -1,0 +1,12 @@
+layout:
+  rows: 2
+  columns: 2
+  fullscreen: true
+
+streams:
+  - name: Camera 1
+    url: rtsp://camera1/stream
+    position: [0, 0]
+  - name: Camera 2
+    url: rtsp://camera2/stream
+    position: [0, 1]

@@ -5,6 +5,12 @@ zaktualizuj requirements-dev.txt
 
 zaktualizuj pliki w fodlerze docs/ dodaj nowe, opisz cała funkcjonalnosć i zaktualizuj folder examples/ gdzie powinny znajdować się przykłady, w kazdym fodlerze w examples/*/ dodaj przykład w python z README.md i innymi plikami
 
-stworz pliki przykladow w python  dla folderu exampels/pipelines z przykładami z README.md
-stworz pliki przykladow w python  dla folderu exampels/webserver z przykładami z README.md
-stworz pliki przykladow w python  dla folderu exampels/speech z przykładami z README.md
+
+
+stworz pliki przykladow w python  dla folderu examples/devices z przykładami z README.md i uruchom, popraw błedy
+stworz pliki przykladow w python  dla folderu examples/webserver z przykładami z README.md i uruchom, popraw błedy
+stworz pliki przykladow w python  dla folderu examples/speech z przykładami z README.md i uruchom, popraw błedy
+
+utworz skrypt do uruchamiania wszystkich przykladow z folderu examples/ ktory bedzie tworzyl 2 pliki: logi poprawnie wykonanymi w correct/[nazwa pliku py z examples] i niepoprawnie error/[nazwa pliku py z examples] z bledami uruchamiania
+
+- sprawdz kolejno bledy w plikach w folderze ./error z uruchomienia skryptow z examples/ dopasuj skyrpty do aktualnego stanu biblioteki rtaspi, jesli pojawiaja sie dane typu string, ktore moglyby byc dana typu constant opobierane bezposrednio z biblitoeki jak w src/rtaspi/constants to utworz je w biblitoeece i uzyj w przykladzie

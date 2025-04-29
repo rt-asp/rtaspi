@@ -2,6 +2,33 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.28] - 2025-04-29
+
+### Added
+- Changes in examples/automation/home_assistant.py
+- Changes in examples/automation/mqtt_example.py
+- Changes in examples/automation/rules_example.py
+- Changes in examples/automation/scheduled_tasks.py
+- Changes in examples/pipelines/audio_config.yaml
+- Changes in examples/pipelines/audio_processing.py
+- Changes in examples/pipelines/face_detection.py
+- Changes in examples/pipelines/motion_detection.py
+- Changes in examples/pipelines/object_tracking.py
+- Changes in examples/pipelines/pipeline_config.yaml
+- Changes in examples/webserver/generate_certs.sh
+- Changes in examples/webserver/https_server.py
+- Changes in examples/webserver/matrix_config.yaml
+- Changes in examples/webserver/matrix_view.py
+- Changes in examples/webserver/rest_api.py
+- Changes in examples/webserver/server_config.yaml
+- Changes in examples/webserver/webrtc_streaming.py
+- Changes in run_examples.py
+- Changes in src/rtaspi/constants/resolutions.py
+- Changes in src/rtaspi/core/rtaspi.py
+
+### Security
+- Changes in examples/dev/README.md
+
 ## [0.1.27] - 2025-04-29
 
 ### Added

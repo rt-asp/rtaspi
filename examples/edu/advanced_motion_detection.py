@@ -8,8 +8,7 @@ Zaawansowany przykład systemu monitoringu z:
 4. Poprawą jakości obrazu
 """
 
-from rtaspi.core import rtaspi
-from rtaspi.device_managers.local_devices import LocalDevicesManager
+from rtaspi.core.rtaspi import RTASPI
 from rtaspi.processing.video.filters import VideoFilter
 from rtaspi.constants import FilterType
 import time
@@ -17,21 +16,16 @@ import os
 
 def main():
     # Inicjalizacja RTASPI
-    app = rtaspi()
-
-    # Wykrywanie kamery
-    local_manager = LocalDevicesManager(app.config, app.mcp_broker)
-    local_manager.start()
-    time.sleep(2)
+    app = RTASPI()
 
     # Pobierz pierwszą dostępną kamerę
-    video_devices = local_manager.get_devices_by_type("video")
+    video_devices = app.devices.list(type="video")
     if not video_devices:
         print("Nie znaleziono kamery. Podłącz kamerę i uruchom ponownie.")
         return
 
-    camera = next(iter(video_devices.values()))
-    print(f"Znaleziono kamerę: {camera.name}")
+    camera = video_devices[0]
+    print(f"Znaleziono kamerę: {camera['name']}")
 
     # Katalog na nagrania
     recordings_dir = "monitoring_recordings"
@@ -39,7 +33,7 @@ def main():
 
     # Konfiguracja zaawansowanego pipeline'u
     pipeline_config = {
-        "input": {"device_id": camera.device_id},
+        "input": {"device_id": camera['id']},
         "stages": [
             # Poprawa jakości obrazu
             {
@@ -112,7 +106,8 @@ def main():
     }
 
     # Uruchom pipeline
-    pipeline_id = app.create_pipeline(pipeline_config)
+    pipeline_id = app.pipelines.create(pipeline_config)
+    app.pipelines.start(pipeline_id)
     print(f"\nUruchomiono zaawansowany system monitoringu!")
     print(f"ID pipeline'u: {pipeline_id}")
     print(f"\nDostęp do systemu:")
@@ -132,7 +127,7 @@ def main():
     except KeyboardInterrupt:
         print("\nZatrzymywanie systemu monitoringu...")
     finally:
-        app.stop()
+        app.cleanup()
 
 if __name__ == "__main__":
     main()

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Advanced camera stream example demonstrating complex video processing pipeline
-with motion detection, object tracking, and multiple output streams.
+Motion Detection Pipeline Example
+Shows how to use RTASPI for motion detection and tracking
 """
 
 import argparse
@@ -12,18 +12,14 @@ from typing import Optional
 from rtaspi.quick import camera
 from rtaspi.core import logging as rtaspi_logging
 from rtaspi.processing.video.detection import detect_motion
-from rtaspi.processing.video.filters import apply_filters
 from rtaspi.security.analysis.motion import analyze_motion
-from rtaspi.constants.devices import DEVICE_SUBTYPE_USB
-from rtaspi.constants.filters import FILTER_NOISE_REDUCTION, FILTER_SHARPEN, FILTER_CONTRAST
-from rtaspi.constants.resolutions import RES_FULL_HD
 
 # Configure logging
 logger = logging.getLogger(__name__)
 
 def parse_args() -> argparse.Namespace:
     """Parse command line arguments."""
-    parser = argparse.ArgumentParser(description="Advanced camera streaming example")
+    parser = argparse.ArgumentParser(description="Motion Detection Pipeline")
     
     parser.add_argument(
         "--device",
@@ -33,10 +29,24 @@ def parse_args() -> argparse.Namespace:
     )
     
     parser.add_argument(
-        "--rtmp-url",
+        "--sensitivity",
+        type=float,
+        default=0.8,
+        help="Motion detection sensitivity (0-1)"
+    )
+    
+    parser.add_argument(
+        "--min-area",
+        type=int,
+        default=500,
+        help="Minimum motion area in pixels"
+    )
+    
+    parser.add_argument(
+        "--output",
         type=str,
-        default="rtmp://streaming.example.com/live/camera1",
-        help="RTMP streaming URL"
+        default="motion_output.mp4",
+        help="Output file path"
     )
     
     parser.add_argument(
@@ -54,55 +64,45 @@ def parse_args() -> argparse.Namespace:
     
     return parser.parse_args()
 
-def setup_advanced_camera(args: argparse.Namespace) -> Optional[str]:
-    """Initialize and configure the advanced camera streaming."""
+def setup_motion_detection(args: argparse.Namespace) -> Optional[str]:
+    """Initialize and configure the motion detection pipeline."""
     try:
         # Configure stream URLs
-        rtsp_url = f"rtsp://localhost:{args.rtsp_port}/camera1"
+        rtsp_url = f"rtsp://localhost:{args.rtsp_port}/motion"
+        rtmp_url = f"file://{args.output}"
         
-        # Start camera stream with high resolution
+        # Start camera stream
         stream_name = camera.start_camera(
             name=args.device,
-            type=DEVICE_SUBTYPE_USB,
-            resolution=RES_FULL_HD,
+            type="USB_CAMERA",
+            resolution="1280x720",
             framerate=30,
             rtsp_url=rtsp_url,
-            rtmp_url=args.rtmp_url
+            rtmp_url=rtmp_url
         )
         
-        # Configure motion detection settings
+        # Configure motion detection
         detect_motion(
             stream_name,
-            sensitivity=0.8,
-            min_area=500,
+            sensitivity=args.sensitivity,
+            min_area=args.min_area,
             blur_size=5
-        )
-        
-        # Apply video filters
-        apply_filters(
-            stream_name,
-            filters=[
-                {"type": FILTER_NOISE_REDUCTION, "strength": 3},
-                {"type": FILTER_SHARPEN, "amount": 1.5},
-                {"type": FILTER_CONTRAST, "factor": 1.2}
-            ]
         )
         
         # Setup motion analysis zones
         analyze_motion(
             stream_name,
             zones=[
-                {"name": "entrance", "coords": [(0, 0), (640, 0), (640, 480), (0, 480)]},
-                {"name": "parking", "coords": [(640, 0), (1280, 0), (1280, 480), (640, 480)]}
+                {"name": "full_frame", "coords": [(0, 0), (1280, 0), (1280, 720), (0, 720)]}
             ],
-            trigger_threshold=0.3,
-            callback=lambda zone, conf: logger.info(f"Motion in {zone}: {conf:.2f}")
+            trigger_threshold=args.sensitivity,
+            callback=lambda zone, conf: logger.info(f"Motion detected in {zone} with confidence {conf:.2f}")
         )
             
         return stream_name
     
     except Exception as e:
-        logger.error(f"Failed to setup camera streaming: {e}")
+        logger.error(f"Failed to setup motion detection: {e}")
         return None
 
 def main() -> int:
@@ -119,19 +119,19 @@ def main() -> int:
     }
     rtaspi_logging.setup_logging(logging_config)
     
-    # Initialize streaming
-    stream_name = setup_advanced_camera(args)
+    # Initialize motion detection
+    stream_name = setup_motion_detection(args)
     if not stream_name:
         return 1
     
     try:
         # Print stream URLs
-        rtsp_url = f"rtsp://localhost:{args.rtsp_port}/camera1"
+        rtsp_url = f"rtsp://localhost:{args.rtsp_port}/motion"
         logger.info(f"RTSP stream available at: {rtsp_url}")
-        logger.info(f"RTMP stream publishing to: {args.rtmp_url}")
+        logger.info(f"Recording motion to: {args.output}")
         
         # Wait for user input
-        logger.info("Press Ctrl+C to stop streaming")
+        logger.info("Press Ctrl+C to stop")
         while True:
             try:
                 input()
@@ -139,12 +139,12 @@ def main() -> int:
                 break
     
     except Exception as e:
-        logger.error(f"Streaming error: {e}")
+        logger.error(f"Motion detection error: {e}")
         return 1
     
     finally:
         # Cleanup
-        logger.info("Stopping stream...")
+        logger.info("Stopping motion detection...")
         if stream_name:
             camera.stop_camera(stream_name)
     

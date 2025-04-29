@@ -9,9 +9,9 @@ import logging
 import sys
 from typing import List, Optional
 
-from rtaspi.device_managers import discovery
+from rtaspi.device_managers.utils import discovery
 from rtaspi.core import logging as rtaspi_logging
-from rtaspi.schemas.device import Device
+from rtaspi.schemas.device import DeviceConfig
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -55,22 +55,22 @@ def parse_args() -> argparse.Namespace:
     
     return parser.parse_args()
 
-def scan_devices(device_type: str, include_network: bool, timeout: int) -> List[Device]:
+def scan_devices(device_type: str, include_network: bool, timeout: int) -> List[DeviceConfig]:
     """Scan for devices of specified type."""
     devices = []
     
     try:
         # Scan for local devices
         logger.info(f"Scanning for {'all' if device_type == 'all' else device_type} devices...")
-        devices.extend(discovery.scan_devices(
-            type=None if device_type == "all" else device_type
+        devices.extend(discovery.discover_local_devices(
+            device_type=None if device_type == "all" else device_type
         ))
         
         # Scan network if requested
         if include_network:
             logger.info("Scanning network for devices...")
-            devices.extend(discovery.scan_network_devices(
-                type=None if device_type == "all" else device_type,
+            devices.extend(discovery.discover_network_devices(
+                device_type=None if device_type == "all" else device_type,
                 timeout=timeout
             ))
     
@@ -79,7 +79,7 @@ def scan_devices(device_type: str, include_network: bool, timeout: int) -> List[
     
     return devices
 
-def print_device_info(device: Device, as_json: bool = False) -> None:
+def print_device_info(device: DeviceConfig, as_json: bool = False) -> None:
     """Print device information."""
     if as_json:
         import json
@@ -95,15 +95,21 @@ def print_device_info(device: Device, as_json: bool = False) -> None:
             print("  Network Info:")
             print(f"    IP: {device.network_info.ip}")
             print(f"    Protocol: {device.network_info.protocol}")
-        print("  Status:", "Available" if device.available else "Unavailable")
+        print("  Status:", "Available" if device.status.online else "Unavailable")
 
 def main() -> int:
     """Main function."""
     args = parse_args()
     
     # Configure logging
-    log_level = logging.DEBUG if args.verbose else logging.INFO
-    rtaspi_logging.setup_logging(level=log_level)
+    log_level = "DEBUG" if args.verbose else "INFO"
+    logging_config = {
+        "system": {
+            "log_level": log_level,
+            "storage_path": "storage"
+        }
+    }
+    rtaspi_logging.setup_logging(logging_config)
     
     try:
         # Scan for devices

@@ -4,6 +4,35 @@ Constants and enumerations for filter types used in video and audio processing.
 
 from enum import Enum, auto
 
+# Filter type string constants
+FILTER_NOISE_REDUCTION = "noise_reduction"
+FILTER_SHARPEN = "sharpen"
+FILTER_CONTRAST = "contrast"
+FILTER_GRAYSCALE = "grayscale"
+FILTER_EDGE_DETECTION = "edge_detection"
+FILTER_FACE_DETECTION = "face_detection"
+FILTER_MOTION_DETECTION = "motion_detection"
+FILTER_BLUR = "blur"
+FILTER_COLOR_BALANCE = "color_balance"
+FILTER_BRIGHTNESS = "brightness"
+FILTER_SATURATION = "saturation"
+FILTER_HUE = "hue"
+FILTER_GAMMA = "gamma"
+FILTER_THRESHOLD = "threshold"
+
+# Audio filter string constants
+FILTER_EQUALIZER = "equalizer"
+FILTER_NOISE_GATE = "noise_gate"
+FILTER_COMPRESSOR = "compressor"
+FILTER_REVERB = "reverb"
+FILTER_ECHO = "echo"
+FILTER_PITCH_SHIFT = "pitch_shift"
+FILTER_TIME_STRETCH = "time_stretch"
+FILTER_NORMALIZATION = "normalization"
+FILTER_BANDPASS = "bandpass"
+FILTER_LOWPASS = "lowpass"
+FILTER_HIGHPASS = "highpass"
+
 
 class FilterType(Enum):
     """Enumeration of available filter types for video and audio processing."""

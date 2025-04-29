@@ -10,7 +10,8 @@ import logging
 
 from rtaspi.constants import DeviceType, ProtocolType
 from rtaspi.schemas import DeviceConfig, DeviceStatus, DeviceAuth, DeviceConnection
-from rtaspi.device_managers import LocalDeviceManager, NetworkDeviceManager
+from rtaspi.device_managers import LocalDevicesManager as LocalDeviceManager
+from rtaspi.device_managers import NetworkDevicesManager as NetworkDeviceManager
 
 
 class DeviceAPI:
