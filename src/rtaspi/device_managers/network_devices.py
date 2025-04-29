@@ -20,7 +20,7 @@ from pathlib import Path
 
 from ..core.mcp import MCPClient
 from ..device_managers.base import DeviceManager
-from ..device_managers.utils.device import NetworkDevice
+from ..device_managers.utils.device import NetworkDevice, DeviceStatus
 from ..device_managers.utils.discovery import ONVIFDiscovery, UPnPDiscovery, MDNSDiscovery
 from ..streaming.rtsp import RTSPServer
 from ..streaming.rtmp import RTMPServer
@@ -83,7 +83,8 @@ class NetworkDevicesManager:
             ValueError: If device_id doesn't exist or invalid properties are provided.
         """
         if device_id not in self.devices:
-            raise ValueError(f"Device {device_id} not found")
+            logger.warning(f"Attempt to update nonexistent device: {device_id}")
+            return False
 
         device = self.devices[device_id]
 
@@ -170,9 +171,11 @@ class NetworkDevicesManager:
                 raise ValueError("Missing device_id for update command")
 
             # Update device
+            device_id = payload.get('device_id')
             update_data = payload.copy()
-            device_id = update_data.pop('device_id')
-            self.update_device(device_id, **update_data)
+            update_data.pop('device_id')
+            if not self.update_device(device_id, **update_data):
+                raise ValueError(f"Failed to update device {device_id}")
 
         elif command == "scan":
             # Manual device scan
@@ -342,44 +345,43 @@ class NetworkDevicesManager:
             sock.close()
 
             if result != 0:
-                device.status = "offline"
+                device.status = DeviceStatus.OFFLINE
                 return
 
             # Próba połączenia z urządzeniem w zależności od protokołu
             if device.protocol == "rtsp":
                 # RTSP jest trudny do sprawdzenia bez specjalnych bibliotek
                 # Używamy prostego socketa
-                device.status = "online"
+                device.status = DeviceStatus.ONLINE
             elif device.protocol == "http":
                 # Dla HTTP można użyć biblioteki requests, ale tutaj używamy socketa
-                device.status = "online"
+                device.status = DeviceStatus.ONLINE
             elif device.protocol == "rtmp":
                 # RTMP jest trudny do sprawdzenia, uznajemy za online jeśli port jest otwarty
-                device.status = "online"
+                device.status = DeviceStatus.ONLINE
             else:
                 # Domyślnie uznajemy za online jeśli port jest otwarty
-                device.status = "online"
+                device.status = DeviceStatus.ONLINE
 
         except Exception as e:
             logger.warning(f"Błąd podczas sprawdzania stanu urządzenia {device.name}: {e}")
-            device.status = "offline"
+            device.status = DeviceStatus.OFFLINE
 
     def _discover_devices(self):
         """Wykrywa nowe urządzenia sieciowe i lokalne."""
-        try:
-            # Discover network devices
-            for method in self.discovery_methods:
-                if method in self.discovery_modules:
+        # Discover network devices
+        for method in self.discovery_methods:
+            if method in self.discovery_modules:
+                try:
                     logger.info(f"Wykrywanie urządzeń metodą {method}...")
                     discovered_devices = self.discovery_modules[method].discover()
 
                     # Add discovered network devices
                     self._process_discovered_devices(discovered_devices)
 
-            # Network devices manager only handles network devices
-
-        except Exception as e:
-            logger.error(f"Błąd podczas wykrywania urządzeń: {e}")
+                except Exception as e:
+                    logger.error(f"Błąd podczas wykrywania urządzeń metodą {method}: {e}")
+                    continue
 
     def _process_discovered_devices(self, discovered_devices):
         """Process discovered devices and add new ones to the system."""
@@ -422,7 +424,7 @@ class NetworkDevicesManager:
             except Exception as e:
                 logger.error(f"Błąd podczas przetwarzania wykrytego urządzenia: {e}")
 
-    def add_device(self, name, ip, port, username="", password="",
+    def add_device(self, name=None, ip=None, port=None, username="", password="",
                    type="video", protocol="rtsp", paths=None,
                    device_index=None, device_path=None,
                    is_input=None, is_output=None):
@@ -446,8 +448,20 @@ class NetworkDevicesManager:
             ValueError: Gdy podane dane są nieprawidłowe lub urządzenie już istnieje.
         """
         # Validate required fields
-        if not name or not ip or not port:
-            raise ValueError("Name, IP, and port are required")
+        required_fields = {
+            'name': name,
+            'ip': ip,
+            'port': port
+        }
+        missing_fields = [field for field, value in required_fields.items() if not value]
+        if missing_fields:
+            raise ValueError(f"Missing required fields: {', '.join(missing_fields)}")
+
+        # Validate IP address format
+        try:
+            socket.inet_aton(ip)
+        except socket.error:
+            raise ValueError(f"Invalid IP address: {ip}")
 
         # Validate port range
         if not isinstance(port, int) or port < 1 or port > 65535:
@@ -481,6 +495,7 @@ class NetworkDevicesManager:
                 password=password,
                 protocol=protocol
             )
+            device.status = DeviceStatus.UNKNOWN
 
             # Add stream paths
             if paths:
