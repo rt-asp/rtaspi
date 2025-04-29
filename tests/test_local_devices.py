@@ -1,4 +1,5 @@
 import pytest
+from pathlib import Path
 from unittest.mock import MagicMock, patch, AsyncMock
 
 from rtaspi.core.mcp import MCPBroker
@@ -26,13 +27,14 @@ async def test_scan_video_devices_success(local_manager):
     # Mock platform to return 'linux'
     with patch('platform.system', return_value='Linux'):
         # Mock subprocess calls
-        mock_v4l2_output = '''Card type      : Test Camera
+        with patch('pathlib.Path.glob', return_value=[Path('/dev/video0')]):
+            mock_v4l2_output = '''Card type      : Test Camera
 PixelFormat : 'YUYV'
 Size: Discrete 640x480'''
-        
-        with patch('subprocess.check_output', return_value=mock_v4l2_output):
-            # Call _scan_devices which internally calls _scan_video_devices
-            local_manager._scan_devices()
+            
+            with patch('subprocess.check_output', return_value=mock_v4l2_output):
+                # Call _scan_devices which internally calls _scan_video_devices
+                local_manager._scan_devices()
             
             # Verify devices were found
             assert len(local_manager.devices['video']) > 0
@@ -79,9 +81,12 @@ async def test_scan_audio_devices_error(local_manager):
         assert len(local_manager.devices['audio']) == 0
 
 @pytest.mark.asyncio
-async def test_auto_start_enabled(test_config, mcp_broker):
+async def test_auto_start_enabled(test_config, mcp_broker, mock_local_device):
     test_config['local_devices']['auto_start'] = True
     manager = LocalDevicesManager(test_config, mcp_broker)
+    
+    # Add a test device
+    manager.devices['video'][mock_local_device.device_id] = mock_local_device
     
     # Mock device scanning and stream starting
     with patch.object(manager, '_scan_devices') as mock_scan, \
@@ -93,7 +98,7 @@ async def test_auto_start_enabled(test_config, mcp_broker):
         await manager.initialize()
         
         mock_scan.assert_called_once()
-        mock_start.assert_called()
+        mock_start.assert_called_once_with(mock_local_device.device_id, protocol="rtsp")
 
 @pytest.mark.asyncio
 async def test_start_stream_rtsp(local_manager, mock_local_device):
@@ -149,20 +154,24 @@ async def test_start_stream_invalid_protocol(local_manager, mock_local_device):
 async def test_stop_stream(local_manager, mock_local_device):
     local_manager.devices['video'][mock_local_device.device_id] = mock_local_device
     
+    # Add a test stream
+    stream_id = "test_stream"
+    local_manager.streams[stream_id] = {
+        "stream_id": stream_id,
+        "device_id": mock_local_device.device_id,
+        "type": "video",
+        "protocol": "rtsp",
+        "url": "rtsp://localhost:8554/test"
+    }
+    
     # Mock stream servers
-    with patch.object(local_manager.rtsp_server, 'stop_stream') as mock_stop_rtsp, \
-         patch.object(local_manager.rtmp_server, 'stop_stream') as mock_stop_rtmp, \
-         patch.object(local_manager.webrtc_server, 'stop_stream') as mock_stop_webrtc:
+    with patch.object(local_manager.rtsp_server, 'stop_stream') as mock_stop_rtsp:
         mock_stop_rtsp.return_value = True
-        mock_stop_rtmp.return_value = True
-        mock_stop_webrtc.return_value = True
         
-        success = await local_manager.stop_stream("test_video")
+        success = await local_manager.stop_stream(stream_id)
         assert success
         
-        mock_stop_rtsp.assert_called_once()
-        mock_stop_rtmp.assert_called_once()
-        mock_stop_webrtc.assert_called_once()
+        mock_stop_rtsp.assert_called_once_with(stream_id)
 
 @pytest.mark.asyncio
 async def test_stop_stream_invalid_device(local_manager):
@@ -185,7 +194,7 @@ async def test_handle_command_valid(local_manager, mock_local_device):
         
         with patch.object(local_manager, 'start_stream') as mock_start:
             mock_start.return_value = "rtsp://localhost:8554/test"
-            local_manager._handle_command("command/local_devices/start_stream", {
+            await local_manager._handle_command("command/local_devices/start_stream", {
                 "device_id": "test_video",
                 "protocol": "rtsp"
             })

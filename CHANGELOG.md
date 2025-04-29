@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.12] - 2025-04-29
+
+### Changed
+- Changes in src/rtaspi/device_managers/local_devices.py
+
 ## [0.1.11] - 2025-04-29
 
 ### Added

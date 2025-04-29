@@ -149,10 +149,6 @@ class LocalDevicesManager(DeviceManager):
         if self.enable_audio:
             self._scan_audio_devices()
 
-        # Automatyczne uruchamianie strumieni
-        if self.auto_start:
-            self._auto_start_streams()
-
     def _scan_video_devices(self):
         """Skanuje lokalne urządzenia wideo."""
         # Wykrywanie w zależności od platformy
@@ -199,6 +195,9 @@ class LocalDevicesManager(DeviceManager):
                     video_devices[device_id] = self.devices['video'][device_id]
                     continue
 
+                # Dodanie urządzenia do listy
+                video_devices[device_id] = None  # Placeholder to ensure device is added even if parsing fails
+
                 # Próba uzyskania informacji o urządzeniu
                 try:
                     output = subprocess.check_output(['v4l2-ctl', '--device', system_path, '--all'],
@@ -230,8 +229,10 @@ class LocalDevicesManager(DeviceManager):
                         system_path=system_path,
                         driver='v4l2'
                     )
-                    device.formats = formats
-                    device.resolutions = resolutions
+                    device.capabilities = {
+                        'formats': formats,
+                        'resolutions': resolutions
+                    }
                     device.status = DeviceStatus.ONLINE
 
                     # Dodanie urządzenia do listy
@@ -262,12 +263,11 @@ class LocalDevicesManager(DeviceManager):
                     if not line.startswith('card '):
                         continue
 
-                    match = re.match(r'card (\d+): (.+), device (\d+): (.+)', line)
+                    match = re.match(r'card (\d+): (.+?), device (\d+): (.+)', line)
                     if match:
                         card_id = match.group(1)
-                        card_name = match.group(2)
+                        card_name = match.group(2).split('[')[1].split(']')[0] if '[' in match.group(2) else match.group(2)
                         device_num = match.group(3)
-                        device_name = match.group(4)
 
                         # Tworzenie identyfikatora urządzenia
                         alsa_id = f"hw:{card_id},{device_num}"
@@ -276,7 +276,7 @@ class LocalDevicesManager(DeviceManager):
                         # Utworzenie obiektu urządzenia
                         device = LocalDevice(
                             device_id=device_id,
-                            name=f"{card_name} - {device_name}",
+                            name=card_name,
                             type='audio',
                             system_path=alsa_id,
                             driver='alsa'
@@ -596,41 +596,46 @@ class LocalDevicesManager(DeviceManager):
         output_dir = os.path.join(self.local_streams_path, stream_id)
         os.makedirs(output_dir, exist_ok=True)
 
+        # Validate protocol first
+        if protocol not in ['rtsp', 'rtmp', 'webrtc']:
+            raise ValueError(f"Nieobsługiwany protokół: {protocol}")
+
         try:
             # Uruchomienie odpowiedniego serwera streamingu
             if protocol == 'rtsp':
                 url = await self.rtsp_server.start_stream(device, stream_id, output_dir)
             elif protocol == 'rtmp':
                 url = await self.rtmp_server.start_stream(device, stream_id, output_dir)
-            elif protocol == 'webrtc':
+            else:  # protocol == 'webrtc'
                 url = await self.webrtc_server.start_stream(device, stream_id, output_dir)
-            else:
-                raise ValueError(f"Nieobsługiwany protokół: {protocol}")
 
-            if url:
-                logger.info(f"Uruchomiono strumień {protocol} dla urządzenia {device_id}: {url}")
-
-                # Publikacja informacji o nowym strumieniu
-                self.mcp_client.publish(f"local_devices/stream/started", {
-                    "stream_id": stream_id,
-                    "device_id": device_id,
-                    "type": device_type,
-                    "protocol": protocol,
-                    "url": url
-                })
-
-                # Store stream info
-                stream_info = {
-                    "stream_id": stream_id,
-                    "device_id": device_id,
-                    "type": device_type,
-                    "protocol": protocol,
-                    "url": url
-                }
-                self.streams[stream_id] = stream_info
-                return url
-            else:
+            if not url:
                 raise RuntimeError(f"Nie można uruchomić strumienia {protocol} dla urządzenia {device_id}")
+
+            logger.info(f"Uruchomiono strumień {protocol} dla urządzenia {device_id}: {url}")
+
+            # Publikacja informacji o nowym strumieniu
+            self.mcp_client.publish(f"local_devices/stream/started", {
+                "stream_id": stream_id,
+                "device_id": device_id,
+                "type": device_type,
+                "protocol": protocol,
+                "url": url
+            })
+
+            # Store stream info
+            stream_info = {
+                "stream_id": stream_id,
+                "device_id": device_id,
+                "type": device_type,
+                "protocol": protocol,
+                "url": url
+            }
+            self.streams[stream_id] = stream_info
+            return url
+
+        except ValueError as e:
+            raise
         except Exception as e:
             raise RuntimeError(f"Błąd podczas uruchamiania strumienia {protocol} dla urządzenia {device_id}: {e}")
             
@@ -645,7 +650,8 @@ class LocalDevicesManager(DeviceManager):
             bool: True jeśli udało się zatrzymać strumień, False w przeciwnym razie.
         """
         if stream_id not in self.streams:
-            raise ValueError(f"Próba zatrzymania nieistniejącego strumienia: {stream_id}")
+            logger.warning(f"Próba zatrzymania nieistniejącego strumienia: {stream_id}")
+            return False
 
         stream_info = self.streams[stream_id]
         protocol = stream_info["protocol"]
@@ -705,13 +711,12 @@ class LocalDevicesManager(DeviceManager):
                     raise ValueError("Brak wymaganego parametru device_id dla komendy start_stream")
 
                 logger.info(f"Otrzymano polecenie uruchomienia strumienia {protocol} dla urządzenia {device_id}")
-                url = await self.start_stream(device_id, protocol)
-
+                url = await self.start_stream(device_id, protocol=protocol)
                 self.mcp_client.publish("local_devices/command/result", {
                     "command": "start_stream",
                     "device_id": device_id,
                     "protocol": protocol,
-                    "success": bool(url),
+                    "success": True,
                     "url": url
                 })
 

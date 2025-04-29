@@ -68,6 +68,58 @@ class NetworkDevicesManager:
     def _get_client_id(self):
         return "network_devices_manager"
 
+    def update_device(self, device_id, **kwargs):
+        """
+        Updates a network device's properties.
+
+        Args:
+            device_id (str): The ID of the device to update.
+            **kwargs: Device properties to update (name, ip, port, etc.).
+
+        Returns:
+            bool: True if update was successful, False otherwise.
+
+        Raises:
+            ValueError: If device_id doesn't exist or invalid properties are provided.
+        """
+        if device_id not in self.devices:
+            raise ValueError(f"Device {device_id} not found")
+
+        device = self.devices[device_id]
+
+        # Validate port if provided
+        if 'port' in kwargs:
+            port = kwargs['port']
+            if not isinstance(port, int) or port < 1 or port > 65535:
+                raise ValueError("Invalid port number")
+
+        # Validate type if provided
+        if 'type' in kwargs:
+            if kwargs['type'] not in ['video', 'audio']:
+                raise ValueError("Type must be 'video' or 'audio'")
+
+        # Validate protocol if provided
+        if 'protocol' in kwargs:
+            if kwargs['protocol'] not in ['rtsp', 'rtmp', 'http']:
+                raise ValueError("Protocol must be 'rtsp', 'rtmp', or 'http'")
+
+        # Update device properties
+        for key, value in kwargs.items():
+            if hasattr(device, key):
+                setattr(device, key, value)
+
+        # Save changes
+        self._save_devices()
+
+        # Publish update event
+        self.mcp_client.publish("network_devices/device/updated", {
+            "device_id": device_id,
+            "updates": kwargs
+        })
+
+        logger.info(f"Updated network device {device_id}")
+        return True
+
     def _handle_command(self, topic, payload):
         """
         Obsługuje komendy przychodzące przez MCP.
@@ -75,55 +127,59 @@ class NetworkDevicesManager:
         Args:
             topic (str): Temat wiadomości MCP.
             payload (dict): Zawartość wiadomości.
+
+        Raises:
+            ValueError: When command is invalid or required parameters are missing.
         """
-        try:
-            # Wyodrębnienie nazwy komendy z tematu (np. command/network_devices/add → add)
-            parts = topic.split('/')
-            if len(parts) < 3:
-                logger.warning(f"Nieprawidłowy format tematu komendy: {topic}")
-                return
+        # Parse command from topic
+        parts = topic.split('/')
+        if len(parts) < 3:
+            raise ValueError(f"Invalid command topic format: {topic}")
 
-            command = parts[2]
+        command = parts[2]
 
-            if command == "add":
-                # Dodanie nowego urządzenia
-                self.add_device(
-                    name=payload.get('name', 'Nowe urządzenie'),
-                    ip=payload.get('ip', ''),
-                    port=payload.get('port', 80),
-                    username=payload.get('username', ''),
-                    password=payload.get('password', ''),
-                    type=payload.get('type', 'video'),
-                    protocol=payload.get('protocol', 'rtsp'),
-                    paths=payload.get('paths', [])
-                )
+        if command == "add":
+            # Validate required fields
+            if not all(key in payload for key in ['name', 'ip', 'port']):
+                raise ValueError("Missing required fields for add command")
 
-            elif command == "remove":
-                # Usunięcie urządzenia
-                device_id = payload.get('device_id')
-                if device_id:
-                    self.remove_device(device_id)
+            # Add new device
+            self.add_device(
+                name=payload['name'],
+                ip=payload['ip'],
+                port=payload['port'],
+                username=payload.get('username', ''),
+                password=payload.get('password', ''),
+                type=payload.get('type', 'video'),
+                protocol=payload.get('protocol', 'rtsp'),
+                paths=payload.get('paths', [])
+            )
 
-            elif command == "start_stream":
-                # Implementacja uruchamiania strumienia
-                device_id = payload.get('device_id')
-                stream_path = payload.get('stream_path')
-                # Tutaj implementacja uruchamiania strumienia
+        elif command == "remove":
+            # Validate required fields
+            if 'device_id' not in payload:
+                raise ValueError("Missing device_id for remove command")
 
-            elif command == "stop_stream":
-                # Implementacja zatrzymywania strumienia
-                stream_id = payload.get('stream_id')
-                # Tutaj implementacja zatrzymywania strumienia
+            # Remove device
+            if not self.remove_device(payload['device_id']):
+                raise ValueError(f"Failed to remove device {payload['device_id']}")
 
-            elif command == "scan":
-                # Ręczne wywołanie skanowania urządzeń
-                self._scan_devices()
+        elif command == "update":
+            # Validate required fields
+            if 'device_id' not in payload:
+                raise ValueError("Missing device_id for update command")
 
-            else:
-                logger.warning(f"Nieznana komenda: {command}")
+            # Update device
+            update_data = payload.copy()
+            device_id = update_data.pop('device_id')
+            self.update_device(device_id, **update_data)
 
-        except Exception as e:
-            logger.error(f"Błąd podczas przetwarzania komendy {topic}: {e}")
+        elif command == "scan":
+            # Manual device scan
+            self._scan_devices()
+
+        else:
+            raise ValueError(f"Unknown command: {command}")
 
     def _subscribe_to_events(self):
         """Subskrybuje zdarzenia MCP."""
@@ -147,67 +203,111 @@ class NetworkDevicesManager:
             "device_id": stream_info["device_id"]
         })
 
-    def _load_saved_devices(self):
-        """Ładuje zapisane urządzenia z pliku."""
+    def save_state(self, state_file=None):
+        """
+        Save the current state of devices to a file.
+
+        Args:
+            state_file (str, optional): Path to save state to. If not provided,
+                                      uses the default devices_file path.
+
+        Returns:
+            bool: True if save was successful, False otherwise.
+        """
         try:
-            if os.path.exists(self.devices_file):
-                with open(self.devices_file, 'r') as f:
-                    devices_data = json.load(f)
-
-                for device_data in devices_data:
-                    try:
-                        device_id = device_data.get('id')
-                        if not device_id:
-                            continue
-
-                        # Utworzenie obiektu urządzenia
-                        device = NetworkDevice(
-                            device_id=device_id,
-                            name=device_data.get('name', 'Nieznane urządzenie'),
-                            type=device_data.get('type', 'video'),
-                            ip=device_data.get('ip', ''),
-                            port=device_data.get('port', 80),
-                            username=device_data.get('username', ''),
-                            password=device_data.get('password', ''),
-                            protocol=device_data.get('protocol', 'rtsp')
-                        )
-
-                        # Dodanie ścieżek strumieni
-                        if 'streams' in device_data:
-                            device.streams = device_data['streams']
-
-                        # Dodanie urządzenia do listy
-                        self.devices[device_id] = device
-
-                    except Exception as e:
-                        logger.error(f"Błąd podczas ładowania urządzenia: {e}")
-
-                logger.info(f"Załadowano {len(self.devices)} zapisanych urządzeń")
-
-        except Exception as e:
-            logger.error(f"Błąd podczas ładowania zapisanych urządzeń: {e}")
-
-    def _save_devices(self):
-        """Zapisuje urządzenia do pliku."""
-        try:
+            file_path = state_file or self.devices_file
             devices_data = []
 
             for device_id, device in self.devices.items():
                 if isinstance(device, NetworkDevice):
-                    # Utworzenie słownika z danymi urządzenia
                     device_data = device.to_dict()
+                    device_data['id'] = device_id  # Ensure ID is included
                     device_data['username'] = device.username
                     device_data['password'] = device.password
+                    device_data['streams'] = device.streams
                     devices_data.append(device_data)
 
-            # Zapisanie do pliku
-            with open(self.devices_file, 'w') as f:
+            # Create directory if it doesn't exist
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+
+            # Save to file
+            with open(file_path, 'w') as f:
                 json.dump(devices_data, f, indent=2)
 
-            logger.debug(f"Zapisano {len(devices_data)} urządzeń do pliku")
+            logger.info(f"Saved {len(devices_data)} devices to {file_path}")
+            return True
 
         except Exception as e:
-            logger.error(f"Błąd podczas zapisywania urządzeń: {e}")
+            logger.error(f"Error saving devices state: {e}")
+            return False
+
+    def load_state(self, state_file=None):
+        """
+        Load devices state from a file.
+
+        Args:
+            state_file (str, optional): Path to load state from. If not provided,
+                                      uses the default devices_file path.
+
+        Returns:
+            bool: True if load was successful, False otherwise.
+        """
+        try:
+            file_path = state_file or self.devices_file
+            if not os.path.exists(file_path):
+                logger.warning(f"State file not found: {file_path}")
+                return False
+
+            with open(file_path, 'r') as f:
+                devices_data = json.load(f)
+
+            # Clear current devices
+            self.devices.clear()
+
+            # Load devices
+            for device_data in devices_data:
+                try:
+                    device_id = device_data.get('id')
+                    if not device_id:
+                        continue
+
+                    # Create device object
+                    device = NetworkDevice(
+                        device_id=device_id,
+                        name=device_data.get('name', 'Unknown Device'),
+                        type=device_data.get('type', 'video'),
+                        ip=device_data.get('ip', ''),
+                        port=device_data.get('port', 80),
+                        username=device_data.get('username', ''),
+                        password=device_data.get('password', ''),
+                        protocol=device_data.get('protocol', 'rtsp')
+                    )
+
+                    # Add stream paths
+                    if 'streams' in device_data:
+                        device.streams = device_data['streams']
+
+                    # Add device to list
+                    self.devices[device_id] = device
+
+                except Exception as e:
+                    logger.error(f"Error loading device: {e}")
+                    continue
+
+            logger.info(f"Loaded {len(self.devices)} devices from {file_path}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Error loading devices state: {e}")
+            return False
+
+    def _load_saved_devices(self):
+        """Load devices from the default state file."""
+        self.load_state()
+
+    def _save_devices(self):
+        """Save devices to the default state file."""
+        self.save_state()
 
     def _scan_devices(self):
         """Skanuje zdalne urządzenia."""
@@ -340,13 +440,37 @@ class NetworkDevicesManager:
             paths (list): Lista ścieżek do zasobów w urządzeniu.
 
         Returns:
-            str: Identyfikator dodanego urządzenia lub None w przypadku błędu.
+            str: Identyfikator dodanego urządzenia.
+
+        Raises:
+            ValueError: Gdy podane dane są nieprawidłowe lub urządzenie już istnieje.
         """
+        # Validate required fields
+        if not name or not ip or not port:
+            raise ValueError("Name, IP, and port are required")
+
+        # Validate port range
+        if not isinstance(port, int) or port < 1 or port > 65535:
+            raise ValueError("Invalid port number")
+
+        # Validate type
+        if type not in ['video', 'audio']:
+            raise ValueError("Type must be 'video' or 'audio'")
+
+        # Validate protocol
+        if protocol not in ['rtsp', 'rtmp', 'http']:
+            raise ValueError("Protocol must be 'rtsp', 'rtmp', or 'http'")
+
+        # Check for duplicate device
+        for device in self.devices.values():
+            if device.ip == ip and device.port == port:
+                raise ValueError(f"Device with IP {ip} and port {port} already exists")
+
         try:
-            # Tworzenie identyfikatora urządzenia
+            # Create device ID
             device_id = str(uuid.uuid4())
 
-            # Utworzenie obiektu urządzenia sieciowego
+            # Create network device object
             device = NetworkDevice(
                 device_id=device_id,
                 name=name,
@@ -358,30 +482,30 @@ class NetworkDevicesManager:
                 protocol=protocol
             )
 
-            # Dodanie ścieżek do urządzenia
+            # Add stream paths
             if paths:
                 for i, path in enumerate(paths):
                     stream_id = f"{device_id}_{i}"
                     device.streams[stream_id] = f"{device.get_base_url()}/{path}"
 
-            # Sprawdzenie stanu urządzenia
+            # Check device status
             self._check_device_status(device)
 
-            # Dodanie urządzenia do listy
+            # Add device to list
             self.devices[device_id] = device
 
-            # Zapisanie urządzeń
+            # Save devices
             self._save_devices()
 
-            # Publikacja informacji o nowym urządzeniu
+            # Publish device added event
             self.mcp_client.publish("network_devices/device/added", device.to_dict())
 
-            logger.info(f"Dodano zdalne urządzenie: {name} ({ip}:{port})")
+            logger.info(f"Added network device: {name} ({ip}:{port})")
             return device_id
 
         except Exception as e:
-            logger.error(f"Błąd podczas dodawania zdalnego urządzenia: {e}")
-            return None
+            logger.error(f"Error adding network device: {e}")
+            raise
 
     def remove_device(self, device_id):
         """
