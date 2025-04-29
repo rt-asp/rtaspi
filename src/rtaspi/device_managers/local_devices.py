@@ -17,7 +17,7 @@ import time
 from pathlib import Path
 
 from ..device_managers.base import DeviceManager
-from ..device_managers.utils.device import LocalDevice
+from ..device_managers.utils.device import LocalDevice, DeviceStatus
 from ..streaming.rtsp import RTSPServer
 from ..streaming.rtmp import RTMPServer
 from ..streaming.webrtc import WebRTCServer
@@ -79,14 +79,19 @@ class LocalDevicesManager(DeviceManager):
 
         Args:
             device_id (str): Identyfikator urządzenia.
-            status (str): Nowy status urządzenia.
+            status (DeviceStatus): Nowy status urządzenia.
         """
+        if not isinstance(status, DeviceStatus):
+            raise ValueError("Status must be a DeviceStatus enum value")
+
         # Sprawdź w obu słownikach urządzeń
         for devices in [self.devices['video'], self.devices['audio']]:
             if device_id in devices:
                 devices[device_id].status = status
                 self._publish_devices_info()
                 return
+        
+        raise ValueError(f"Device {device_id} not found")
 
     def _get_client_id(self):
         """
@@ -227,7 +232,7 @@ class LocalDevicesManager(DeviceManager):
                     )
                     device.formats = formats
                     device.resolutions = resolutions
-                    device.status = 'online'
+                    device.status = DeviceStatus.ONLINE
 
                     # Dodanie urządzenia do listy
                     video_devices[device_id] = device
@@ -276,7 +281,7 @@ class LocalDevicesManager(DeviceManager):
                             system_path=alsa_id,
                             driver='alsa'
                         )
-                        device.status = 'online'
+                        device.status = DeviceStatus.ONLINE
 
                         # Dodanie urządzenia do listy
                         audio_devices[device_id] = device
@@ -308,7 +313,7 @@ class LocalDevicesManager(DeviceManager):
                                 system_path=current_device['name'],
                                 driver='pulse'
                             )
-                            device.status = 'online'
+                            device.status = DeviceStatus.ONLINE
 
                             # Dodanie urządzenia do listy
                             audio_devices[device_id] = device
@@ -335,7 +340,7 @@ class LocalDevicesManager(DeviceManager):
                         system_path=current_device['name'],
                         driver='pulse'
                     )
-                    device.status = 'online'
+                    device.status = DeviceStatus.ONLINE
 
                     # Dodanie urządzenia do listy
                     audio_devices[device_id] = device
@@ -381,7 +386,7 @@ class LocalDevicesManager(DeviceManager):
                             system_path=index,
                             driver='avfoundation'
                         )
-                        device.status = 'online'
+                        device.status = DeviceStatus.ONLINE
 
                     # Dodanie urządzenia do listy
                     video_devices[device_id] = device
@@ -390,7 +395,7 @@ class LocalDevicesManager(DeviceManager):
                     # Dodanie formatów i rozdzielczości
                     device.formats = formats
                     device.resolutions = resolutions
-                    device.status = 'online'
+                    device.status = DeviceStatus.ONLINE
 
         except Exception as e:
             logger.error(f"Błąd podczas skanowania urządzeń wideo w systemie macOS: {e}")
@@ -425,7 +430,7 @@ class LocalDevicesManager(DeviceManager):
                             system_path=index,
                             driver='avfoundation'
                         )
-                        device.status = 'online'
+                        device.status = DeviceStatus.ONLINE
 
                         # Dodanie urządzenia do listy
                         audio_devices[device_id] = device
@@ -467,7 +472,7 @@ class LocalDevicesManager(DeviceManager):
                             system_path=name,
                             driver='dshow'
                         )
-                        device.status = 'online'
+                        device.status = DeviceStatus.ONLINE
 
                         # Dodanie urządzenia do listy
                         video_devices[device_id] = device
@@ -507,7 +512,7 @@ class LocalDevicesManager(DeviceManager):
                             system_path=name,
                             driver='dshow'
                         )
-                        device.status = 'online'
+                        device.status = DeviceStatus.ONLINE
 
                         # Dodanie urządzenia do listy
                         audio_devices[device_id] = device
@@ -576,8 +581,7 @@ class LocalDevicesManager(DeviceManager):
             device = self.devices['audio'][device_id]
 
         if not device:
-            logger.error(f"Nieznane urządzenie: {device_id}")
-            return None
+            raise ValueError(f"Nieznane urządzenie: {device_id}")
 
         # Sprawdzenie, czy strumień już istnieje
         for stream_id, stream_info in self.streams.items():
@@ -601,8 +605,7 @@ class LocalDevicesManager(DeviceManager):
             elif protocol == 'webrtc':
                 url = await self.webrtc_server.start_stream(device, stream_id, output_dir)
             else:
-                logger.error(f"Nieobsługiwany protokół: {protocol}")
-                return None
+                raise ValueError(f"Nieobsługiwany protokół: {protocol}")
 
             if url:
                 logger.info(f"Uruchomiono strumień {protocol} dla urządzenia {device_id}: {url}")
@@ -627,11 +630,9 @@ class LocalDevicesManager(DeviceManager):
                 self.streams[stream_id] = stream_info
                 return url
             else:
-                logger.error(f"Nie można uruchomić strumienia {protocol} dla urządzenia {device_id}")
-                return None
+                raise RuntimeError(f"Nie można uruchomić strumienia {protocol} dla urządzenia {device_id}")
         except Exception as e:
-            logger.error(f"Błąd podczas uruchamiania strumienia {protocol} dla urządzenia {device_id}: {e}")
-            return None
+            raise RuntimeError(f"Błąd podczas uruchamiania strumienia {protocol} dla urządzenia {device_id}: {e}")
             
     async def stop_stream(self, stream_id):
         """
@@ -644,8 +645,7 @@ class LocalDevicesManager(DeviceManager):
             bool: True jeśli udało się zatrzymać strumień, False w przeciwnym razie.
         """
         if stream_id not in self.streams:
-            logger.warning(f"Próba zatrzymania nieistniejącego strumienia: {stream_id}")
-            return False
+            raise ValueError(f"Próba zatrzymania nieistniejącego strumienia: {stream_id}")
 
         stream_info = self.streams[stream_id]
         protocol = stream_info["protocol"]
@@ -659,8 +659,7 @@ class LocalDevicesManager(DeviceManager):
             elif protocol == 'webrtc':
                 success = await self.webrtc_server.stop_stream(stream_id)
             else:
-                logger.error(f"Nieobsługiwany protokół: {protocol}")
-                return False
+                raise ValueError(f"Nieobsługiwany protokół: {protocol}")
 
             if success:
                 # Remove stream info and publish event
@@ -670,32 +669,31 @@ class LocalDevicesManager(DeviceManager):
             return False
 
         except Exception as e:
-            logger.error(f"Błąd podczas zatrzymywania strumienia: {e}")
-            return False
+            raise RuntimeError(f"Błąd podczas zatrzymywania strumienia: {e}")
 
-    def _handle_command(self, topic, message):
+    async def _handle_command(self, topic, message):
         """
         Obsługuje komendy MCP dla menedżera lokalnych urządzeń.
 
         Args:
             topic (str): Temat MCP.
             message (dict): Treść wiadomości.
+
+        Raises:
+            ValueError: Gdy temat jest nieprawidłowy lub komenda jest nieznana.
         """
+        # Parsowanie tematu
+        parts = topic.split('/')
+        if len(parts) < 3:
+            raise ValueError(f"Nieprawidłowy format tematu: {topic}")
+
+        command = parts[2]
+
         try:
-            # Parsowanie tematu
-            parts = topic.split('/')
-            if len(parts) < 3:
-                logger.warning(f"Nieprawidłowy format tematu: {topic}")
-                return
-
-            command = parts[2]
-
             if command == "scan":
                 # Ręczne skanowanie urządzeń
                 logger.info("Otrzymano polecenie skanowania urządzeń")
                 self._scan_devices()
-
-                # Publikacja informacji o urządzeniach
                 self._publish_devices_info()
 
             elif command == "start_stream":
@@ -704,13 +702,11 @@ class LocalDevicesManager(DeviceManager):
                 protocol = message.get("protocol", "rtsp")
 
                 if not device_id:
-                    logger.warning("Brak wymaganego parametru device_id dla komendy start_stream")
-                    return
+                    raise ValueError("Brak wymaganego parametru device_id dla komendy start_stream")
 
                 logger.info(f"Otrzymano polecenie uruchomienia strumienia {protocol} dla urządzenia {device_id}")
-                url = self.start_stream(device_id, protocol)
+                url = await self.start_stream(device_id, protocol)
 
-                # Publikacja odpowiedzi
                 self.mcp_client.publish("local_devices/command/result", {
                     "command": "start_stream",
                     "device_id": device_id,
@@ -724,13 +720,11 @@ class LocalDevicesManager(DeviceManager):
                 stream_id = message.get("stream_id")
 
                 if not stream_id:
-                    logger.warning("Brak wymaganego parametru stream_id dla komendy stop_stream")
-                    return
+                    raise ValueError("Brak wymaganego parametru stream_id dla komendy stop_stream")
 
                 logger.info(f"Otrzymano polecenie zatrzymania strumienia {stream_id}")
-                success = self.stop_stream(stream_id)
+                success = await self.stop_stream(stream_id)
 
-                # Publikacja odpowiedzi
                 self.mcp_client.publish("local_devices/command/result", {
                     "command": "stop_stream",
                     "stream_id": stream_id,
@@ -740,14 +734,10 @@ class LocalDevicesManager(DeviceManager):
             elif command == "get_devices":
                 # Pobranie listy urządzeń
                 logger.info("Otrzymano polecenie pobrania listy urządzeń")
-
-                # Konwersja obiektów urządzeń do słowników
                 devices_dict = {
                     'video': {dev_id: dev.to_dict() for dev_id, dev in self.devices['video'].items()},
                     'audio': {dev_id: dev.to_dict() for dev_id, dev in self.devices['audio'].items()}
                 }
-
-                # Publikacja odpowiedzi
                 self.mcp_client.publish("local_devices/command/result", {
                     "command": "get_devices",
                     "devices": devices_dict
@@ -756,15 +746,14 @@ class LocalDevicesManager(DeviceManager):
             elif command == "get_streams":
                 # Pobranie listy strumieni
                 logger.info("Otrzymano polecenie pobrania listy strumieni")
-
-                # Publikacja odpowiedzi
                 self.mcp_client.publish("local_devices/command/result", {
                     "command": "get_streams",
                     "streams": self.get_streams()
                 })
 
             else:
-                logger.warning(f"Nieznana komenda: {command}")
+                raise ValueError(f"Nieznana komenda: {command}")
 
         except Exception as e:
             logger.error(f"Błąd podczas obsługi komendy MCP: {e}")
+            raise

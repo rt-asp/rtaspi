@@ -1,9 +1,9 @@
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, AsyncMock
 
 from rtaspi.core.mcp import MCPBroker
 from rtaspi.device_managers.local_devices import LocalDevicesManager
-from rtaspi.device_managers.utils.device import LocalDevice
+from rtaspi.device_managers.utils.device import LocalDevice, DeviceStatus
 
 @pytest.fixture
 def local_manager(test_config, mcp_broker):
@@ -41,7 +41,7 @@ Size: Discrete 640x480'''
             device_id, device = next(iter(local_manager.devices['video'].items()))
             assert isinstance(device, LocalDevice)
             assert device.type == 'video'
-            assert device.status == 'online'
+            assert device.status == DeviceStatus.ONLINE
             assert device.driver == 'v4l2'
             assert device.capabilities['formats'] == ['YUYV']
             assert device.capabilities['resolutions'] == ['640x480']
@@ -68,7 +68,7 @@ card 0: TestMic [Test Microphone], device 0: USB Audio [USB Audio]
         device_id, device = next(iter(local_manager.devices['audio'].items()))
         assert isinstance(device, LocalDevice)
         assert device.type == 'audio'
-        assert device.status == 'online'
+        assert device.status == DeviceStatus.ONLINE
         assert device.name == 'Test Microphone'
 
 @pytest.mark.asyncio
@@ -87,7 +87,7 @@ async def test_auto_start_enabled(test_config, mcp_broker):
     with patch.object(manager, '_scan_devices') as mock_scan, \
          patch.object(manager, 'start_stream') as mock_start:
         mock_scan.return_value = None
-        mock_start.return_value = "rtsp://localhost:8554/test"
+        mock_start.return_value = AsyncMock(return_value="rtsp://localhost:8554/test")()
         
         # Initialize manager which should trigger auto-start
         await manager.initialize()
@@ -101,7 +101,7 @@ async def test_start_stream_rtsp(local_manager, mock_local_device):
     
     # Mock RTSP server
     with patch.object(local_manager.rtsp_server, 'start_stream') as mock_start_stream:
-        mock_start_stream.return_value = "rtsp://localhost:8554/test_stream"
+        mock_start_stream.return_value = AsyncMock(return_value="rtsp://localhost:8554/test_stream")()
         
         # Start stream
         url = await local_manager.start_stream("test_video", protocol="rtsp")
@@ -114,7 +114,7 @@ async def test_start_stream_rtmp(local_manager, mock_local_device):
     local_manager.devices['video'][mock_local_device.device_id] = mock_local_device
     
     with patch.object(local_manager.rtmp_server, 'start_stream') as mock_start_stream:
-        mock_start_stream.return_value = "rtmp://localhost:1935/live/test_stream"
+        mock_start_stream.return_value = AsyncMock(return_value="rtmp://localhost:1935/live/test_stream")()
         
         url = await local_manager.start_stream("test_video", protocol="rtmp")
         
@@ -126,7 +126,7 @@ async def test_start_stream_webrtc(local_manager, mock_local_device):
     local_manager.devices['video'][mock_local_device.device_id] = mock_local_device
     
     with patch.object(local_manager.webrtc_server, 'start_stream') as mock_start_stream:
-        mock_start_stream.return_value = "ws://localhost:8080/test_stream"
+        mock_start_stream.return_value = AsyncMock(return_value="ws://localhost:8080/test_stream")()
         
         url = await local_manager.start_stream("test_video", protocol="webrtc")
         
@@ -154,9 +154,9 @@ async def test_stop_stream(local_manager, mock_local_device):
          patch.object(local_manager.rtmp_server, 'stop_stream') as mock_stop_rtmp, \
          patch.object(local_manager.webrtc_server, 'stop_stream') as mock_stop_webrtc:
         
-        mock_stop_rtsp.return_value = True
-        mock_stop_rtmp.return_value = True
-        mock_stop_webrtc.return_value = True
+        mock_stop_rtsp.return_value = AsyncMock(return_value=True)()
+        mock_stop_rtmp.return_value = AsyncMock(return_value=True)()
+        mock_stop_webrtc.return_value = AsyncMock(return_value=True)()
         
         success = await local_manager.stop_stream("test_video")
         assert success
@@ -212,12 +212,12 @@ async def test_update_device_status(local_manager, mock_local_device):
     local_manager.devices['video'][mock_local_device.device_id] = mock_local_device
     
     # Update status to offline
-    local_manager.update_device_status(mock_local_device.device_id, "offline")
-    assert mock_local_device.status == "offline"
+    local_manager.update_device_status(mock_local_device.device_id, DeviceStatus.OFFLINE)
+    assert mock_local_device.status == DeviceStatus.OFFLINE
     
     # Update status back to online
-    local_manager.update_device_status(mock_local_device.device_id, "online")
-    assert mock_local_device.status == "online"
+    local_manager.update_device_status(mock_local_device.device_id, DeviceStatus.ONLINE)
+    assert mock_local_device.status == DeviceStatus.ONLINE
     
     # Test invalid status
     with pytest.raises(ValueError):

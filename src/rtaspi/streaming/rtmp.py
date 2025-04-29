@@ -287,6 +287,32 @@ class RTMPServer:
         }}
         """
 
+    async def stop_stream(self, stream_id):
+        """
+        Zatrzymuje strumień RTMP.
+
+        Args:
+            stream_id (str): Identyfikator strumienia.
+
+        Returns:
+            bool: True jeśli udało się zatrzymać strumień, False w przeciwnym razie.
+        """
+        try:
+            if hasattr(self, 'process') and self.process:
+                self.process.terminate()
+                self.process.wait()
+                self.process = None
+
+            if hasattr(self, 'nginx_process') and self.nginx_process:
+                self.nginx_process.terminate()
+                self.nginx_process.wait()
+                self.nginx_process = None
+
+            return True
+        except Exception as e:
+            logger.error(f"Błąd podczas zatrzymywania strumienia RTMP: {e}")
+            return False
+
     def _find_free_port(self, start_port):
         """
         Znajduje wolny port zaczynając od podanego.

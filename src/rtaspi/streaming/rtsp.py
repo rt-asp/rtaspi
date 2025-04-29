@@ -58,7 +58,7 @@ class RTSPServer:
             
             if not input_args or not output_args:
                 logger.error(f"Nie można przygotować argumentów FFmpeg dla urządzenia {device.device_id}")
-                return None
+                raise ValueError(f"Nie można przygotować argumentów FFmpeg dla urządzenia {device.device_id}")
                 
             # Uruchomienie procesu FFmpeg
             cmd = ['ffmpeg', '-hide_banner'] + input_args + output_args
@@ -74,7 +74,7 @@ class RTSPServer:
             time.sleep(2)
             if process.poll() is not None:
                 logger.error(f"Proces FFmpeg zakończył działanie z kodem: {process.returncode}")
-                return None
+                raise RuntimeError(f"Proces FFmpeg zakończył działanie z kodem: {process.returncode}")
                 
             # Dodanie procesu do informacji o strumieniu
             url = f"rtsp://localhost:{port}/{stream_id}"
@@ -152,7 +152,7 @@ class RTSPServer:
             time.sleep(2)
             if process.poll() is not None:
                 logger.error(f"Proces FFmpeg proxy zakończył działanie z kodem: {process.returncode}")
-                return None
+                raise RuntimeError(f"Proces FFmpeg proxy zakończył działanie z kodem: {process.returncode}")
                 
             # Utworzenie URL do strumienia
             url = f"rtsp://localhost:{port}/{stream_id}"
@@ -301,16 +301,23 @@ class RTSPServer:
         """
         port = start_port
         max_port = start_port + 1000  # Ograniczenie zakresu skanowania
+        used_ports = set(stream_info["port"] for stream_info in self.active_streams.values())
         
         while port < max_port:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(0.1)
-            result = sock.connect_ex(('127.0.0.1', port))
-            sock.close()
-            
-            if result != 0:  # Port jest wolny
-                return port
+            if port not in used_ports:
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.settimeout(0.1)
+                result = sock.connect_ex(('127.0.0.1', port))
+                sock.close()
+                
+                if result != 0:  # Port jest wolny
+                    return port
             
             port += 1
             
         raise Exception(f"Nie znaleziono wolnego portu w zakresie {start_port}-{max_port}")
+
+    async def shutdown(self):
+        """Zatrzymuje wszystkie aktywne strumienie i zamyka serwer."""
+        for stream_id in list(self.active_streams.keys()):
+            await self.stop_stream(stream_id)
