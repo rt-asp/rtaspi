@@ -1,396 +1,344 @@
-"""
-Audio filter implementations.
+"""Audio processing filters."""
 
-This module provides audio filter implementations using numpy and scipy, including:
-- Basic filters (equalizer, noise gate, etc.)
-- Effects (reverb, echo, etc.)
-- Audio adjustments (pitch, time stretch, etc.)
-"""
-
+import logging
 import numpy as np
-from typing import Optional, Dict, Any
-from scipy import signal
-from scipy.io import wavfile
+from typing import Optional, List, Dict, Any
+import scipy.signal as signal
 
+from ...core.logging import get_logger
+
+logger = get_logger(__name__)
 
 class AudioFilter:
     """Base class for audio filters."""
 
-    def __init__(self, filter_type: str, params: Optional[Dict[str, Any]] = None):
-        """Initialize the audio filter.
+    def __init__(self):
+        """Initialize filter."""
+        self._initialized = False
+        self._sample_rate = 0
+        self._channels = 0
 
+    def initialize(self, sample_rate: int, channels: int) -> bool:
+        """Initialize filter.
+        
         Args:
-            filter_type: Type of filter to apply
-            params: Filter-specific parameters
-        """
-        self.filter_type = filter_type
-        self.params = params or {}
-
-    def apply(self, audio: np.ndarray, sample_rate: int) -> np.ndarray:
-        """Apply the filter to an audio signal.
-
-        Args:
-            audio: Input audio signal
             sample_rate: Audio sample rate in Hz
-
+            channels: Number of audio channels
+            
         Returns:
-            Processed audio signal
+            bool: True if initialization successful
         """
-        if self.filter_type == "EQUALIZER":
-            return self._apply_equalizer(audio, sample_rate)
-        elif self.filter_type == "NOISE_GATE":
-            return self._apply_noise_gate(audio)
-        elif self.filter_type == "COMPRESSOR":
-            return self._apply_compressor(audio)
-        elif self.filter_type == "REVERB":
-            return self._apply_reverb(audio, sample_rate)
-        elif self.filter_type == "ECHO":
-            return self._apply_echo(audio, sample_rate)
-        elif self.filter_type == "PITCH_SHIFT":
-            return self._apply_pitch_shift(audio, sample_rate)
-        elif self.filter_type == "TIME_STRETCH":
-            return self._apply_time_stretch(audio)
-        elif self.filter_type == "NORMALIZATION":
-            return self._apply_normalization(audio)
-        elif self.filter_type == "BANDPASS":
-            return self._apply_bandpass(audio, sample_rate)
-        elif self.filter_type == "LOWPASS":
-            return self._apply_lowpass(audio, sample_rate)
-        elif self.filter_type == "HIGHPASS":
-            return self._apply_highpass(audio, sample_rate)
+        self._sample_rate = sample_rate
+        self._channels = channels
+        self._initialized = True
+        return True
+
+    def process(self, audio_data: np.ndarray, sample_rate: Optional[int] = None) -> np.ndarray:
+        """Process audio data.
+        
+        Args:
+            audio_data: Audio samples as numpy array
+            sample_rate: Sample rate (optional, for verification)
+            
+        Returns:
+            np.ndarray: Processed audio samples
+        """
+        if not self._initialized:
+            logger.warning("Filter not initialized")
+            return audio_data
+
+        if sample_rate is not None and sample_rate != self._sample_rate:
+            logger.warning(f"Sample rate mismatch: {sample_rate} != {self._sample_rate}")
+            return audio_data
+
+        return audio_data
+
+    def cleanup(self) -> None:
+        """Clean up filter resources."""
+        self._initialized = False
+
+
+class NoiseReductionFilter(AudioFilter):
+    """Noise reduction filter using spectral subtraction."""
+
+    def __init__(self, frame_size: int = 2048, overlap: float = 0.75):
+        """Initialize noise reduction filter.
+        
+        Args:
+            frame_size: FFT frame size
+            overlap: Frame overlap ratio
+        """
+        super().__init__()
+        self.frame_size = frame_size
+        self.overlap = overlap
+        self._noise_estimate = None
+        self._window = None
+
+    def initialize(self, sample_rate: int, channels: int) -> bool:
+        """Initialize filter.
+        
+        Args:
+            sample_rate: Audio sample rate in Hz
+            channels: Number of audio channels
+            
+        Returns:
+            bool: True if initialization successful
+        """
+        if not super().initialize(sample_rate, channels):
+            return False
+
+        self._window = signal.windows.hann(self.frame_size)
+        self._noise_estimate = np.zeros(self.frame_size // 2 + 1)
+        return True
+
+    def process(self, audio_data: np.ndarray, sample_rate: Optional[int] = None) -> np.ndarray:
+        """Process audio data.
+        
+        Args:
+            audio_data: Audio samples as numpy array
+            sample_rate: Sample rate (optional, for verification)
+            
+        Returns:
+            np.ndarray: Processed audio samples
+        """
+        if not super().process(audio_data, sample_rate).any():
+            return audio_data
+
+        # Convert to float32 if needed
+        if audio_data.dtype != np.float32:
+            audio_data = audio_data.astype(np.float32)
+
+        # Apply spectral subtraction
+        hop_size = int(self.frame_size * (1 - self.overlap))
+        num_frames = (len(audio_data) - self.frame_size) // hop_size + 1
+        output = np.zeros_like(audio_data)
+        window_sum = np.zeros_like(audio_data)
+
+        for i in range(num_frames):
+            start = i * hop_size
+            end = start + self.frame_size
+            frame = audio_data[start:end] * self._window
+
+            # Compute spectrum
+            spectrum = np.fft.rfft(frame)
+            magnitude = np.abs(spectrum)
+            phase = np.angle(spectrum)
+
+            # Update noise estimate
+            if i == 0:
+                self._noise_estimate = magnitude
+            else:
+                self._noise_estimate = 0.95 * self._noise_estimate + 0.05 * magnitude
+
+            # Apply spectral subtraction
+            magnitude = np.maximum(magnitude - self._noise_estimate, 0)
+            spectrum = magnitude * np.exp(1j * phase)
+
+            # Reconstruct frame
+            frame = np.fft.irfft(spectrum) * self._window
+            output[start:end] += frame
+            window_sum[start:end] += self._window
+
+        # Normalize by window sum
+        valid_indices = window_sum > 1e-10
+        output[valid_indices] /= window_sum[valid_indices]
+        return output
+
+
+class EchoCancellationFilter(AudioFilter):
+    """Echo cancellation filter using adaptive filtering."""
+
+    def __init__(self, filter_length: int = 1024, step_size: float = 0.1):
+        """Initialize echo cancellation filter.
+        
+        Args:
+            filter_length: Length of adaptive filter
+            step_size: LMS adaptation step size
+        """
+        super().__init__()
+        self.filter_length = filter_length
+        self.step_size = step_size
+        self._filter = None
+        self._buffer = None
+
+    def initialize(self, sample_rate: int, channels: int) -> bool:
+        """Initialize filter.
+        
+        Args:
+            sample_rate: Audio sample rate in Hz
+            channels: Number of audio channels
+            
+        Returns:
+            bool: True if initialization successful
+        """
+        if not super().initialize(sample_rate, channels):
+            return False
+
+        self._filter = np.zeros(self.filter_length)
+        self._buffer = np.zeros(self.filter_length)
+        return True
+
+    def process(self, audio_data: np.ndarray, sample_rate: Optional[int] = None) -> np.ndarray:
+        """Process audio data.
+        
+        Args:
+            audio_data: Audio samples as numpy array
+            sample_rate: Sample rate (optional, for verification)
+            
+        Returns:
+            np.ndarray: Processed audio samples
+        """
+        if not super().process(audio_data, sample_rate).any():
+            return audio_data
+
+        # Convert to float32 if needed
+        if audio_data.dtype != np.float32:
+            audio_data = audio_data.astype(np.float32)
+
+        # Apply adaptive filtering
+        output = np.zeros_like(audio_data)
+        for i in range(len(audio_data)):
+            # Update buffer
+            self._buffer = np.roll(self._buffer, 1)
+            self._buffer[0] = audio_data[i]
+
+            # Estimate echo
+            echo = np.dot(self._filter, self._buffer)
+
+            # Cancel echo
+            output[i] = audio_data[i] - echo
+
+            # Update filter
+            error = output[i]
+            self._filter += self.step_size * error * self._buffer
+
+        return output
+
+
+class FeedbackSuppressionFilter(AudioFilter):
+    """Feedback suppression using frequency shifting."""
+
+    def __init__(self, shift_hz: float = 5.0):
+        """Initialize feedback suppression filter.
+        
+        Args:
+            shift_hz: Frequency shift in Hz
+        """
+        super().__init__()
+        self.shift_hz = shift_hz
+        self._phase = 0.0
+        self._phase_increment = 0.0
+
+    def initialize(self, sample_rate: int, channels: int) -> bool:
+        """Initialize filter.
+        
+        Args:
+            sample_rate: Audio sample rate in Hz
+            channels: Number of audio channels
+            
+        Returns:
+            bool: True if initialization successful
+        """
+        if not super().initialize(sample_rate, channels):
+            return False
+
+        self._phase_increment = 2 * np.pi * self.shift_hz / sample_rate
+        return True
+
+    def process(self, audio_data: np.ndarray, sample_rate: Optional[int] = None) -> np.ndarray:
+        """Process audio data.
+        
+        Args:
+            audio_data: Audio samples as numpy array
+            sample_rate: Sample rate (optional, for verification)
+            
+        Returns:
+            np.ndarray: Processed audio samples
+        """
+        if not super().process(audio_data, sample_rate).any():
+            return audio_data
+
+        # Convert to float32 if needed
+        if audio_data.dtype != np.float32:
+            audio_data = audio_data.astype(np.float32)
+
+        # Apply frequency shift
+        t = np.arange(len(audio_data))
+        phase = self._phase + t * self._phase_increment
+        output = audio_data * np.cos(phase)
+
+        # Update phase
+        self._phase = (self._phase + len(audio_data) * self._phase_increment) % (2 * np.pi)
+
+        return output
+
+
+class GainControlFilter(AudioFilter):
+    """Automatic gain control."""
+
+    def __init__(self, target_rms: float = 0.1, attack_time: float = 0.01, release_time: float = 0.1):
+        """Initialize gain control filter.
+        
+        Args:
+            target_rms: Target RMS level
+            attack_time: Attack time in seconds
+            release_time: Release time in seconds
+        """
+        super().__init__()
+        self.target_rms = target_rms
+        self.attack_time = attack_time
+        self.release_time = release_time
+        self._current_gain = 1.0
+        self._attack_coef = 0.0
+        self._release_coef = 0.0
+
+    def initialize(self, sample_rate: int, channels: int) -> bool:
+        """Initialize filter.
+        
+        Args:
+            sample_rate: Audio sample rate in Hz
+            channels: Number of audio channels
+            
+        Returns:
+            bool: True if initialization successful
+        """
+        if not super().initialize(sample_rate, channels):
+            return False
+
+        self._attack_coef = np.exp(-1 / (self.attack_time * sample_rate))
+        self._release_coef = np.exp(-1 / (self.release_time * sample_rate))
+        return True
+
+    def process(self, audio_data: np.ndarray, sample_rate: Optional[int] = None) -> np.ndarray:
+        """Process audio data.
+        
+        Args:
+            audio_data: Audio samples as numpy array
+            sample_rate: Sample rate (optional, for verification)
+            
+        Returns:
+            np.ndarray: Processed audio samples
+        """
+        if not super().process(audio_data, sample_rate).any():
+            return audio_data
+
+        # Convert to float32 if needed
+        if audio_data.dtype != np.float32:
+            audio_data = audio_data.astype(np.float32)
+
+        # Calculate RMS level
+        rms = np.sqrt(np.mean(audio_data ** 2))
+        if rms < 1e-10:
+            return audio_data
+
+        # Calculate target gain
+        target_gain = self.target_rms / rms
+
+        # Apply smoothing
+        if target_gain > self._current_gain:
+            self._current_gain = self._attack_coef * self._current_gain + (1 - self._attack_coef) * target_gain
         else:
-            raise ValueError(f"Unsupported filter type: {self.filter_type}")
+            self._current_gain = self._release_coef * self._current_gain + (1 - self._release_coef) * target_gain
 
-    def _apply_equalizer(self, audio: np.ndarray, sample_rate: int) -> np.ndarray:
-        """Apply equalizer filter.
-
-        Args:
-            audio: Input audio signal
-            sample_rate: Audio sample rate in Hz
-
-        Returns:
-            Equalized audio signal
-        """
-        # Get parameters
-        bands = self.params.get(
-            "bands",
-            {
-                "60": 0,  # Sub bass
-                "170": 0,  # Bass
-                "310": 0,  # Low midrange
-                "600": 0,  # Midrange
-                "1000": 0,  # Higher midrange
-                "3000": 0,  # Presence
-                "6000": 0,  # Brilliance
-                "12000": 0,  # Air
-            },
-        )
-
-        # Apply each band
-        output = np.zeros_like(audio)
-        for freq, gain in bands.items():
-            freq = float(freq)
-
-            # Create bandpass filter
-            nyquist = sample_rate / 2
-            low = freq / 1.5
-            high = freq * 1.5
-            b, a = signal.butter(2, [low / nyquist, high / nyquist], btype="band")
-
-            # Apply filter and adjust gain
-            filtered = signal.filtfilt(b, a, audio)
-            output += filtered * (10 ** (gain / 20))
-
-        return output
-
-    def _apply_noise_gate(self, audio: np.ndarray) -> np.ndarray:
-        """Apply noise gate filter.
-
-        Args:
-            audio: Input audio signal
-
-        Returns:
-            Noise-gated audio signal
-        """
-        # Get parameters
-        threshold = self.params.get("threshold", -50)  # dB
-        ratio = self.params.get("ratio", 10)
-        attack = self.params.get("attack", 0.01)
-        release = self.params.get("release", 0.1)
-
-        # Convert threshold to linear
-        threshold_linear = 10 ** (threshold / 20)
-
-        # Calculate envelope
-        abs_audio = np.abs(audio)
-        envelope = np.zeros_like(audio)
-        for i in range(1, len(audio)):
-            if abs_audio[i] > envelope[i - 1]:
-                envelope[i] = envelope[i - 1] + attack * (
-                    abs_audio[i] - envelope[i - 1]
-                )
-            else:
-                envelope[i] = envelope[i - 1] + release * (
-                    abs_audio[i] - envelope[i - 1]
-                )
-
-        # Apply gate
-        gain = np.ones_like(audio)
-        mask = envelope < threshold_linear
-        gain[mask] = (envelope[mask] / threshold_linear) ** ratio
-
-        return audio * gain
-
-    def _apply_compressor(self, audio: np.ndarray) -> np.ndarray:
-        """Apply compressor filter.
-
-        Args:
-            audio: Input audio signal
-
-        Returns:
-            Compressed audio signal
-        """
-        # Get parameters
-        threshold = self.params.get("threshold", -20)  # dB
-        ratio = self.params.get("ratio", 4)
-        attack = self.params.get("attack", 0.01)
-        release = self.params.get("release", 0.1)
-
-        # Convert threshold to linear
-        threshold_linear = 10 ** (threshold / 20)
-
-        # Calculate envelope
-        abs_audio = np.abs(audio)
-        envelope = np.zeros_like(audio)
-        for i in range(1, len(audio)):
-            if abs_audio[i] > envelope[i - 1]:
-                envelope[i] = envelope[i - 1] + attack * (
-                    abs_audio[i] - envelope[i - 1]
-                )
-            else:
-                envelope[i] = envelope[i - 1] + release * (
-                    abs_audio[i] - envelope[i - 1]
-                )
-
-        # Apply compression
-        gain = np.ones_like(audio)
-        mask = envelope > threshold_linear
-        gain[mask] = (threshold_linear / envelope[mask]) ** (1 - 1 / ratio)
-
-        return audio * gain
-
-    def _apply_reverb(self, audio: np.ndarray, sample_rate: int) -> np.ndarray:
-        """Apply reverb filter.
-
-        Args:
-            audio: Input audio signal
-            sample_rate: Audio sample rate in Hz
-
-        Returns:
-            Reverberated audio signal
-        """
-        # Get parameters
-        room_size = self.params.get("room_size", 0.5)  # 0.0 to 1.0
-        damping = self.params.get("damping", 0.5)  # 0.0 to 1.0
-        wet_level = self.params.get("wet_level", 0.3)  # 0.0 to 1.0
-        dry_level = self.params.get("dry_level", 0.7)  # 0.0 to 1.0
-
-        # Calculate delay times
-        delays = [int(sample_rate * t) for t in [0.0297, 0.0371, 0.0411, 0.0437]]
-
-        # Create feedback matrix
-        size = len(delays)
-        feedback = np.zeros((size, size))
-        for i in range(size):
-            for j in range(size):
-                feedback[i, j] = (-1 if (i + j) % 2 else 1) * room_size * damping
-
-        # Apply reverb
-        output = np.zeros_like(audio)
-        state = np.zeros((size, max(delays)))
-
-        for i in range(len(audio)):
-            # Get delayed samples
-            delayed = np.array(
-                [state[j, (i - delays[j]) % len(state[j])] for j in range(size)]
-            )
-
-            # Calculate feedback
-            feedback_signal = feedback.dot(delayed)
-
-            # Update state
-            for j in range(size):
-                state[j, i % len(state[j])] = audio[i] + feedback_signal[j]
-
-            # Mix wet and dry signals
-            output[i] = dry_level * audio[i] + wet_level * np.mean(delayed)
-
-        return output
-
-    def _apply_echo(self, audio: np.ndarray, sample_rate: int) -> np.ndarray:
-        """Apply echo filter.
-
-        Args:
-            audio: Input audio signal
-            sample_rate: Audio sample rate in Hz
-
-        Returns:
-            Echo-processed audio signal
-        """
-        # Get parameters
-        delay = self.params.get("delay", 0.3)  # seconds
-        decay = self.params.get("decay", 0.5)  # 0.0 to 1.0
-        count = self.params.get("count", 3)  # number of echoes
-
-        # Calculate delay samples
-        delay_samples = int(delay * sample_rate)
-
-        # Apply echoes
-        output = audio.copy()
-        for i in range(1, count + 1):
-            # Shift and attenuate
-            echo = np.zeros_like(audio)
-            echo[i * delay_samples :] = audio[: -i * delay_samples] * (decay**i)
-            output += echo
-
-        return output
-
-    def _apply_pitch_shift(self, audio: np.ndarray, sample_rate: int) -> np.ndarray:
-        """Apply pitch shift filter.
-
-        Args:
-            audio: Input audio signal
-            sample_rate: Audio sample rate in Hz
-
-        Returns:
-            Pitch-shifted audio signal
-        """
-        # Get parameters
-        semitones = self.params.get("semitones", 0)
-
-        if semitones == 0:
-            return audio
-
-        # Calculate pitch shift factor
-        factor = 2 ** (semitones / 12)
-
-        # Resample audio
-        output_length = int(len(audio) / factor)
-        time_orig = np.arange(len(audio))
-        time_new = np.linspace(0, len(audio) - 1, output_length)
-
-        return np.interp(time_new, time_orig, audio)
-
-    def _apply_time_stretch(self, audio: np.ndarray) -> np.ndarray:
-        """Apply time stretch filter.
-
-        Args:
-            audio: Input audio signal
-
-        Returns:
-            Time-stretched audio signal
-        """
-        # Get parameters
-        factor = self.params.get("factor", 1.0)
-
-        if factor == 1.0:
-            return audio
-
-        # Calculate new length
-        output_length = int(len(audio) * factor)
-
-        # Resample audio
-        time_orig = np.arange(len(audio))
-        time_new = np.linspace(0, len(audio) - 1, output_length)
-
-        return np.interp(time_new, time_orig, audio)
-
-    def _apply_normalization(self, audio: np.ndarray) -> np.ndarray:
-        """Apply normalization filter.
-
-        Args:
-            audio: Input audio signal
-
-        Returns:
-            Normalized audio signal
-        """
-        # Get parameters
-        target_db = self.params.get("target_db", -1)  # dB
-
-        # Calculate current peak
-        peak = np.max(np.abs(audio))
-        if peak == 0:
-            return audio
-
-        # Calculate target amplitude
-        target_amplitude = 10 ** (target_db / 20)
-
-        return audio * (target_amplitude / peak)
-
-    def _apply_bandpass(self, audio: np.ndarray, sample_rate: int) -> np.ndarray:
-        """Apply bandpass filter.
-
-        Args:
-            audio: Input audio signal
-            sample_rate: Audio sample rate in Hz
-
-        Returns:
-            Bandpass-filtered audio signal
-        """
-        # Get parameters
-        low_freq = self.params.get("low_freq", 500)
-        high_freq = self.params.get("high_freq", 2000)
-        order = self.params.get("order", 4)
-
-        # Create bandpass filter
-        nyquist = sample_rate / 2
-        low = low_freq / nyquist
-        high = high_freq / nyquist
-        b, a = signal.butter(order, [low, high], btype="band")
-
-        # Apply filter
-        return signal.filtfilt(b, a, audio)
-
-    def _apply_lowpass(self, audio: np.ndarray, sample_rate: int) -> np.ndarray:
-        """Apply lowpass filter.
-
-        Args:
-            audio: Input audio signal
-            sample_rate: Audio sample rate in Hz
-
-        Returns:
-            Lowpass-filtered audio signal
-        """
-        # Get parameters
-        cutoff = self.params.get("cutoff", 1000)
-        order = self.params.get("order", 4)
-
-        # Create lowpass filter
-        nyquist = sample_rate / 2
-        normal_cutoff = cutoff / nyquist
-        b, a = signal.butter(order, normal_cutoff, btype="low")
-
-        # Apply filter
-        return signal.filtfilt(b, a, audio)
-
-    def _apply_highpass(self, audio: np.ndarray, sample_rate: int) -> np.ndarray:
-        """Apply highpass filter.
-
-        Args:
-            audio: Input audio signal
-            sample_rate: Audio sample rate in Hz
-
-        Returns:
-            Highpass-filtered audio signal
-        """
-        # Get parameters
-        cutoff = self.params.get("cutoff", 1000)
-        order = self.params.get("order", 4)
-
-        # Create highpass filter
-        nyquist = sample_rate / 2
-        normal_cutoff = cutoff / nyquist
-        b, a = signal.butter(order, normal_cutoff, btype="high")
-
-        # Apply filter
-        return signal.filtfilt(b, a, audio)
+        # Apply gain
+        return audio_data * self._current_gain

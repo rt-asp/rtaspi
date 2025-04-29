@@ -1,5 +1,3 @@
-zadania do wykonania:
-
 ### 6. Integracja protokołów zdalnego pulpitu
 
 #### 6.1 Obsługa RDP (Remote Desktop Protocol)

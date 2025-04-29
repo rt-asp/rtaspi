@@ -1,0 +1,220 @@
+# Example OPC UA device configurations
+
+devices:
+  # Temperature controller
+  temperature_controller:
+    url: opc.tcp://192.168.1.100:4840
+    username: admin
+    password: secret123
+    security_policy: Basic256Sha256
+    security_mode: SignAndEncrypt
+    certificate: /etc/rtaspi/certs/client.pem
+    private_key: /etc/rtaspi/certs/client.key
+    nodes:
+      process_value:
+        id: ns=2;s=Controller.PV
+        scale: 0.1
+        offset: 0
+        subscribe: true
+        interval: 1000
+        description: Current temperature value
+      setpoint:
+        id: ns=2;s=Controller.SP
+        scale: 0.1
+        offset: 0
+        description: Target temperature value
+      control_mode:
+        id: ns=2;s=Controller.Mode
+        description: Control mode (0=Off, 1=Auto, 2=Manual)
+      output_power:
+        id: ns=2;s=Controller.Output
+        scale: 0.1
+        description: Output power percentage
+      alarm_status:
+        id: ns=2;s=Controller.Alarm
+        subscribe: true
+        interval: 1000
+        description: Alarm active status
+      alarm_code:
+        id: ns=2;s=Controller.AlarmCode
+        description: Current alarm code
+
+  # Flow meter
+  flow_meter:
+    url: opc.tcp://192.168.1.200:4840
+    username: operator
+    password: pass456
+    security_policy: Basic128Rsa15
+    security_mode: Sign
+    certificate: /etc/rtaspi/certs/client.pem
+    private_key: /etc/rtaspi/certs/client.key
+    nodes:
+      flow_rate:
+        id: ns=3;s=FlowMeter.Rate
+        scale: 1.0
+        subscribe: true
+        interval: 500
+        description: Current flow rate
+      total_flow:
+        id: ns=3;s=FlowMeter.Total
+        scale: 1.0
+        description: Total flow accumulator
+      units:
+        id: ns=3;s=FlowMeter.Units
+        description: Flow units (0=L/s, 1=m³/h)
+      status:
+        id: ns=3;s=FlowMeter.Status
+        subscribe: true
+        interval: 1000
+        description: Device status
+      serial_number:
+        id: ns=3;s=FlowMeter.SerialNumber
+        description: Device serial number
+
+  # PLC interface
+  plc:
+    url: opc.tcp://192.168.1.300:4840
+    username: plc_user
+    password: plc789
+    security_policy: None  # No encryption for local network
+    nodes:
+      # Digital inputs
+      di_0:
+        id: ns=4;s=PLC.Inputs.DI0
+        subscribe: true
+        interval: 100
+        description: Digital input 0
+      di_1:
+        id: ns=4;s=PLC.Inputs.DI1
+        subscribe: true
+        interval: 100
+        description: Digital input 1
+      di_2:
+        id: ns=4;s=PLC.Inputs.DI2
+        subscribe: true
+        interval: 100
+        description: Digital input 2
+      di_3:
+        id: ns=4;s=PLC.Inputs.DI3
+        subscribe: true
+        interval: 100
+        description: Digital input 3
+      
+      # Digital outputs
+      do_0:
+        id: ns=4;s=PLC.Outputs.DO0
+        description: Digital output 0
+      do_1:
+        id: ns=4;s=PLC.Outputs.DO1
+        description: Digital output 1
+      do_2:
+        id: ns=4;s=PLC.Outputs.DO2
+        description: Digital output 2
+      do_3:
+        id: ns=4;s=PLC.Outputs.DO3
+        description: Digital output 3
+      
+      # Analog inputs
+      ai_0:
+        id: ns=4;s=PLC.Inputs.AI0
+        scale: 0.001
+        offset: 0
+        subscribe: true
+        interval: 500
+        description: Analog input 0 (4-20mA)
+      ai_1:
+        id: ns=4;s=PLC.Inputs.AI1
+        scale: 0.001
+        offset: 0
+        subscribe: true
+        interval: 500
+        description: Analog input 1 (4-20mA)
+      
+      # Analog outputs
+      ao_0:
+        id: ns=4;s=PLC.Outputs.AO0
+        scale: 0.001
+        offset: 0
+        description: Analog output 0 (4-20mA)
+      ao_1:
+        id: ns=4;s=PLC.Outputs.AO1
+        scale: 0.001
+        offset: 0
+        description: Analog output 1 (4-20mA)
+      
+      # System status
+      system_status:
+        id: ns=4;s=PLC.System.Status
+        subscribe: true
+        interval: 1000
+        description: System status word
+      error_code:
+        id: ns=4;s=PLC.System.ErrorCode
+        subscribe: true
+        interval: 1000
+        description: Error code
+      uptime:
+        id: ns=4;s=PLC.System.Uptime
+        description: System uptime in seconds
+      firmware_version:
+        id: ns=4;s=PLC.System.FirmwareVersion
+        description: Firmware version string
+
+  # VFD (Variable Frequency Drive)
+  vfd:
+    url: opc.tcp://192.168.1.400:4840
+    username: vfd_user
+    password: vfd123
+    security_policy: Basic256
+    security_mode: SignAndEncrypt
+    certificate: /etc/rtaspi/certs/client.pem
+    private_key: /etc/rtaspi/certs/client.key
+    nodes:
+      frequency:
+        id: ns=5;s=VFD.Output.Frequency
+        scale: 0.1
+        subscribe: true
+        interval: 500
+        description: Output frequency in Hz
+      current:
+        id: ns=5;s=VFD.Output.Current
+        scale: 0.1
+        subscribe: true
+        interval: 500
+        description: Output current in A
+      voltage:
+        id: ns=5;s=VFD.Output.Voltage
+        scale: 0.1
+        subscribe: true
+        interval: 500
+        description: Output voltage in V
+      power:
+        id: ns=5;s=VFD.Output.Power
+        scale: 0.1
+        subscribe: true
+        interval: 500
+        description: Output power in kW
+      speed:
+        id: ns=5;s=VFD.Output.Speed
+        subscribe: true
+        interval: 500
+        description: Motor speed in RPM
+      run_command:
+        id: ns=5;s=VFD.Control.Run
+        description: Run/Stop command
+      direction:
+        id: ns=5;s=VFD.Control.Direction
+        description: Forward/Reverse direction
+      fault_reset:
+        id: ns=5;s=VFD.Control.FaultReset
+        description: Fault reset command
+      fault_code:
+        id: ns=5;s=VFD.Status.FaultCode
+        subscribe: true
+        interval: 1000
+        description: Active fault code
+      status_word:
+        id: ns=5;s=VFD.Status.Word
+        subscribe: true
+        interval: 1000
+        description: Drive status word

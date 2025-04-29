@@ -1,107 +1,49 @@
-"""
-Constants and enumerations for device types supported by the system.
-"""
+"""Device type constants."""
 
-from enum import Enum, auto
+# Device types
+DEVICE_TYPE_CAMERA = "camera"
+DEVICE_TYPE_MICROPHONE = "microphone"
+DEVICE_TYPE_SCREEN = "screen"
+DEVICE_TYPE_REMOTE_DESKTOP = "remote_desktop"
 
+# Device subtypes
+DEVICE_SUBTYPE_USB = "usb"
+DEVICE_SUBTYPE_IP = "ip"
+DEVICE_SUBTYPE_RDP = "rdp"
+DEVICE_SUBTYPE_VNC = "vnc"
+DEVICE_SUBTYPE_VIRTUAL = "virtual"
+DEVICE_SUBTYPE_PHYSICAL = "physical"
+DEVICE_SUBTYPE_NETWORK = "network"
 
-class DeviceType(Enum):
-    """Enumeration of supported device types."""
+# Device capabilities
+CAPABILITY_VIDEO = "video"
+CAPABILITY_AUDIO = "audio"
+CAPABILITY_PTZ = "ptz"
+CAPABILITY_MOTION = "motion"
+CAPABILITY_REMOTE_CONTROL = "remote_control"
+CAPABILITY_KEYBOARD = "keyboard"
+CAPABILITY_MOUSE = "mouse"
 
-    # Local Devices
-    USB_CAMERA = auto()
-    BUILT_IN_CAMERA = auto()
-    CSI_CAMERA = auto()  # Raspberry Pi Camera Module, etc.
-    USB_MICROPHONE = auto()
-    BUILT_IN_MICROPHONE = auto()
+# Device states
+DEVICE_STATE_UNKNOWN = "unknown"
+DEVICE_STATE_OFFLINE = "offline"
+DEVICE_STATE_ONLINE = "online"
+DEVICE_STATE_STREAMING = "streaming"
+DEVICE_STATE_ERROR = "error"
+DEVICE_STATE_CONNECTING = "connecting"
+DEVICE_STATE_DISCONNECTING = "disconnecting"
 
-    # Network Devices
-    IP_CAMERA = auto()
-    ONVIF_CAMERA = auto()
-    RTSP_CAMERA = auto()
-    NETWORK_MICROPHONE = auto()
-    VOIP_DEVICE = auto()
+# Device protocols
+DEVICE_PROTOCOL_RTSP = "rtsp"
+DEVICE_PROTOCOL_ONVIF = "onvif"
+DEVICE_PROTOCOL_RDP = "rdp"
+DEVICE_PROTOCOL_VNC = "vnc"
+DEVICE_PROTOCOL_WEBRTC = "webrtc"
+DEVICE_PROTOCOL_RTMP = "rtmp"
+DEVICE_PROTOCOL_HLS = "hls"
+DEVICE_PROTOCOL_DASH = "dash"
 
-    # Virtual/Special Devices
-    VIRTUAL_CAMERA = auto()  # For testing/simulation
-    VIRTUAL_MICROPHONE = auto()
-    SCREEN_CAPTURE = auto()
-    AUDIO_LOOPBACK = auto()
-
-    @classmethod
-    def local_devices(cls) -> list["DeviceType"]:
-        """Return a list of local device types."""
-        return [
-            cls.USB_CAMERA,
-            cls.BUILT_IN_CAMERA,
-            cls.CSI_CAMERA,
-            cls.USB_MICROPHONE,
-            cls.BUILT_IN_MICROPHONE,
-        ]
-
-    @classmethod
-    def network_devices(cls) -> list["DeviceType"]:
-        """Return a list of network device types."""
-        return [
-            cls.IP_CAMERA,
-            cls.ONVIF_CAMERA,
-            cls.RTSP_CAMERA,
-            cls.NETWORK_MICROPHONE,
-            cls.VOIP_DEVICE,
-        ]
-
-    @classmethod
-    def virtual_devices(cls) -> list["DeviceType"]:
-        """Return a list of virtual/special device types."""
-        return [
-            cls.VIRTUAL_CAMERA,
-            cls.VIRTUAL_MICROPHONE,
-            cls.SCREEN_CAPTURE,
-            cls.AUDIO_LOOPBACK,
-        ]
-
-    @classmethod
-    def video_devices(cls) -> list["DeviceType"]:
-        """Return a list of video capture devices."""
-        return [
-            cls.USB_CAMERA,
-            cls.BUILT_IN_CAMERA,
-            cls.CSI_CAMERA,
-            cls.IP_CAMERA,
-            cls.ONVIF_CAMERA,
-            cls.RTSP_CAMERA,
-            cls.VIRTUAL_CAMERA,
-            cls.SCREEN_CAPTURE,
-        ]
-
-    @classmethod
-    def audio_devices(cls) -> list["DeviceType"]:
-        """Return a list of audio capture devices."""
-        return [
-            cls.USB_MICROPHONE,
-            cls.BUILT_IN_MICROPHONE,
-            cls.NETWORK_MICROPHONE,
-            cls.VOIP_DEVICE,
-            cls.VIRTUAL_MICROPHONE,
-            cls.AUDIO_LOOPBACK,
-        ]
-
-    def is_local_device(self) -> bool:
-        """Check if this is a local device type."""
-        return self in self.local_devices()
-
-    def is_network_device(self) -> bool:
-        """Check if this is a network device type."""
-        return self in self.network_devices()
-
-    def is_virtual_device(self) -> bool:
-        """Check if this is a virtual/special device type."""
-        return self in self.virtual_devices()
-
-    def is_video_device(self) -> bool:
-        """Check if this is a video capture device type."""
-        return self in self.video_devices()
-
-    def is_audio_device(self) -> bool:
-        """Check if this is an audio capture device type."""
-        return self in self.audio_devices()
+# Device categories
+DEVICE_CATEGORY_INPUT = "input"
+DEVICE_CATEGORY_OUTPUT = "output"
+DEVICE_CATEGORY_REMOTE = "remote"

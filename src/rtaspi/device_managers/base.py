@@ -6,7 +6,7 @@ base.py
 # -*- coding: utf-8 -*-
 """
 rtaspi - Real-Time Annotation and Stream Processing
-Podstawowa klasa menedżera urządzeń
+Podstawowa klasa menedżera urządzeń i urządzenia
 """
 
 import os
@@ -17,11 +17,87 @@ import time
 import socket
 import subprocess
 from abc import ABC, abstractmethod
+from typing import Dict, Any, Optional
 
 from ..core.mcp import MCPClient
 
 
 logger = logging.getLogger("NetworkDevices")
+
+
+class BaseDevice(ABC):
+    """Base class for all devices."""
+
+    def __init__(self, device_id: str, name: str, device_type: str):
+        """
+        Initialize base device.
+
+        Args:
+            device_id (str): Unique device identifier
+            name (str): Human-readable device name
+            device_type (str): Type of device (e.g. 'video', 'audio', etc.)
+        """
+        self.device_id = device_id
+        self.name = name
+        self.type = device_type
+        self.connected = False
+        self.error = None
+        self.metadata: Dict[str, Any] = {}
+
+    @abstractmethod
+    def connect(self) -> bool:
+        """
+        Connect to the device.
+
+        Returns:
+            bool: True if connection successful, False otherwise
+        """
+        pass
+
+    @abstractmethod
+    def disconnect(self) -> bool:
+        """
+        Disconnect from the device.
+
+        Returns:
+            bool: True if disconnection successful, False otherwise
+        """
+        pass
+
+    @abstractmethod
+    def get_status(self) -> Dict[str, Any]:
+        """
+        Get current device status.
+
+        Returns:
+            dict: Dictionary containing device status information
+        """
+        pass
+
+    def to_dict(self) -> Dict[str, Any]:
+        """
+        Convert device information to dictionary.
+
+        Returns:
+            dict: Dictionary containing device information
+        """
+        return {
+            "device_id": self.device_id,
+            "name": self.name,
+            "type": self.type,
+            "connected": self.connected,
+            "error": str(self.error) if self.error else None,
+            "metadata": self.metadata
+        }
+
+    def update_metadata(self, metadata: Dict[str, Any]) -> None:
+        """
+        Update device metadata.
+
+        Args:
+            metadata (dict): New metadata to update/add
+        """
+        self.metadata.update(metadata)
 
 
 class DeviceManager(ABC):

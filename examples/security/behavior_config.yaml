@@ -1,0 +1,272 @@
+# Example behavior analysis configuration
+
+analyzers:
+  # Motion analyzer for entrance area
+  entrance_monitor:
+    type: motion
+    enabled: true
+    min_confidence: 0.5
+    max_history: 1000
+    alert_threshold: 0.8
+    
+    # Motion detection settings
+    motion_threshold: 25
+    min_area: 500
+    blur_size: [21, 21]
+    dilate_iterations: 2
+    
+    # Object tracking settings
+    max_disappeared: 30  # Maximum frames before removing track
+    max_distance: 0.2   # Maximum normalized distance for track association
+    track_history: 50   # Number of positions to keep in history
+    
+    # Behavior analysis settings
+    velocity_threshold: 0.1  # Maximum normalized velocity
+    direction_bins: 8       # Number of direction bins for pattern analysis
+    loitering_time: 10      # Seconds before considering loitering
+    crowding_threshold: 5    # Objects per zone
+    
+    # Analysis zones
+    zones:
+      entrance:
+        x: 0.0
+        y: 0.0
+        width: 0.3
+        height: 1.0
+        restricted: true     # No objects allowed
+        check_crowding: true
+      
+      reception:
+        x: 0.3
+        y: 0.0
+        width: 0.4
+        height: 0.5
+        restricted: false
+        check_crowding: true
+      
+      exit:
+        x: 0.7
+        y: 0.0
+        width: 0.3
+        height: 1.0
+        restricted: false
+        check_crowding: true
+
+  # Motion analyzer for secure area
+  secure_area_monitor:
+    type: motion
+    enabled: true
+    min_confidence: 0.6
+    max_history: 500
+    alert_threshold: 0.7
+    
+    # Motion detection settings
+    motion_threshold: 20
+    min_area: 300
+    blur_size: [21, 21]
+    dilate_iterations: 2
+    
+    # Object tracking settings
+    max_disappeared: 20
+    max_distance: 0.15
+    track_history: 30
+    
+    # Behavior analysis settings
+    velocity_threshold: 0.15
+    direction_bins: 8
+    loitering_time: 5       # More strict loitering detection
+    crowding_threshold: 2    # Fewer people allowed
+    
+    # Analysis zones
+    zones:
+      server_room:
+        x: 0.1
+        y: 0.1
+        width: 0.3
+        height: 0.3
+        restricted: true     # No access allowed
+        check_crowding: true
+      
+      electrical:
+        x: 0.5
+        y: 0.1
+        width: 0.2
+        height: 0.2
+        restricted: true
+        check_crowding: true
+      
+      storage:
+        x: 0.1
+        y: 0.5
+        width: 0.4
+        height: 0.4
+        restricted: false
+        check_crowding: true
+
+  # Motion analyzer for parking area
+  parking_monitor:
+    type: motion
+    enabled: true
+    min_confidence: 0.4
+    max_history: 2000
+    alert_threshold: 0.75
+    
+    # Motion detection settings
+    motion_threshold: 30
+    min_area: 1000          # Larger objects (vehicles)
+    blur_size: [31, 31]
+    dilate_iterations: 3
+    
+    # Object tracking settings
+    max_disappeared: 50      # Objects may be hidden by others
+    max_distance: 0.25      # Larger movements
+    track_history: 100
+    
+    # Behavior analysis settings
+    velocity_threshold: 0.2  # Higher speeds allowed
+    direction_bins: 12      # More precise direction analysis
+    loitering_time: 300     # 5 minutes for vehicles
+    crowding_threshold: 20   # More vehicles allowed
+    
+    # Analysis zones
+    zones:
+      entrance_gate:
+        x: 0.0
+        y: 0.4
+        width: 0.2
+        height: 0.2
+        restricted: false
+        check_crowding: true
+      
+      parking_spots:
+        x: 0.2
+        y: 0.0
+        width: 0.6
+        height: 1.0
+        restricted: false
+        check_crowding: true
+      
+      exit_gate:
+        x: 0.8
+        y: 0.4
+        width: 0.2
+        height: 0.2
+        restricted: false
+        check_crowding: true
+      
+      restricted_area:
+        x: 0.3
+        y: 0.7
+        width: 0.4
+        height: 0.3
+        restricted: true
+        check_crowding: true
+
+  # Motion analyzer for warehouse
+  warehouse_monitor:
+    type: motion
+    enabled: true
+    min_confidence: 0.5
+    max_history: 1500
+    alert_threshold: 0.8
+    
+    # Motion detection settings
+    motion_threshold: 25
+    min_area: 800
+    blur_size: [25, 25]
+    dilate_iterations: 2
+    
+    # Object tracking settings
+    max_disappeared: 40
+    max_distance: 0.3       # Large movements with forklifts
+    track_history: 75
+    
+    # Behavior analysis settings
+    velocity_threshold: 0.25 # Higher speeds for vehicles
+    direction_bins: 8
+    loitering_time: 60      # 1 minute stationary
+    crowding_threshold: 8    # Multiple workers and vehicles
+    
+    # Analysis zones
+    zones:
+      loading_dock:
+        x: 0.0
+        y: 0.0
+        width: 0.3
+        height: 1.0
+        restricted: false
+        check_crowding: true
+      
+      storage_racks:
+        x: 0.3
+        y: 0.0
+        width: 0.4
+        height: 1.0
+        restricted: false
+        check_crowding: true
+      
+      hazmat_storage:
+        x: 0.7
+        y: 0.0
+        width: 0.3
+        height: 0.5
+        restricted: true     # Limited access
+        check_crowding: true
+      
+      staging_area:
+        x: 0.7
+        y: 0.5
+        width: 0.3
+        height: 0.5
+        restricted: false
+        check_crowding: true
+
+# Alert configuration
+alerts:
+  # Email alerts
+  email:
+    enabled: true
+    recipients:
+      - security@company.com
+      - operations@company.com
+    min_severity: 0.7
+    cooldown: 300  # 5 minutes between alerts
+    include_snapshot: true
+    
+  # SMS alerts
+  sms:
+    enabled: true
+    recipients:
+      - "+1234567890"
+      - "+0987654321"
+    min_severity: 0.9
+    cooldown: 600  # 10 minutes between alerts
+    
+  # Webhook alerts
+  webhook:
+    enabled: true
+    url: "https://api.alertsystem.com/webhook"
+    auth_token: "secret_token"
+    min_severity: 0.5
+    cooldown: 60  # 1 minute between alerts
+    
+  # MQTT alerts
+  mqtt:
+    enabled: true
+    broker: "mqtt://broker.company.com"
+    topic: "security/alerts"
+    username: "alert_publisher"
+    password: "secret"
+    min_severity: 0.6
+    cooldown: 120  # 2 minutes between alerts
+
+# Recording configuration
+recording:
+  enabled: true
+  pre_event: 10    # Seconds before event
+  post_event: 30   # Seconds after event
+  min_severity: 0.7
+  format: "mp4"
+  quality: "high"
+  retention_days: 30
+  storage_path: "/recordings/security"

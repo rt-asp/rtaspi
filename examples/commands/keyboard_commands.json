@@ -1,0 +1,79 @@
+{
+    "commands": [
+        {
+            "pattern": "type slowly {text}",
+            "description": "Type text with a delay between characters",
+            "action": "self.keyboard.type_text(m['text'], delay=0.1)"
+        },
+        {
+            "pattern": "press {key} {count} times",
+            "description": "Press a key multiple times",
+            "action": "for _ in range(int(m['count'])): self.keyboard.tap_key(m['key'])"
+        },
+        {
+            "pattern": "hold {key} for {seconds} seconds",
+            "description": "Hold a key for specified duration",
+            "action": "self.keyboard.press_key(m['key']); time.sleep(float(m['seconds'])); self.keyboard.release_key(m['key'])"
+        },
+        {
+            "pattern": "shortcut {keys}",
+            "description": "Press multiple keys as a shortcut (space-separated)",
+            "action": "for key in m['keys'].split(): self.keyboard.press_key(key); time.sleep(0.1); for key in reversed(m['keys'].split()): self.keyboard.release_key(key)"
+        },
+        {
+            "pattern": "save text {name}",
+            "description": "Save current text as variable",
+            "action": "self.set_variable('text_' + m['name'], self._last_command.split(' ', 1)[1] if self._last_command and self._last_command.startswith('type ') else '')"
+        },
+        {
+            "pattern": "recall text {name}",
+            "description": "Type previously saved text",
+            "action": "self.keyboard.type_text(self.get_variable('text_' + m['name']) or '')"
+        },
+        {
+            "pattern": "type date",
+            "description": "Type current date",
+            "action": "import datetime; self.keyboard.type_text(datetime.datetime.now().strftime('%Y-%m-%d'))"
+        },
+        {
+            "pattern": "type time",
+            "description": "Type current time",
+            "action": "import datetime; self.keyboard.type_text(datetime.datetime.now().strftime('%H:%M:%S'))"
+        },
+        {
+            "pattern": "caps {text}",
+            "description": "Type text in uppercase",
+            "action": "self.keyboard.type_text(m['text'].upper())"
+        },
+        {
+            "pattern": "lowercase {text}",
+            "description": "Type text in lowercase",
+            "action": "self.keyboard.type_text(m['text'].lower())"
+        },
+        {
+            "pattern": "snake {text}",
+            "description": "Convert text to snake_case",
+            "action": "self.keyboard.type_text('_'.join(m['text'].lower().split()))"
+        },
+        {
+            "pattern": "camel {text}",
+            "description": "Convert text to camelCase",
+            "action": "words = m['text'].split(); self.keyboard.type_text(words[0].lower() + ''.join(word.capitalize() for word in words[1:]))"
+        },
+        {
+            "pattern": "repeat {count} times",
+            "description": "Repeat last command multiple times",
+            "action": "for _ in range(int(m['count'])): self.repeat_last_command()"
+        },
+        {
+            "pattern": "wait {seconds}",
+            "description": "Wait for specified seconds",
+            "action": "time.sleep(float(m['seconds']))"
+        },
+        {
+            "pattern": "clear saved",
+            "description": "Clear all saved variables",
+            "action": "self.clear_variables()"
+        }
+    ]
+}

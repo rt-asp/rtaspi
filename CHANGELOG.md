@@ -2,6 +2,58 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.23] - 2025-04-29
+
+### Added
+- Changes in docs/SPEECH_AND_INPUT.md
+- Changes in docs/TEST.md
+- Changes in examples/automation/rules.json
+- Changes in examples/commands/keyboard_commands.json
+- Changes in examples/industrial/modbus_config.yaml
+- Changes in examples/industrial/opcua_config.yaml
+- Changes in examples/security/alarms_config.yaml
+- Changes in examples/security/behavior_config.yaml
+- Changes in src/rtaspi/automation/actions/device.py
+- Changes in src/rtaspi/automation/actions/stream.py
+- Changes in src/rtaspi/automation/hass.py
+- Changes in src/rtaspi/automation/mqtt.py
+- Changes in src/rtaspi/automation/rules.py
+- Changes in src/rtaspi/automation/triggers/device.py
+- Changes in src/rtaspi/automation/triggers/stream.py
+- Changes in src/rtaspi/device_managers/industrial/modbus.py
+- Changes in src/rtaspi/device_managers/industrial/opcua.py
+- Changes in src/rtaspi/device_managers/intercom/device.py
+- Changes in src/rtaspi/device_managers/remote_desktop/capture.py
+- Changes in src/rtaspi/device_managers/remote_desktop/manager.py
+- Changes in src/rtaspi/device_managers/remote_desktop/vnc.py
+- Changes in src/rtaspi/device_managers/voip/sip.py
+- Changes in src/rtaspi/input/command_processor.py
+- Changes in src/rtaspi/input/keyboard.py
+- Changes in src/rtaspi/processing/speech/recognition.py
+- Changes in src/rtaspi/security/alarms/base.py
+- Changes in src/rtaspi/security/alarms/dsc.py
+- Changes in src/rtaspi/security/alarms/honeywell.py
+- Changes in src/rtaspi/security/analysis/base.py
+- Changes in src/rtaspi/security/analysis/motion.py
+- Changes in src/rtaspi/streaming/output.py
+- Changes in tests/test_audio_filters.py
+- Changes in tests/test_command_processor.py
+- Changes in tests/test_dsc.py
+- Changes in tests/test_hass.py
+- Changes in tests/test_honeywell.py
+- Changes in tests/test_intercom.py
+- Changes in tests/test_keyboard.py
+- Changes in tests/test_modbus.py
+- Changes in tests/test_motion.py
+- Changes in tests/test_mqtt.py
+- Changes in tests/test_opcua.py
+- Changes in tests/test_remote_desktop.py
+- Changes in tests/test_remote_desktop_manager.py
+- Changes in tests/test_sip.py
+- Changes in tests/test_speech_recognition.py
+- Changes in tests/test_vnc.py
+- Changes in tests/test_window_capture.py
+
 ## [0.1.22] - 2025-04-29
 
 ### Added

@@ -1,0 +1,188 @@
+{
+    "rules": [
+        {
+            "id": "camera_motion_recording",
+            "name": "Start Recording on Motion",
+            "description": "Start recording when motion is detected by camera",
+            "enabled": true,
+            "triggers": [
+                {
+                    "type": "device",
+                    "device_id": "camera1",
+                    "event_type": "motion_detected"
+                }
+            ],
+            "conditions": [
+                "data.confidence > 0.8",
+                "not data.get('recording', False)"
+            ],
+            "actions": [
+                {
+                    "type": "stream",
+                    "stream_id": "camera1_stream",
+                    "command": "start",
+                    "parameters": {
+                        "output": "/recordings/{data.timestamp}.mp4",
+                        "duration": 300
+                    }
+                }
+            ]
+        },
+        {
+            "id": "low_bandwidth_quality",
+            "name": "Reduce Quality on Low Bandwidth",
+            "description": "Reduce stream quality when bandwidth is low",
+            "enabled": true,
+            "triggers": [
+                {
+                    "type": "stream",
+                    "stream_id": "camera1_stream",
+                    "event_type": "stream_stats"
+                }
+            ],
+            "conditions": [
+                "data.bandwidth < 1000000",
+                "data.quality > 50"
+            ],
+            "actions": [
+                {
+                    "type": "stream",
+                    "stream_id": "camera1_stream",
+                    "command": "set_quality",
+                    "parameters": {
+                        "quality": 50
+                    }
+                },
+                {
+                    "type": "stream",
+                    "stream_id": "camera1_stream",
+                    "command": "set_bitrate",
+                    "parameters": {
+                        "bitrate": 500000
+                    }
+                }
+            ]
+        },
+        {
+            "id": "intercom_echo_control",
+            "name": "Enable Echo Cancellation on High Echo",
+            "description": "Enable echo cancellation when echo level is high",
+            "enabled": true,
+            "triggers": [
+                {
+                    "type": "device",
+                    "device_id": "intercom1",
+                    "event_type": "audio_stats"
+                }
+            ],
+            "conditions": [
+                "data.echo_level > 0.3"
+            ],
+            "actions": [
+                {
+                    "type": "device",
+                    "device_id": "intercom1",
+                    "command": "enable_echo_cancellation"
+                }
+            ]
+        },
+        {
+            "id": "daily_stream_restart",
+            "name": "Daily Stream Restart",
+            "description": "Restart all streams daily at midnight",
+            "enabled": true,
+            "schedule": "0 0 * * *",
+            "actions": [
+                {
+                    "type": "stream",
+                    "stream_id": "camera1_stream",
+                    "command": "restart"
+                },
+                {
+                    "type": "stream",
+                    "stream_id": "camera2_stream",
+                    "command": "restart"
+                }
+            ]
+        },
+        {
+            "id": "remote_desktop_quality",
+            "name": "Adjust Remote Desktop Quality",
+            "description": "Adjust remote desktop quality based on network conditions",
+            "enabled": true,
+            "triggers": [
+                {
+                    "type": "device",
+                    "device_id": "rdp1",
+                    "event_type": "network_stats"
+                }
+            ],
+            "conditions": [
+                "data.latency > 100 or data.packet_loss > 0.01"
+            ],
+            "actions": [
+                {
+                    "type": "device",
+                    "device_id": "rdp1",
+                    "command": "set_quality",
+                    "parameters": {
+                        "compression": "high",
+                        "color_depth": 16,
+                        "frame_rate": 15
+                    }
+                }
+            ]
+        },
+        {
+            "id": "sip_call_recording",
+            "name": "Record Important SIP Calls",
+            "description": "Start recording when specific numbers call",
+            "enabled": true,
+            "triggers": [
+                {
+                    "type": "device",
+                    "device_id": "sip1",
+                    "event_type": "incoming_call"
+                }
+            ],
+            "conditions": [
+                "data.caller_id in ['1234567890', '0987654321']"
+            ],
+            "actions": [
+                {
+                    "type": "stream",
+                    "stream_id": "sip1_stream",
+                    "command": "start",
+                    "parameters": {
+                        "output": "/recordings/calls/{data.timestamp}_{data.caller_id}.wav",
+                        "format": "wav",
+                        "channels": 2,
+                        "sample_rate": 16000
+                    }
+                }
+            ]
+        },
+        {
+            "id": "periodic_bandwidth_check",
+            "name": "Check Bandwidth Every Hour",
+            "description": "Monitor bandwidth usage and adjust streams",
+            "enabled": true,
+            "schedule": {
+                "interval": 1,
+                "unit": "hours"
+            },
+            "actions": [
+                {
+                    "type": "stream",
+                    "stream_id": "camera1_stream",
+                    "command": "get_stats"
+                },
+                {
+                    "type": "stream",
+                    "stream_id": "camera2_stream",
+                    "command": "get_stats"
+                }
+            ]
+        }
+    ]
+}

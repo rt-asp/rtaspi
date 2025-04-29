@@ -1,0 +1,240 @@
+# Example Modbus device configurations
+
+devices:
+  # Temperature controller
+  temperature_controller:
+    mode: tcp
+    host: 192.168.1.100
+    port: 502
+    unit: 1
+    registers:
+      process_value:
+        type: holding
+        address: 100
+        data_type: float32
+        scale: 0.1
+        offset: 0
+        description: Current temperature value
+      setpoint:
+        type: holding
+        address: 102
+        data_type: float32
+        scale: 0.1
+        offset: 0
+        description: Target temperature value
+      control_mode:
+        type: holding
+        address: 104
+        data_type: uint16
+        description: Control mode (0=Off, 1=Auto, 2=Manual)
+      output_power:
+        type: holding
+        address: 105
+        data_type: int16
+        scale: 0.1
+        description: Output power percentage
+      alarm_status:
+        type: coil
+        address: 0
+        description: Alarm active status
+      alarm_code:
+        type: input
+        address: 200
+        data_type: uint16
+        description: Current alarm code
+
+  # Flow meter
+  flow_meter:
+    mode: rtu
+    serial_port: /dev/ttyUSB0
+    baudrate: 9600
+    parity: N
+    stopbits: 1
+    bytesize: 8
+    unit: 1
+    registers:
+      flow_rate:
+        type: input
+        address: 100
+        data_type: float32
+        scale: 1.0
+        description: Current flow rate
+      total_flow:
+        type: holding
+        address: 102
+        data_type: float64
+        scale: 1.0
+        description: Total flow accumulator
+      units:
+        type: holding
+        address: 106
+        data_type: uint16
+        description: Flow units (0=L/s, 1=m³/h)
+      status:
+        type: input
+        address: 200
+        data_type: uint16
+        description: Device status
+      serial_number:
+        type: holding
+        address: 300
+        data_type: string
+        count: 8
+        description: Device serial number
+
+  # PLC interface
+  plc:
+    mode: tcp
+    host: 192.168.1.200
+    port: 502
+    unit: 1
+    registers:
+      # Digital inputs
+      di_0:
+        type: discrete
+        address: 0
+        description: Digital input 0
+      di_1:
+        type: discrete
+        address: 1
+        description: Digital input 1
+      di_2:
+        type: discrete
+        address: 2
+        description: Digital input 2
+      di_3:
+        type: discrete
+        address: 3
+        description: Digital input 3
+      
+      # Digital outputs
+      do_0:
+        type: coil
+        address: 0
+        description: Digital output 0
+      do_1:
+        type: coil
+        address: 1
+        description: Digital output 1
+      do_2:
+        type: coil
+        address: 2
+        description: Digital output 2
+      do_3:
+        type: coil
+        address: 3
+        description: Digital output 3
+      
+      # Analog inputs
+      ai_0:
+        type: input
+        address: 100
+        data_type: int16
+        scale: 0.001
+        offset: 0
+        description: Analog input 0 (4-20mA)
+      ai_1:
+        type: input
+        address: 101
+        data_type: int16
+        scale: 0.001
+        offset: 0
+        description: Analog input 1 (4-20mA)
+      
+      # Analog outputs
+      ao_0:
+        type: holding
+        address: 200
+        data_type: int16
+        scale: 0.001
+        offset: 0
+        description: Analog output 0 (4-20mA)
+      ao_1:
+        type: holding
+        address: 201
+        data_type: int16
+        scale: 0.001
+        offset: 0
+        description: Analog output 1 (4-20mA)
+      
+      # System status
+      system_status:
+        type: holding
+        address: 1000
+        data_type: uint16
+        description: System status word
+      error_code:
+        type: holding
+        address: 1001
+        data_type: uint16
+        description: Error code
+      uptime:
+        type: holding
+        address: 1002
+        data_type: uint32
+        description: System uptime in seconds
+      firmware_version:
+        type: holding
+        address: 1004
+        data_type: string
+        count: 4
+        description: Firmware version string
+
+  # VFD (Variable Frequency Drive)
+  vfd:
+    mode: tcp
+    host: 192.168.1.300
+    port: 502
+    unit: 1
+    registers:
+      frequency:
+        type: holding
+        address: 100
+        data_type: uint16
+        scale: 0.1
+        description: Output frequency in Hz
+      current:
+        type: holding
+        address: 101
+        data_type: uint16
+        scale: 0.1
+        description: Output current in A
+      voltage:
+        type: holding
+        address: 102
+        data_type: uint16
+        scale: 0.1
+        description: Output voltage in V
+      power:
+        type: holding
+        address: 103
+        data_type: uint16
+        scale: 0.1
+        description: Output power in kW
+      speed:
+        type: holding
+        address: 104
+        data_type: uint16
+        description: Motor speed in RPM
+      run_command:
+        type: coil
+        address: 0
+        description: Run/Stop command
+      direction:
+        type: coil
+        address: 1
+        description: Forward/Reverse direction
+      fault_reset:
+        type: coil
+        address: 2
+        description: Fault reset command
+      fault_code:
+        type: holding
+        address: 200
+        data_type: uint16
+        description: Active fault code
+      status_word:
+        type: holding
+        address: 201
+        data_type: uint16
+        description: Drive status word

@@ -1,0 +1,281 @@
+# Example alarm system configuration
+
+alarms:
+  # DSC PowerSeries integration
+  dsc_main:
+    type: dsc
+    system_id: main_panel
+    name: Main Security Panel
+    host: 192.168.1.100
+    port: 4025
+    password: secret123
+    user_code: "1234"
+    partition: 1
+    socket_timeout: 10
+    keepalive_interval: 30
+    auto_reconnect: true
+    reconnect_delay: 30
+    event_history_size: 1000
+    
+    # Zone configuration
+    zones:
+      front_door:
+        zone_id: "1"
+        name: "Front Door"
+        type: "contact"
+        bypass_allowed: true
+      back_door:
+        zone_id: "2"
+        name: "Back Door"
+        type: "contact"
+        bypass_allowed: true
+      garage_door:
+        zone_id: "3"
+        name: "Garage Door"
+        type: "contact"
+        bypass_allowed: true
+      living_room:
+        zone_id: "4"
+        name: "Living Room Motion"
+        type: "motion"
+        bypass_allowed: true
+      kitchen:
+        zone_id: "5"
+        name: "Kitchen Motion"
+        type: "motion"
+        bypass_allowed: true
+      hallway:
+        zone_id: "6"
+        name: "Hallway Motion"
+        type: "motion"
+        bypass_allowed: true
+      master_bedroom:
+        zone_id: "7"
+        name: "Master Bedroom Motion"
+        type: "motion"
+        bypass_allowed: true
+      smoke_detector_1:
+        zone_id: "8"
+        name: "Living Room Smoke"
+        type: "smoke"
+        bypass_allowed: false
+      smoke_detector_2:
+        zone_id: "9"
+        name: "Kitchen Smoke"
+        type: "smoke"
+        bypass_allowed: false
+      glass_break_1:
+        zone_id: "10"
+        name: "Living Room Glass Break"
+        type: "glass_break"
+        bypass_allowed: true
+      glass_break_2:
+        zone_id: "11"
+        name: "Kitchen Glass Break"
+        type: "glass_break"
+        bypass_allowed: true
+      panic_button:
+        zone_id: "12"
+        name: "Panic Button"
+        type: "panic"
+        bypass_allowed: false
+
+  # DSC PowerSeries integration for secondary building
+  dsc_secondary:
+    type: dsc
+    system_id: secondary_panel
+    name: Secondary Building Panel
+    host: 192.168.1.101
+    port: 4025
+    password: secret456
+    user_code: "5678"
+    partition: 1
+    socket_timeout: 10
+    keepalive_interval: 30
+    auto_reconnect: true
+    reconnect_delay: 30
+    event_history_size: 1000
+    
+    # Zone configuration
+    zones:
+      entry_door:
+        zone_id: "1"
+        name: "Entry Door"
+        type: "contact"
+        bypass_allowed: true
+      warehouse_motion_1:
+        zone_id: "2"
+        name: "Warehouse Motion 1"
+        type: "motion"
+        bypass_allowed: true
+      warehouse_motion_2:
+        zone_id: "3"
+        name: "Warehouse Motion 2"
+        type: "motion"
+        bypass_allowed: true
+      smoke_detector:
+        zone_id: "4"
+        name: "Warehouse Smoke"
+        type: "smoke"
+        bypass_allowed: false
+
+# Alert configuration
+alerts:
+  # Email alerts
+  email:
+    enabled: true
+    recipients:
+      - security@company.com
+      - operations@company.com
+    min_severity: 0.7
+    cooldown: 300  # 5 minutes between alerts
+    include_snapshot: true
+    smtp:
+      host: smtp.company.com
+      port: 587
+      username: alerts@company.com
+      password: secret
+      use_tls: true
+    
+  # SMS alerts
+  sms:
+    enabled: true
+    recipients:
+      - "+1234567890"  # Security manager
+      - "+0987654321"  # Operations manager
+    min_severity: 0.9
+    cooldown: 600  # 10 minutes between alerts
+    provider: twilio
+    account_sid: AC1234567890
+    auth_token: secret
+    from_number: "+1111111111"
+    
+  # Webhook alerts
+  webhook:
+    enabled: true
+    url: "https://api.alertsystem.com/webhook"
+    auth_token: "secret_token"
+    min_severity: 0.5
+    cooldown: 60  # 1 minute between alerts
+    retry_count: 3
+    retry_delay: 5
+    
+  # MQTT alerts
+  mqtt:
+    enabled: true
+    broker: "mqtt://broker.company.com"
+    topic: "security/alerts"
+    username: "alert_publisher"
+    password: "secret"
+    min_severity: 0.6
+    cooldown: 120  # 2 minutes between alerts
+    qos: 1
+    retain: false
+
+# Recording configuration
+recording:
+  enabled: true
+  pre_event: 10    # Seconds before event
+  post_event: 30   # Seconds after event
+  min_severity: 0.7
+  format: "mp4"
+  quality: "high"
+  retention_days: 30
+  storage_path: "/recordings/security"
+  
+  # Storage management
+  max_size_gb: 500
+  cleanup_threshold: 0.9  # Start cleanup when storage is 90% full
+  cleanup_target: 0.8    # Clean up until storage is 80% full
+  
+  # Event types to record
+  record_events:
+    - zone_alarm
+    - zone_tamper
+    - panic_alarm
+    - fire_alarm
+    - glass_break
+    - motion_detected
+
+# Integration with other systems
+integrations:
+  # Home Assistant integration
+  home_assistant:
+    enabled: true
+    host: "homeassistant.local"
+    port: 8123
+    token: "long_lived_access_token"
+    entity_prefix: "alarm_"
+    
+  # Surveillance system integration
+  surveillance:
+    enabled: true
+    type: "milestone"
+    host: "surveillance.local"
+    port: 443
+    username: "admin"
+    password: "secret"
+    use_ssl: true
+    
+  # Access control integration
+  access_control:
+    enabled: true
+    type: "lenel"
+    host: "access.local"
+    port: 8080
+    username: "system"
+    password: "secret"
+    use_ssl: true
+
+# Automation rules
+automation:
+  # Arm system at night
+  night_arm:
+    enabled: true
+    trigger:
+      type: time
+      time: "23:00"
+      days: [mon, tue, wed, thu, fri, sun]
+    condition:
+      type: state
+      entity: alarm
+      state: disarmed
+    action:
+      type: arm
+      mode: stay
+  
+  # Disarm system in morning
+  morning_disarm:
+    enabled: true
+    trigger:
+      type: time
+      time: "07:00"
+      days: [mon, tue, wed, thu, fri]
+    action:
+      type: disarm
+  
+  # Turn on lights on alarm
+  alarm_lights:
+    enabled: true
+    trigger:
+      type: event
+      event: zone_alarm
+    action:
+      - type: light
+        entity: group.all_lights
+        state: on
+        brightness: 100
+      - type: notification
+        title: "Security Alert"
+        message: "Alarm triggered - All lights turned on"
+  
+  # Record on motion
+  motion_record:
+    enabled: true
+    trigger:
+      type: event
+      event: motion_detected
+    action:
+      type: record
+      duration: 60
+      quality: high

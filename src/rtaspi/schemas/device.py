@@ -1,125 +1,107 @@
-"""
-device.py - Device configuration schemas
-"""
+"""Device configuration schema."""
 
-from typing import List, Optional, Union
-from pydantic import BaseModel, Field, field_validator
-from enum import Enum
+from typing import Dict, Any, Optional, List
+from pydantic import BaseModel, Field, validator
 
-
-class DeviceType(str, Enum):
-    """Device types supported by rtaspi."""
-    CAMERA = "camera"
-    MICROPHONE = "microphone"
-    VIRTUAL_CAMERA = "virtual_camera"
-    VIRTUAL_MICROPHONE = "virtual_microphone"
-
-
-class DeviceProtocol(str, Enum):
-    """Supported device protocols."""
-    V4L2 = "v4l2"  # Linux video devices
-    ALSA = "alsa"  # Linux audio devices
-    DSHOW = "dshow"  # Windows DirectShow
-    AVFOUNDATION = "avfoundation"  # macOS AVFoundation
-    RTSP = "rtsp"  # Network RTSP devices
-    ONVIF = "onvif"  # Network ONVIF devices
-    VIRTUAL = "virtual"  # Virtual devices
-
-
-class DeviceAuth(BaseModel):
-    """Device authentication configuration."""
-    username: Optional[str] = None
-    password: Optional[str] = None
-    token: Optional[str] = None
-    method: str = "basic"  # basic, digest, token
-
-
-class DeviceCapabilities(BaseModel):
-    """Device capabilities configuration."""
-    video: bool = False
-    audio: bool = False
-    ptz: bool = False
-    infrared: bool = False
-    motion_detection: bool = False
-    audio_detection: bool = False
-    formats: List[str] = Field(default_factory=list)
-    resolutions: List[str] = Field(default_factory=list)
-    framerates: List[int] = Field(default_factory=list)
-    audio_formats: List[str] = Field(default_factory=list)
-    audio_rates: List[int] = Field(default_factory=list)
-    audio_channels: List[int] = Field(default_factory=list)
+from ..constants.devices import (
+    DEVICE_TYPE_CAMERA, DEVICE_TYPE_MICROPHONE, DEVICE_TYPE_SCREEN, DEVICE_TYPE_REMOTE_DESKTOP,
+    DEVICE_SUBTYPE_USB, DEVICE_SUBTYPE_IP, DEVICE_SUBTYPE_RDP, DEVICE_SUBTYPE_VNC,
+    DEVICE_PROTOCOL_RTSP, DEVICE_PROTOCOL_ONVIF, DEVICE_PROTOCOL_RDP, DEVICE_PROTOCOL_VNC
+)
 
 
 class DeviceConfig(BaseModel):
-    """Device configuration schema."""
+    """Base device configuration."""
+    
     id: str = Field(..., description="Unique device identifier")
-    name: str = Field(..., description="Human-readable device name")
-    type: DeviceType = Field(..., description="Type of device")
-    protocol: DeviceProtocol = Field(..., description="Device protocol")
-    enabled: bool = True
-    path: Optional[str] = Field(None, description="Device path or URL")
-    index: Optional[int] = Field(None, description="Device index for local devices")
+    name: str = Field(..., description="Human readable device name")
+    type: str = Field(..., description="Device type")
+    subtype: str = Field(..., description="Device subtype")
+    enabled: bool = Field(True, description="Whether device is enabled")
+    protocol: Optional[str] = Field(None, description="Device protocol")
     
-    # Authentication
-    auth: Optional[DeviceAuth] = None
+    # Network device fields
+    host: Optional[str] = Field(None, description="Device hostname/IP")
+    port: Optional[int] = Field(None, description="Device port")
+    username: Optional[str] = Field(None, description="Authentication username")
+    password: Optional[str] = Field(None, description="Authentication password")
     
-    # Capabilities and settings
-    capabilities: DeviceCapabilities = Field(default_factory=DeviceCapabilities)
-    preferred_format: Optional[str] = None
-    preferred_resolution: Optional[str] = None
-    preferred_framerate: Optional[int] = None
-    preferred_audio_format: Optional[str] = None
-    preferred_audio_rate: Optional[int] = None
-    preferred_audio_channels: Optional[int] = None
+    # Remote desktop specific fields
+    domain: Optional[str] = Field(None, description="Domain for RDP authentication")
+    width: Optional[int] = Field(1920, description="Remote desktop width")
+    height: Optional[int] = Field(1080, description="Remote desktop height")
+    refresh_rate: Optional[int] = Field(30, description="Remote desktop refresh rate in Hz")
     
-    # Network device specific
-    host: Optional[str] = None
-    port: Optional[int] = None
-    discovery_info: Optional[dict] = None
+    # Camera specific fields
+    resolution: Optional[str] = Field(None, description="Camera resolution")
+    framerate: Optional[int] = Field(None, description="Camera framerate")
+    format: Optional[str] = Field(None, description="Camera pixel format")
     
-    # Virtual device specific
-    source_device: Optional[str] = None
-    virtual_type: Optional[str] = None
+    # Audio specific fields
+    channels: Optional[int] = Field(None, description="Audio channels")
+    sample_rate: Optional[int] = Field(None, description="Audio sample rate")
+    sample_format: Optional[str] = Field(None, description="Audio sample format")
     
-    # Additional settings
-    settings: dict = Field(default_factory=dict)
-    metadata: dict = Field(default_factory=dict)
+    # Additional configuration
+    options: Dict[str, Any] = Field(default_factory=dict, description="Additional device options")
+    capabilities: List[str] = Field(default_factory=list, description="Device capabilities")
 
-    @field_validator("preferred_resolution")
-    def validate_resolution(cls, v, info):
-        """Validate resolution format (e.g., '1920x1080')."""
-        if v is not None:
-            try:
-                width, height = map(int, v.split("x"))
-                if width <= 0 or height <= 0:
-                    raise ValueError
-                return v
-            except (ValueError, AttributeError):
-                raise ValueError("Resolution must be in format 'WIDTHxHEIGHT'")
+    @validator('type')
+    def validate_type(cls, v):
+        """Validate device type."""
+        valid_types = [
+            DEVICE_TYPE_CAMERA,
+            DEVICE_TYPE_MICROPHONE,
+            DEVICE_TYPE_SCREEN,
+            DEVICE_TYPE_REMOTE_DESKTOP
+        ]
+        if v not in valid_types:
+            raise ValueError(f"Invalid device type: {v}")
         return v
 
-    @field_validator("preferred_framerate")
-    def validate_framerate(cls, v, info):
-        """Validate framerate is positive."""
+    @validator('subtype')
+    def validate_subtype(cls, v):
+        """Validate device subtype."""
+        valid_subtypes = [
+            DEVICE_SUBTYPE_USB,
+            DEVICE_SUBTYPE_IP,
+            DEVICE_SUBTYPE_RDP,
+            DEVICE_SUBTYPE_VNC
+        ]
+        if v not in valid_subtypes:
+            raise ValueError(f"Invalid device subtype: {v}")
+        return v
+
+    @validator('protocol')
+    def validate_protocol(cls, v):
+        """Validate device protocol."""
+        if v is None:
+            return v
+        valid_protocols = [
+            DEVICE_PROTOCOL_RTSP,
+            DEVICE_PROTOCOL_ONVIF,
+            DEVICE_PROTOCOL_RDP,
+            DEVICE_PROTOCOL_VNC
+        ]
+        if v not in valid_protocols:
+            raise ValueError(f"Invalid device protocol: {v}")
+        return v
+
+    @validator('width', 'height')
+    def validate_dimensions(cls, v):
+        """Validate screen dimensions."""
         if v is not None and v <= 0:
-            raise ValueError("Framerate must be positive")
+            raise ValueError("Dimensions must be positive")
         return v
 
-    @field_validator("preferred_audio_rate")
-    def validate_audio_rate(cls, v, info):
-        """Validate audio sample rate is positive."""
+    @validator('refresh_rate')
+    def validate_refresh_rate(cls, v):
+        """Validate refresh rate."""
         if v is not None and v <= 0:
-            raise ValueError("Audio sample rate must be positive")
+            raise ValueError("Refresh rate must be positive")
         return v
 
-    @field_validator("preferred_audio_channels")
-    def validate_audio_channels(cls, v, info):
-        """Validate audio channels is positive."""
-        if v is not None and v <= 0:
-            raise ValueError("Audio channels must be positive")
-        return v
-
-
-class DeviceList(BaseModel):
-    """List of device configurations."""
-    devices: List[DeviceConfig] = Field(default_factory=list)
+    class Config:
+        """Pydantic configuration."""
+        
+        extra = "allow"  # Allow extra fields
