@@ -8,10 +8,10 @@ including support for local and network devices.
 from .base import (
     Device,
     LocalDevice,
-    NetworkDevice,
     DeviceStatus,
     DeviceManager,
 )
+from .network import NetworkDevice
 from .local import LocalDeviceManager
 from .protocols import (
     ProtocolStatus,

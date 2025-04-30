@@ -2,6 +2,42 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.31] - 2025-04-30
+
+### Added
+- Changes in rtaspi-modular/rtaspi-core/rtaspi_core/mcp/__init__.py
+- Changes in rtaspi-modular/rtaspi-core/rtaspi_core/mcp/client.py
+- Changes in rtaspi-modular/rtaspi-devices/docs/advanced_usage.md
+- Changes in rtaspi-modular/rtaspi-devices/docs/architecture.md
+- Changes in rtaspi-modular/rtaspi-devices/docs/components.md
+- Changes in rtaspi-modular/rtaspi-devices/docs/configuration.md
+- Changes in rtaspi-modular/rtaspi-devices/docs/index.md
+- Changes in rtaspi-modular/rtaspi-devices/docs/network/README.md
+- Changes in rtaspi-modular/rtaspi-devices/docs/network/advanced_usage.md
+- Changes in rtaspi-modular/rtaspi-devices/docs/network/components.md
+- Changes in rtaspi-modular/rtaspi-devices/examples/README.md
+- Changes in rtaspi-modular/rtaspi-devices/examples/basic_usage/quick_start.py
+- Changes in rtaspi-modular/rtaspi-devices/examples/basic_usage/simple_example.py
+- Changes in rtaspi-modular/rtaspi-devices/examples/integrations/cross_module.py
+- Changes in rtaspi-modular/rtaspi-devices/examples/network/advanced_discovery.py
+- Changes in rtaspi-modular/rtaspi-devices/examples/network/device_discovery.py
+- Changes in rtaspi-modular/rtaspi-devices/rtaspi_devices/discovery/scanner.py
+- Changes in rtaspi-modular/rtaspi-devices/rtaspi_devices/events/__init__.py
+- Changes in rtaspi-modular/rtaspi-devices/rtaspi_devices/network/__init__.py
+- Changes in rtaspi-modular/rtaspi-devices/rtaspi_devices/network/manager.py
+- Changes in rtaspi-modular/rtaspi-devices/rtaspi_devices/network/monitor.py
+- Changes in rtaspi-modular/rtaspi-devices/tests/conftest.py
+- Changes in rtaspi-modular/rtaspi-devices/tests/network/test_device.py
+- Changes in rtaspi-modular/rtaspi-devices/tests/network/test_manager.py
+- Changes in rtaspi-modular/rtaspi-devices/tests/network/test_monitor.py
+- Changes in rtaspi-modular/rtaspi-devices/tests/test_examples.py
+
+### Changed
+- Changes in rtaspi-modular/rtaspi-devices/rtaspi_devices/network/device.py
+
+### Fixed
+- Changes in rtaspi-modular/TODO.md
+
 ## [0.1.30] - 2025-04-30
 
 ### Added

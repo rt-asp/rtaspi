@@ -1,9 +1,8 @@
 """
-Device discovery module initialization.
+Device discovery functionality.
 """
 
-from .base import DeviceScanner
+from .base import DiscoveryService, ProtocolHandler
+from .scanner import DeviceScanner
 
-__all__ = [
-    'DeviceScanner',
-]
+__all__ = ['DiscoveryService', 'ProtocolHandler', 'DeviceScanner']

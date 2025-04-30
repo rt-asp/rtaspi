@@ -3,6 +3,16 @@
 from enum import auto
 from ..core.enums import ConfigurableEnum
 
+# String constants for backward compatibility with tests
+DEVICE_TYPE_REMOTE_DESKTOP = "remote_desktop"
+DEVICE_SUBTYPE_RDP = "rdp"
+DEVICE_SUBTYPE_VNC = "vnc"
+DEVICE_PROTOCOL_RDP = "rdp"
+DEVICE_PROTOCOL_VNC = "vnc"
+CAPABILITY_VIDEO = "video"
+CAPABILITY_KEYBOARD = "keyboard"
+CAPABILITY_MOUSE = "mouse"
+
 
 class DeviceType(ConfigurableEnum):
     """Device type enumeration."""

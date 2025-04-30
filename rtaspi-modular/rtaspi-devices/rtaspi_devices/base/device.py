@@ -29,6 +29,10 @@ class Device(ABC):
             name (str): Friendly device name.
             type (str): Device type ('video' or 'audio').
         """
+        # Validate type
+        if type not in ["video", "audio"]:
+            raise ValueError("Type must be 'video' or 'audio'")
+
         self.device_id = device_id
         self.name = name
         self.type = type
@@ -86,72 +90,3 @@ class LocalDevice(Device):
             "resolutions": self.resolutions,
         })
         return result
-
-
-class NetworkDevice(Device):
-    """Class representing a network device (IP camera, IP microphone)."""
-
-    def __init__(
-        self, 
-        device_id: str, 
-        name: str, 
-        type: str, 
-        ip: str, 
-        port: int, 
-        username: str = "", 
-        password: str = "", 
-        protocol: str = "rtsp"
-    ):
-        """
-        Initialize a network device.
-
-        Args:
-            device_id (str): Unique device identifier.
-            name (str): Friendly device name.
-            type (str): Device type ('video' or 'audio').
-            ip (str): Device IP address.
-            port (int): Device port.
-            username (str): Authentication username.
-            password (str): Authentication password.
-            protocol (str): Protocol ('rtsp', 'rtmp', 'http', etc.).
-        """
-        super().__init__(device_id, name, type)
-        self.ip = ip
-        self.port = port
-        self.username = username
-        self.password = password
-        self.protocol = protocol
-        self.streams = {}  # stream_id -> url
-
-    def to_dict(self) -> Dict[str, Any]:
-        """
-        Convert object to dictionary for serialization.
-
-        Returns:
-            Dict[str, Any]: Device representation as dictionary.
-        """
-        result = super().to_dict()
-        result.update({
-            "ip": self.ip,
-            "port": self.port,
-            "protocol": self.protocol,
-            "streams": self.streams,
-        })
-        # Don't return sensitive data (username, password)
-        return result
-
-    def get_base_url(self) -> str:
-        """
-        Get the base URL for the device.
-
-        Returns:
-            str: Base device URL.
-        """
-        auth = ""
-        if self.username:
-            if self.password:
-                auth = f"{self.username}:{self.password}@"
-            else:
-                auth = f"{self.username}@"
-
-        return f"{self.protocol}://{auth}{self.ip}:{self.port}"
