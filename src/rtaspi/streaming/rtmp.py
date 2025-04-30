@@ -33,6 +33,7 @@ class RTMPServer:
         streaming_config = config.get("streaming", {}).get("rtmp", {})
         self.port_start = streaming_config.get("port_start", 1935)
         self.storage_path = config.get("system", {}).get("storage_path", "storage")
+        self.streams = {}
 
     async def start_stream(self, device, stream_id, output_dir):
         """
@@ -103,6 +104,7 @@ class RTMPServer:
                 "protocol": "rtmp",
                 "port": port,
             }
+            self.streams[stream_id] = stream_info
 
             return url
 
@@ -209,6 +211,18 @@ class RTMPServer:
 
             # Utworzenie URL do strumienia
             url = f"rtmp://localhost:{port}/live/{stream_id}"
+            
+            # Store process information
+            stream_info = {
+                "process": process,
+                "nginx_process": nginx_process,
+                "device_id": device.device_id,
+                "type": device.type,
+                "url": url,
+                "protocol": "rtmp",
+                "port": port,
+            }
+            self.streams[stream_id] = stream_info
 
             return url
 
@@ -343,16 +357,24 @@ class RTMPServer:
             bool: True jeśli udało się zatrzymać strumień, False w przeciwnym razie.
         """
         try:
-            if hasattr(self, "process") and self.process:
-                self.process.terminate()
-                self.process.wait()
-                self.process = None
+            if stream_id not in self.streams:
+                logger.warning(f"Stream not found: {stream_id}")
+                return False
 
-            if hasattr(self, "nginx_process") and self.nginx_process:
-                self.nginx_process.terminate()
-                self.nginx_process.wait()
-                self.nginx_process = None
+            stream_info = self.streams[stream_id]
 
+            # Stop FFmpeg process
+            if stream_info["process"]:
+                stream_info["process"].terminate()
+                stream_info["process"].wait()
+
+            # Stop nginx process
+            if stream_info["nginx_process"]:
+                stream_info["nginx_process"].terminate()
+                stream_info["nginx_process"].wait()
+
+            # Remove stream info
+            del self.streams[stream_id]
             return True
         except Exception as e:
             logger.error(f"Błąd podczas zatrzymywania strumienia RTMP: {e}")

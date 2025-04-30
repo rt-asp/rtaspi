@@ -58,6 +58,29 @@ class LocalDevicesManager(DeviceManager):
         if self.auto_start:
             await self._auto_start_streams()
 
+    def get_device(self, device_id: str) -> LocalDevice:
+        """
+        Get a device by ID.
+
+        Args:
+            device_id (str): Device identifier.
+
+        Returns:
+            LocalDevice: Device object if found.
+
+        Raises:
+            ValueError: If device not found.
+        """
+        # Check video devices
+        if device_id in self.devices["video"]:
+            return self.devices["video"][device_id]
+
+        # Check audio devices
+        if device_id in self.devices["audio"]:
+            return self.devices["audio"][device_id]
+
+        raise ValueError(f"Device {device_id} not found")
+
     def update_device_status(self, device_id: str, status: DeviceStatus):
         """
         Update a device's status.

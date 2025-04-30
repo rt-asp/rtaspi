@@ -1,0 +1,21 @@
+"""
+Constants for streaming configuration.
+"""
+
+# Default ports from core/defaults.py
+DEFAULT_RTSP_PORT = 8554
+DEFAULT_RTMP_PORT = 1935
+DEFAULT_WEBRTC_PORT = 8080
+
+# Default stream paths
+DEFAULT_STREAM_PATH = "camera1"
+DEFAULT_RTSP_URL = f"rtsp://localhost:{DEFAULT_RTSP_PORT}/{DEFAULT_STREAM_PATH}"
+DEFAULT_RTMP_URL = f"rtmp://streaming.example.com/live/{DEFAULT_STREAM_PATH}"
+DEFAULT_WEBRTC_URL = f"ws://localhost:{DEFAULT_WEBRTC_PORT}/{DEFAULT_STREAM_PATH}"
+
+# Default streaming settings
+DEFAULT_VIDEO_FRAMERATE = 30
+DEFAULT_VIDEO_BITRATE = "2000k"
+DEFAULT_AUDIO_BITRATE = "128k"
+DEFAULT_AUDIO_SAMPLE_RATE = 44100
+DEFAULT_AUDIO_CHANNELS = 2

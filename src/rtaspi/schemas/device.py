@@ -5,66 +5,22 @@ from typing import Dict, Any, Optional, List
 from pydantic import BaseModel, Field, validator
 
 
-class DeviceType(Enum):
-    """Device type enumeration."""
-
-    CAMERA = auto()
-    MICROPHONE = auto()
-    SCREEN = auto()
-    REMOTE_DESKTOP = auto()
-
-
-class DeviceProtocol(Enum):
-    """Device protocol enumeration."""
-
-    RTSP = auto()
-    ONVIF = auto()
-    RDP = auto()
-    VNC = auto()
-    WEBRTC = auto()
-    RTMP = auto()
-    HLS = auto()
-    DASH = auto()
-
-
-class DeviceAuth(Enum):
-    """Device authentication enumeration."""
-
-    NONE = auto()
-    BASIC = auto()
-    DIGEST = auto()
-    TOKEN = auto()
-    CERTIFICATE = auto()
-    KERBEROS = auto()
-    NTLM = auto()
-
-
-class DeviceCapabilities(Enum):
-    """Device capabilities enumeration."""
-
-    VIDEO = auto()
-    AUDIO = auto()
-    PTZ = auto()
-    MOTION = auto()
-    REMOTE_CONTROL = auto()
-    KEYBOARD = auto()
-    MOUSE = auto()
-
-
 from ..constants.devices import (
-    DEVICE_TYPE_CAMERA,
-    DEVICE_TYPE_MICROPHONE,
-    DEVICE_TYPE_SCREEN,
-    DEVICE_TYPE_REMOTE_DESKTOP,
-    DEVICE_SUBTYPE_USB,
-    DEVICE_SUBTYPE_IP,
-    DEVICE_SUBTYPE_RDP,
-    DEVICE_SUBTYPE_VNC,
-    DEVICE_PROTOCOL_RTSP,
-    DEVICE_PROTOCOL_ONVIF,
-    DEVICE_PROTOCOL_RDP,
-    DEVICE_PROTOCOL_VNC,
+    DeviceType, DeviceSubType, DeviceProtocol,
+    DeviceCapability, DeviceState, DeviceCategory
 )
+
+
+class DeviceAuth(BaseModel):
+    """Device authentication configuration."""
+    
+    username: Optional[str] = Field(None, description="Authentication username")
+    password: Optional[str] = Field(None, description="Authentication password")
+    domain: Optional[str] = Field(None, description="Domain for authentication")
+    token: Optional[str] = Field(None, description="Authentication token")
+    key_file: Optional[str] = Field(None, description="Path to key file")
+    cert_file: Optional[str] = Field(None, description="Path to certificate file")
+    options: Dict[str, Any] = Field(default_factory=dict, description="Additional auth options")
 
 
 class DeviceConfig(BaseModel):
@@ -112,43 +68,28 @@ class DeviceConfig(BaseModel):
     @validator("type")
     def validate_type(cls, v):
         """Validate device type."""
-        valid_types = [
-            DEVICE_TYPE_CAMERA,
-            DEVICE_TYPE_MICROPHONE,
-            DEVICE_TYPE_SCREEN,
-            DEVICE_TYPE_REMOTE_DESKTOP,
-        ]
-        if v not in valid_types:
+        try:
+            return DeviceType[v.upper()].value
+        except KeyError:
             raise ValueError(f"Invalid device type: {v}")
-        return v
 
     @validator("subtype")
     def validate_subtype(cls, v):
         """Validate device subtype."""
-        valid_subtypes = [
-            DEVICE_SUBTYPE_USB,
-            DEVICE_SUBTYPE_IP,
-            DEVICE_SUBTYPE_RDP,
-            DEVICE_SUBTYPE_VNC,
-        ]
-        if v not in valid_subtypes:
+        try:
+            return DeviceSubType[v.upper()].value
+        except KeyError:
             raise ValueError(f"Invalid device subtype: {v}")
-        return v
 
     @validator("protocol")
     def validate_protocol(cls, v):
         """Validate device protocol."""
         if v is None:
             return v
-        valid_protocols = [
-            DEVICE_PROTOCOL_RTSP,
-            DEVICE_PROTOCOL_ONVIF,
-            DEVICE_PROTOCOL_RDP,
-            DEVICE_PROTOCOL_VNC,
-        ]
-        if v not in valid_protocols:
+        try:
+            return DeviceProtocol[v.upper()].value
+        except KeyError:
             raise ValueError(f"Invalid device protocol: {v}")
-        return v
 
     @validator("width", "height")
     def validate_dimensions(cls, v):
@@ -176,7 +117,7 @@ class DeviceConnection(BaseModel):
     host: str = Field(..., description="Device hostname/IP")
     port: Optional[int] = Field(None, description="Device port")
     protocol: Optional[str] = Field(None, description="Connection protocol")
-    auth: Optional[Dict[str, Any]] = Field(None, description="Authentication details")
+    auth: Optional[DeviceAuth] = Field(None, description="Authentication details")
     options: Dict[str, Any] = Field(
         default_factory=dict, description="Connection options"
     )

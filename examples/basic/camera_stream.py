@@ -10,7 +10,8 @@ import sys
 from typing import Optional
 
 from rtaspi.quick import camera
-from rtaspi.core import config, logging as rtaspi_logging
+from rtaspi.core import config, logging as rtaspi_logging, mcp
+from rtaspi.constants import DeviceType
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -75,7 +76,7 @@ def parse_args() -> argparse.Namespace:
     
     return parser.parse_args()
 
-def setup_streaming(args: argparse.Namespace) -> Optional[str]:
+def setup_streaming(args: argparse.Namespace, config_manager: config.ConfigManager, mcp_broker: mcp.MCPBroker) -> Optional[str]:
     """Initialize and configure the camera streaming."""
     try:
         # Parse resolution
@@ -87,10 +88,13 @@ def setup_streaming(args: argparse.Namespace) -> Optional[str]:
         # Start camera stream
         stream_name = camera.start_camera(
             name=args.device,
+            type=DeviceType.USB_CAMERA.value,
             resolution=f"{width}x{height}",
             framerate=args.fps,
             rtsp_url=rtsp_url,
-            rtmp_url=args.save_file if args.save_file else None
+            rtmp_url=args.save_file if args.save_file else None,
+            config=config_manager.config,
+            mcp_broker=mcp_broker
         )
             
         return stream_name
@@ -103,18 +107,18 @@ def main() -> int:
     """Main function."""
     args = parse_args()
     
-    # Configure logging
+    # Initialize config and logging
+    config_manager = config.ConfigManager()
     log_level = "DEBUG" if args.verbose else "INFO"
-    logging_config = {
-        "system": {
-            "log_level": log_level,
-            "storage_path": "storage"
-        }
-    }
-    rtaspi_logging.setup_logging(logging_config)
+    config_manager.set_config("system", "log_level", log_level)
+    config_manager.set_config("system", "storage_path", "storage")
+    rtaspi_logging.setup_logging(config_manager.config)
+    
+    # Initialize MCP broker
+    mcp_broker = mcp.MCPBroker()
     
     # Initialize streaming
-    stream_name = setup_streaming(args)
+    stream_name = setup_streaming(args, config_manager, mcp_broker)
     if not stream_name:
         return 1
     
@@ -142,7 +146,7 @@ def main() -> int:
         # Cleanup
         logger.info("Stopping stream...")
         if stream_name:
-            camera.stop_camera(stream_name)
+            camera.stop_camera(stream_name, config=config_manager.config, mcp_broker=mcp_broker)
     
     return 0
 

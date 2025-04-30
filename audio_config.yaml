@@ -1,0 +1,17 @@
+analysis:
+- type: feature_extraction
+  window: 1024
+- model: default
+  type: classification
+filters:
+- name: noise_reduction
+  strength: 0.5
+- bands:
+  - 0.8
+  - 1.0
+  - 1.2
+  name: equalizer
+input:
+  channels: 2
+  device: '0'
+  rate: 44100

@@ -10,7 +10,8 @@ import sys
 from typing import Optional
 
 from rtaspi.quick import microphone
-from rtaspi.core import config, logging as rtaspi_logging
+from rtaspi.core import config, logging as rtaspi_logging, mcp
+from rtaspi.constants import DeviceType
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -88,7 +89,7 @@ def parse_args() -> argparse.Namespace:
     
     return parser.parse_args()
 
-def setup_recording(args: argparse.Namespace) -> Optional[str]:
+def setup_recording(args: argparse.Namespace, config_manager: config.ConfigManager, mcp_broker: mcp.MCPBroker) -> Optional[str]:
     """Initialize and configure the microphone recording."""
     try:
         # Configure RTMP URL for file output
@@ -97,10 +98,12 @@ def setup_recording(args: argparse.Namespace) -> Optional[str]:
         # Start microphone stream
         stream_name = microphone.start_microphone(
             name=args.device,
-            type="USB_MICROPHONE",
+            type=DeviceType.USB_MICROPHONE.value,
             sample_rate=args.rate,
             channels=args.channels,
-            rtmp_url=rtmp_url
+            rtmp_url=rtmp_url,
+            config=config_manager.config,
+            mcp_broker=mcp_broker
         )
             
         return stream_name
@@ -113,18 +116,18 @@ def main() -> int:
     """Main function."""
     args = parse_args()
     
-    # Configure logging
+    # Initialize config, logging and MCP broker
+    config_manager = config.ConfigManager()
     log_level = "DEBUG" if args.verbose else "INFO"
-    logging_config = {
-        "system": {
-            "log_level": log_level,
-            "storage_path": "storage"
-        }
-    }
-    rtaspi_logging.setup_logging(logging_config)
+    config_manager.set_config("system", "log_level", log_level)
+    config_manager.set_config("system", "storage_path", "storage")
+    rtaspi_logging.setup_logging(config_manager.config)
+    
+    # Initialize MCP broker
+    mcp_broker = mcp.MCPBroker()
     
     # Initialize recording
-    stream_name = setup_recording(args)
+    stream_name = setup_recording(args, config_manager, mcp_broker)
     if not stream_name:
         return 1
     
@@ -151,7 +154,7 @@ def main() -> int:
         # Cleanup
         logger.info("Stopping recording...")
         if stream_name:
-            microphone.stop_microphone(stream_name)
+            microphone.stop_microphone(stream_name, config=config_manager.config)
             logger.info(f"Recording saved to: {args.output}")
     
     return 0

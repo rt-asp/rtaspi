@@ -1,16 +1,20 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 rtaspi - Real-Time Annotation and Stream Processing
-Wykrywanie zdalnych urządzeń (ONVIF, UPnP, mDNS)
+Device discovery module for ONVIF, UPnP, and mDNS devices.
 """
 
 import logging
 import socket
 import time
 import re
+from typing import List, Optional
 from urllib.parse import urlparse
 from abc import ABC, abstractmethod
+
+from ...constants.devices import DeviceType, DeviceCapability
+from ...constants.protocols import ProtocolType
+from ...schemas.device import DeviceConfig
+from ..scanners import get_platform_scanner
 
 logger = logging.getLogger("Discovery")
 
@@ -73,8 +77,8 @@ class ONVIFDiscovery(DiscoveryModule):
                 "name": service.getEPR() or "ONVIF Camera",
                 "ip": self._extract_ip_from_xaddrs(service.getXAddrs()),
                 "port": self._extract_port_from_xaddrs(service.getXAddrs()),
-                "type": "video",
-                "protocol": "rtsp",
+                "type": DeviceType.IP_CAMERA.name,
+                "protocol": ProtocolType.RTSP.value,
                 "paths": ["/onvif-media/media.amp"],
             }
             if device_info["ip"]:
@@ -115,8 +119,8 @@ class ONVIFDiscovery(DiscoveryModule):
                         "name": "ONVIF Camera",
                         "ip": addr[0],
                         "port": 80,
-                        "type": "video",
-                        "protocol": "rtsp",
+                        "type": DeviceType.IP_CAMERA.name,
+                        "protocol": ProtocolType.RTSP.value,
                         "paths": ["/onvif-media/media.amp"],
                     }
                     discovered.append(device_info)
@@ -193,10 +197,10 @@ class UPnPDiscovery(DiscoveryModule):
                 device_type = upnp_device.device_type.lower()
 
                 if "camera" in device_type or "video" in device_type:
-                    device_type = "video"
+                    device_type = DeviceType.IP_CAMERA.name
                     is_av_device = True
                 elif "audio" in device_type or "sound" in device_type:
-                    device_type = "audio"
+                    device_type = DeviceType.USB_MICROPHONE.name
                     is_av_device = True
 
                 if not is_av_device:
@@ -215,7 +219,7 @@ class UPnPDiscovery(DiscoveryModule):
                         "ip": ip,
                         "port": port,
                         "type": device_type,
-                        "protocol": "http",
+                        "protocol": ProtocolType.HTTP.value,
                     }
                 )
 
@@ -255,9 +259,9 @@ MX: 5
                         ip = url_parts.hostname
                         port = url_parts.port or 80
 
-                        device_type = "video"
+                        device_type = DeviceType.IP_CAMERA.name
                         if "audio" in response.lower() or "sound" in response.lower():
-                            device_type = "audio"
+                            device_type = DeviceType.USB_MICROPHONE.name
 
                         devices.append(
                             {
@@ -320,11 +324,11 @@ class MDNSDiscovery(DiscoveryModule):
                 port = info.port
                 device_name = name.split(".")[0]
 
-                device_type = "video"
+                device_type = DeviceType.IP_CAMERA.name
                 if "camera" in type.lower() or "video" in type.lower():
-                    device_type = "video"
+                    device_type = DeviceType.IP_CAMERA.name
                 elif "audio" in type.lower() or "sound" in type.lower():
-                    device_type = "audio"
+                    device_type = DeviceType.USB_MICROPHONE.name
 
                 protocol = "http"
                 if "rtsp" in type.lower():
@@ -402,7 +406,7 @@ class MDNSDiscovery(DiscoveryModule):
                                     "name": f"mDNS Device ({ip})",
                                     "ip": ip,
                                     "port": port,
-                                    "type": "video",
+                                    "type": DeviceType.IP_CAMERA.name,
                                     "protocol": (
                                         "rtsp" if "_rtsp._tcp" in response else "http"
                                     ),
@@ -419,3 +423,96 @@ class MDNSDiscovery(DiscoveryModule):
             logger.warning(f"Błąd podczas alternatywnego wykrywania mDNS: {e}")
 
         return devices
+
+def discover_local_devices(device_type: Optional[str] = None) -> List[DeviceConfig]:
+    """
+    Discover local devices of the specified type.
+    
+    Args:
+        device_type (str, optional): Type of device to discover. If None, discovers all types.
+        
+    Returns:
+        List[DeviceConfig]: List of discovered devices.
+    """
+    logger.info(f"Discovering local devices of type: {device_type or 'all'}")
+    
+    devices = []
+    scanner = get_platform_scanner()
+    
+    try:
+        # Scan for video devices if no type specified or type is camera/video
+        if not device_type or device_type.lower() in ["camera", "video", "all"]:
+            video_devices = scanner.scan_video_devices()
+            for device_id, device in video_devices.items():
+                devices.append(DeviceConfig(
+                    id=device_id,
+                    name=device.name,
+                    type=DeviceType.USB_CAMERA.name,
+                    capabilities=device.capabilities,
+                    status=device.status
+                ))
+        
+        # Scan for audio devices if no type specified or type is microphone/audio
+        if not device_type or device_type.lower() in ["microphone", "audio", "all"]:
+            audio_devices = scanner.scan_audio_devices()
+            for device_id, device in audio_devices.items():
+                devices.append(DeviceConfig(
+                    id=device_id,
+                    name=device.name,
+                    type=DeviceType.USB_MICROPHONE.name,
+                    capabilities=device.capabilities,
+                    status=device.status
+                ))
+                
+    except Exception as e:
+        logger.error(f"Error discovering local devices: {e}")
+        
+    return devices
+
+def discover_network_devices(device_type: Optional[str] = None, timeout: int = 5) -> List[DeviceConfig]:
+    """
+    Discover network devices using various protocols.
+    
+    Args:
+        device_type (str, optional): Type of device to discover. If None, discovers all types.
+        timeout (int): Discovery timeout in seconds.
+        
+    Returns:
+        List[DeviceConfig]: List of discovered devices.
+    """
+    logger.info(f"Discovering network devices of type: {device_type or 'all'}")
+    
+    devices = []
+    discoverers = [
+        ONVIFDiscovery(),
+        UPnPDiscovery(),
+        MDNSDiscovery()
+    ]
+    
+    for discoverer in discoverers:
+        try:
+            discovered = discoverer.discover()
+            for device_info in discovered:
+                # Skip if device type doesn't match requested type
+                if device_type and device_info["type"].lower() != device_type.lower():
+                    continue
+                    
+                # Convert to DeviceConfig
+                device = DeviceConfig(
+                    id=f"{device_info['protocol']}_{device_info['ip']}_{device_info['port']}",
+                    name=device_info["name"],
+                    type=device_info["type"],
+                    network_info={
+                        "ip": device_info["ip"],
+                        "port": device_info["port"],
+                        "protocol": device_info["protocol"]
+                    },
+                    capabilities={},
+                    status={"online": True}
+                )
+                devices.append(device)
+                
+        except Exception as e:
+            logger.error(f"Error in {discoverer.__class__.__name__}: {e}")
+            
+    return devices

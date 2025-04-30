@@ -9,29 +9,34 @@ import yaml
 from rtaspi.quick.camera import Camera
 from rtaspi.processing.video.detection import FaceDetector
 from rtaspi.streaming.output import StreamOutput, FileOutput
+from rtaspi.core.config import ConfigManager
+from rtaspi.core.mcp import MCPBroker
 
 def setup_pipeline(config_path):
     """Setup the face detection pipeline from config"""
     with open(config_path, 'r') as f:
-        config = yaml.safe_load(f)
+        pipeline_config = yaml.safe_load(f)
+    
+    # Initialize config and MCP broker
+    config_manager = ConfigManager()
+    mcp_broker = MCPBroker()
     
     # Setup input
     camera = Camera(
-        device=config['input']['source'],
-        resolution=config['input']['resolution'],
-        fps=config['input']['fps']
+        device=pipeline_config['input']['source'],
+        resolution=pipeline_config['input']['resolution'],
+        fps=pipeline_config['input']['fps']
     )
     
     # Setup face detector
     detector = FaceDetector(
-        model=config['processing'][0]['model'],
-        confidence=config['processing'][0]['confidence'],
-        device=config['processing'][0]['device']
+        method='dnn',
+        confidence_threshold=pipeline_config['processing'][0]['confidence']
     )
     
     # Setup outputs
     outputs = []
-    for output_config in config['output']:
+    for output_config in pipeline_config['output']:
         if output_config['type'] == 'rtsp':
             outputs.append(StreamOutput(port=output_config['port']))
         elif output_config['type'] == 'file':
@@ -42,22 +47,8 @@ def setup_pipeline(config_path):
 def process_frame(frame, detector):
     """Process a single frame with face detection"""
     # Detect faces
-    faces = detector.detect(frame)
-    
-    # Draw bounding boxes
-    for face in faces:
-        x1, y1, x2, y2 = face['bbox']
-        confidence = face['confidence']
-        
-        # Draw rectangle around face
-        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-        
-        # Add confidence label
-        label = f"{confidence:.2f}"
-        cv2.putText(frame, label, (x1, y1-10),
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-    
-    return frame
+    faces, annotated_frame = detector.detect(frame, draw=True)
+    return annotated_frame
 
 def main():
     parser = argparse.ArgumentParser(description='Face Detection Pipeline')

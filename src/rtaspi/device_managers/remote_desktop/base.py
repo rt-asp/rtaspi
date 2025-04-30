@@ -4,7 +4,9 @@ from abc import ABC, abstractmethod
 from typing import Optional, Dict, Any, Tuple
 
 from ..base import BaseDevice
-from ...streaming import StreamOutput
+from ...streaming import get_stream_output
+
+StreamOutput = get_stream_output()
 
 
 class RemoteDesktopDevice(BaseDevice, ABC):

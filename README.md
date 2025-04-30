@@ -2079,6 +2079,65 @@ secrets:
   CLOUD_STORAGE_KEY: "your-storage-key"
 ```
 
+## Enum Configuration
+
+RTASPI supports configurable enumerations that can be overridden through the configuration hierarchy. This allows customizing enum values without modifying the code.
+
+### Enum Configuration in YAML
+
+```yaml
+enums:
+  # Device type overrides
+  DeviceType:
+    USB_CAMERA: "usb_cam"    # Override auto() value
+    IP_CAMERA: "ip_cam"
+    
+  # Device protocol overrides
+  DeviceProtocol:
+    RTSP: "rtsp_stream"      # Override default "rtsp" value
+    WEBRTC: "webrtc_peer"    # Override default "webrtc" value
+```
+
+### Environment Variable Overrides
+
+Enum values can be overridden using environment variables following the pattern:
+```bash
+RTASPI_{ENUM_CLASS}_{ENUM_NAME}=value
+```
+
+Examples:
+```bash
+# Override DeviceType.USB_CAMERA value
+export RTASPI_DEVICETYPE_USB_CAMERA=usb_cam
+
+# Override DeviceProtocol.RTSP value
+export RTASPI_DEVICEPROTOCOL_RTSP=rtsp_stream
+```
+
+### Configuration Hierarchy
+
+Enum values are resolved in the following order:
+1. Environment variables (RTASPI_{ENUM_CLASS}_{ENUM_NAME})
+2. Project configuration (rtaspi.config.yaml)
+3. User configuration (~/.config/rtaspi/config.yaml)
+4. Global configuration (/etc/rtaspi/config.yaml)
+5. Default enum value
+
+### Usage in Code
+
+```python
+from rtaspi.constants.devices import DeviceType
+from rtaspi.core.config import ConfigManager
+
+config_manager = ConfigManager()
+
+# Get value using the hierarchical system
+camera_type = DeviceType.USB_CAMERA.get_value(config_manager)
+
+# Get constant-style name
+type_constant = DeviceType.USB_CAMERA.CONSTANT_NAME  # Returns "USB_CAMERA"
+```
+
 ## Environment Variables
 
 Configuration values can reference environment variables using `${VAR_NAME}` syntax. This is particularly useful for sensitive information:

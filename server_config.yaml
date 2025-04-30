@@ -1,0 +1,13 @@
+auth:
+  secret: your-secret-key
+server:
+  cors:
+    methods:
+    - '*'
+    origins:
+    - '*'
+  host: localhost
+  port: 8443
+  ssl:
+    cert: cert.pem
+    key: key.pem

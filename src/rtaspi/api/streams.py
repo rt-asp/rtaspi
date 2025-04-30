@@ -22,12 +22,19 @@ from rtaspi.streaming import RTSPServer, RTMPServer, WebRTCServer
 class StreamAPI:
     """High-level API for stream management."""
 
-    def __init__(self):
-        """Initialize the stream API."""
+    def __init__(self, config: Optional[Dict[str, Any]] = None, mcp_broker: Optional[Any] = None):
+        """Initialize the stream API.
+        
+        Args:
+            config: Optional configuration dictionary
+            mcp_broker: Optional MCP broker instance
+        """
         self.logger = logging.getLogger(__name__)
-        self.rtsp_server = RTSPServer()
-        self.rtmp_server = RTMPServer()
-        self.webrtc_server = WebRTCServer()
+        self.config = config or {}
+        self.mcp_broker = mcp_broker
+        self.rtsp_server = RTSPServer(config=config)
+        self.rtmp_server = RTMPServer(config=config)
+        self.webrtc_server = WebRTCServer(config=config)
         self.streams: Dict[str, StreamConfig] = {}
 
     def list_streams(

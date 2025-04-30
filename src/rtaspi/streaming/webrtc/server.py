@@ -42,6 +42,7 @@ class WebRTCServer:
         # Initialize components
         self.pipeline_generator = WebRTCPipeline()
         self.ui_generator = WebRTCUI()
+        self.streams = {}
 
     async def start_stream(
         self, device, stream_id: str, output_dir: str

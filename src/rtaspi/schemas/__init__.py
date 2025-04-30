@@ -3,14 +3,17 @@ schemas - Configuration schema definitions for rtaspi
 """
 
 from .device import (
-    DeviceType,
-    DeviceProtocol,
     DeviceAuth,
-    DeviceCapabilities,
     DeviceConfig,
     DeviceStatus,
     DeviceConnection,
     DeviceList,
+)
+
+from ..constants.devices import (
+    DeviceType,
+    DeviceProtocol,
+    DeviceCapability,
 )
 
 from .stream import (
@@ -45,7 +48,7 @@ __all__ = [
     "DeviceType",
     "DeviceProtocol",
     "DeviceAuth",
-    "DeviceCapabilities",
+    "DeviceCapability",
     "DeviceConfig",
     "DeviceStatus",
     "DeviceConnection",

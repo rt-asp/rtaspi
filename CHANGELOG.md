@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.29] - 2025-04-30
+
+### Added
+- Changes in .rtaspi/config.yaml
+- Changes in audio_config.yaml
+- Changes in examples/config/enum_overrides.yaml
+- Changes in pipeline_config.yaml
+- Changes in server_config.yaml
+- Changes in src/rtaspi/constants/camera.py
+- Changes in src/rtaspi/constants/detection.py
+- Changes in src/rtaspi/constants/logging.py
+- Changes in src/rtaspi/constants/streaming.py
+- Changes in src/rtaspi/core/enums.py
+
 ## [0.1.28] - 2025-04-29
 
 ### Added

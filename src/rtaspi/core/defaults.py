@@ -3,6 +3,41 @@ defaults.py - Default configuration values for rtaspi
 """
 
 DEFAULT_CONFIG = {
+    "enums": {
+        "DeviceType": {},
+        "DeviceSubType": {},
+        "DeviceCapability": {},
+        "DeviceState": {},
+        "DeviceProtocol": {},
+        "DeviceCategory": {},
+        "ProtocolType": {
+            "HTTP": "http",
+            "HTTPS": "https",
+            "RTSP": "rtsp",
+            "RTMP": "rtmp",
+            "RTMPS": "rtmps",
+            "WEBRTC": "webrtc",
+            "HLS": "hls",
+            "MPEG_DASH": "dash",
+            "SRT": "srt",
+            "ONVIF": "onvif",
+            "UPNP": "upnp",
+            "MDNS": "mdns",
+            "SSDP": "ssdp",
+            "WS_DISCOVERY": "ws-discovery",
+            "SSH": "ssh",
+            "TELNET": "telnet",
+            "FTP": "ftp",
+            "SFTP": "sftp",
+            "MQTT": "mqtt",
+            "WEBSOCKET": "ws",
+            "WEBSOCKET_SECURE": "wss",
+            "BASIC_AUTH": "basic",
+            "DIGEST_AUTH": "digest",
+            "OAUTH2": "oauth2",
+            "JWT": "jwt"
+        },
+    },
     "system": {
         "storage_path": "storage",
         "log_level": "INFO",
@@ -66,6 +101,7 @@ DEFAULT_CONFIG = {
     },
 }
 
+# Base environment variable mappings
 ENV_VARIABLE_MAP = {
     "RTASPI_STORAGE_PATH": "system.storage_path",
     "RTASPI_LOG_LEVEL": "system.log_level",
@@ -79,3 +115,24 @@ ENV_VARIABLE_MAP = {
     "RTASPI_TURN_USERNAME": "streaming.webrtc.turn_username",
     "RTASPI_TURN_PASSWORD": "streaming.webrtc.turn_password",
 }
+
+# Add enum environment variable mappings
+def _add_enum_env_mappings():
+    """Add environment variable mappings for enums."""
+    enum_classes = [
+        "DeviceType",
+        "DeviceSubType",
+        "DeviceCapability",
+        "DeviceState",
+        "DeviceProtocol",
+        "DeviceCategory",
+        "ProtocolType"
+    ]
+    
+    for enum_class in enum_classes:
+        ENV_VARIABLE_MAP.update({
+            f"RTASPI_{enum_class.upper()}_{item}": f"enums.{enum_class}.{item}"
+            for item in DEFAULT_CONFIG["enums"][enum_class].keys()
+        })
+
+_add_enum_env_mappings()

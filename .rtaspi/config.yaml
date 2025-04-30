@@ -1,0 +1,92 @@
+enums:
+  DeviceCapability: {}
+  DeviceCategory: {}
+  DeviceProtocol: {}
+  DeviceState: {}
+  DeviceSubType: {}
+  DeviceType: {}
+  ProtocolType:
+    BASIC_AUTH: basic
+    DIGEST_AUTH: digest
+    FTP: ftp
+    HLS: hls
+    HTTP: http
+    HTTPS: https
+    JWT: jwt
+    MDNS: mdns
+    MPEG_DASH: dash
+    MQTT: mqtt
+    OAUTH2: oauth2
+    ONVIF: onvif
+    RTMP: rtmp
+    RTMPS: rtmps
+    RTSP: rtsp
+    SFTP: sftp
+    SRT: srt
+    SSDP: ssdp
+    SSH: ssh
+    TELNET: telnet
+    UPNP: upnp
+    WEBRTC: webrtc
+    WEBSOCKET: ws
+    WEBSOCKET_SECURE: wss
+    WS_DISCOVERY: ws-discovery
+local_devices:
+  auto_start: false
+  enable_audio: true
+  enable_video: true
+  rtmp_port_start: 1935
+  rtsp_port_start: 8554
+  scan_interval: 60
+  webrtc_port_start: 8080
+network_devices:
+  discovery_enabled: true
+  discovery_methods:
+  - onvif
+  - upnp
+  - mdns
+  enable: true
+  rtmp_port_start: 2935
+  rtsp_port_start: 8654
+  scan_interval: 60
+  webrtc_port_start: 9080
+processing:
+  audio:
+    default_channels: 2
+    default_format: aac
+    default_sample_rate: 44100
+  video:
+    default_format: h264
+    default_fps: 30
+    default_resolution: 1280x720
+streaming:
+  rtmp:
+    enable_auth: false
+    port_start: 1935
+  rtsp:
+    auth_method: basic
+    enable_auth: false
+    port_start: 8554
+  webrtc:
+    port_start: 8080
+    stun_server: stun://stun.l.google.com:19302
+    turn_password: ''
+    turn_server: ''
+    turn_username: ''
+system:
+  config_paths:
+    global: /etc/rtaspi/config.yaml
+    project: .rtaspi/config.yaml
+    user: ~/.config/rtaspi/config.yaml
+  log_level: INFO
+  storage_path: storage
+web:
+  auth_method: basic
+  cert_path: ''
+  enable: true
+  enable_auth: false
+  enable_https: false
+  host: 0.0.0.0
+  key_path: ''
+  port: 8000
+  session_timeout: 3600

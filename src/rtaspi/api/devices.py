@@ -8,8 +8,9 @@ abstracting away the internal implementation details.
 from typing import Optional, Dict, List, Any, Union
 import logging
 
-from rtaspi.constants import DeviceType, ProtocolType
-from rtaspi.schemas import DeviceConfig, DeviceStatus, DeviceAuth, DeviceConnection
+from rtaspi.constants import ProtocolType
+from rtaspi.schemas import DeviceConfig, DeviceStatus, DeviceConnection
+from rtaspi.constants.devices import DeviceType, DeviceState
 from rtaspi.device_managers import LocalDevicesManager as LocalDeviceManager
 from rtaspi.device_managers import NetworkDevicesManager as NetworkDeviceManager
 
@@ -17,11 +18,16 @@ from rtaspi.device_managers import NetworkDevicesManager as NetworkDeviceManager
 class DeviceAPI:
     """High-level API for device management."""
 
-    def __init__(self):
-        """Initialize the device API."""
+    def __init__(self, config, mcp_broker):
+        """Initialize the device API.
+        
+        Args:
+            config (dict): Configuration dictionary
+            mcp_broker (MCPBroker): MCP broker instance
+        """
         self.logger = logging.getLogger(__name__)
-        self.local_manager = LocalDeviceManager()
-        self.network_manager = NetworkDeviceManager()
+        self.local_manager = LocalDeviceManager(config=config, mcp_broker=mcp_broker)
+        self.network_manager = NetworkDeviceManager(config=config, mcp_broker=mcp_broker)
 
     def list_devices(
         self,

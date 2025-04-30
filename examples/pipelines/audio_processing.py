@@ -100,7 +100,7 @@ def main():
     pipeline = AudioPipeline(args.config)
     mic = Microphone(
         device=pipeline.config['input']['device'],
-        rate=pipeline.config['input']['rate'],
+        sample_rate=pipeline.config['input']['rate'],
         channels=pipeline.config['input']['channels']
     )
     output = AudioOutput()

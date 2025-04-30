@@ -11,7 +11,7 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException, Depends, Security
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
-import jwt
+from jose import jwt
 import uvicorn
 
 # Initialize FastAPI app
@@ -32,7 +32,7 @@ def verify_jwt_token(credentials: HTTPAuthorizationCredentials = Security(securi
             algorithms=["HS256"]
         )
         return payload
-    except jwt.InvalidTokenError:
+    except jwt.JWTError:
         raise HTTPException(
             status_code=401,
             detail="Invalid authentication token"

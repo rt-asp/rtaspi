@@ -1,61 +1,106 @@
 """Device type constants."""
 
-from enum import Enum, auto
+from enum import auto
+from ..core.enums import ConfigurableEnum
 
 
-class DeviceType(Enum):
+class DeviceType(ConfigurableEnum):
     """Device type enumeration."""
-
-    CAMERA = auto()
-    MICROPHONE = auto()
+    USB_CAMERA = auto()
+    IP_CAMERA = auto()
+    CSI_CAMERA = auto()
+    BUILT_IN_CAMERA = auto()
+    USB_MICROPHONE = auto()
+    BUILT_IN_MICROPHONE = auto()
     SCREEN = auto()
     REMOTE_DESKTOP = auto()
 
+    @property
+    def is_camera(self) -> bool:
+        """Check if device type is a camera."""
+        return self in (
+            DeviceType.USB_CAMERA,
+            DeviceType.IP_CAMERA,
+            DeviceType.CSI_CAMERA,
+            DeviceType.BUILT_IN_CAMERA
+        )
 
-# Device types (string constants)
-DEVICE_TYPE_CAMERA = "camera"
-DEVICE_TYPE_MICROPHONE = "microphone"
-DEVICE_TYPE_SCREEN = "screen"
-DEVICE_TYPE_REMOTE_DESKTOP = "remote_desktop"
+    @property
+    def is_microphone(self) -> bool:
+        """Check if device type is a microphone."""
+        return self in (
+            DeviceType.USB_MICROPHONE,
+            DeviceType.BUILT_IN_MICROPHONE
+        )
 
-# Device subtypes
-DEVICE_SUBTYPE_USB = "usb"
-DEVICE_SUBTYPE_IP = "ip"
-DEVICE_SUBTYPE_RDP = "rdp"
-DEVICE_SUBTYPE_VNC = "vnc"
-DEVICE_SUBTYPE_VIRTUAL = "virtual"
-DEVICE_SUBTYPE_PHYSICAL = "physical"
-DEVICE_SUBTYPE_NETWORK = "network"
+    @property
+    def is_local_device(self) -> bool:
+        """Check if device type is local."""
+        return self in (
+            DeviceType.USB_CAMERA,
+            DeviceType.CSI_CAMERA,
+            DeviceType.BUILT_IN_CAMERA,
+            DeviceType.USB_MICROPHONE,
+            DeviceType.BUILT_IN_MICROPHONE,
+            DeviceType.SCREEN
+        )
 
-# Device capabilities
-CAPABILITY_VIDEO = "video"
-CAPABILITY_AUDIO = "audio"
-CAPABILITY_PTZ = "ptz"
-CAPABILITY_MOTION = "motion"
-CAPABILITY_REMOTE_CONTROL = "remote_control"
-CAPABILITY_KEYBOARD = "keyboard"
-CAPABILITY_MOUSE = "mouse"
+    @property
+    def is_network_device(self) -> bool:
+        """Check if device type is networked."""
+        return self in (
+            DeviceType.IP_CAMERA,
+            DeviceType.REMOTE_DESKTOP
+        )
 
-# Device states
-DEVICE_STATE_UNKNOWN = "unknown"
-DEVICE_STATE_OFFLINE = "offline"
-DEVICE_STATE_ONLINE = "online"
-DEVICE_STATE_STREAMING = "streaming"
-DEVICE_STATE_ERROR = "error"
-DEVICE_STATE_CONNECTING = "connecting"
-DEVICE_STATE_DISCONNECTING = "disconnecting"
 
-# Device protocols
-DEVICE_PROTOCOL_RTSP = "rtsp"
-DEVICE_PROTOCOL_ONVIF = "onvif"
-DEVICE_PROTOCOL_RDP = "rdp"
-DEVICE_PROTOCOL_VNC = "vnc"
-DEVICE_PROTOCOL_WEBRTC = "webrtc"
-DEVICE_PROTOCOL_RTMP = "rtmp"
-DEVICE_PROTOCOL_HLS = "hls"
-DEVICE_PROTOCOL_DASH = "dash"
+class DeviceSubType(ConfigurableEnum):
+    """Device subtype enumeration."""
+    USB = "usb"
+    IP = "ip"
+    RDP = "rdp"
+    VNC = "vnc"
+    VIRTUAL = "virtual"
+    PHYSICAL = "physical"
+    NETWORK = "network"
 
-# Device categories
-DEVICE_CATEGORY_INPUT = "input"
-DEVICE_CATEGORY_OUTPUT = "output"
-DEVICE_CATEGORY_REMOTE = "remote"
+
+class DeviceCapability(ConfigurableEnum):
+    """Device capability enumeration."""
+    VIDEO = "video"
+    AUDIO = "audio"
+    PTZ = "ptz"
+    MOTION = "motion"
+    REMOTE_CONTROL = "remote_control"
+    KEYBOARD = "keyboard"
+    MOUSE = "mouse"
+
+
+class DeviceState(ConfigurableEnum):
+    """Device state enumeration."""
+    UNKNOWN = "unknown"
+    OFFLINE = "offline"
+    ONLINE = "online"
+    STREAMING = "streaming"
+    ERROR = "error"
+    CONNECTING = "connecting"
+    DISCONNECTING = "disconnecting"
+
+
+class DeviceProtocol(ConfigurableEnum):
+    """Device protocol enumeration."""
+    RTSP = "rtsp"
+    ONVIF = "onvif"
+    RDP = "rdp"
+    VNC = "vnc"
+    WEBRTC = "webrtc"
+    RTMP = "rtmp"
+    HLS = "hls"
+    DASH = "dash"
+
+
+class DeviceCategory(ConfigurableEnum):
+    """Device category enumeration."""
+    INPUT = "input"
+    OUTPUT = "output"
+    REMOTE = "remote"

@@ -12,11 +12,9 @@ from .base import RemoteDesktopDevice
 from .rdp import RDPDevice
 from .vnc import VNCDevice
 from ...constants.devices import (
-    DEVICE_TYPE_REMOTE_DESKTOP,
-    DEVICE_SUBTYPE_RDP,
-    DEVICE_SUBTYPE_VNC,
-    DEVICE_PROTOCOL_RDP,
-    DEVICE_PROTOCOL_VNC,
+    DeviceType,
+    DeviceSubType,
+    DeviceProtocol
 )
 
 logger = logging.getLogger(__name__)
@@ -107,9 +105,9 @@ class RemoteDesktopManager(DeviceManager):
                         config = {
                             "id": device_id,
                             "name": f"RDP Device ({ip_str})",
-                            "type": DEVICE_TYPE_REMOTE_DESKTOP,
-                            "subtype": DEVICE_SUBTYPE_RDP,
-                            "protocol": DEVICE_PROTOCOL_RDP,
+                            "type": DeviceType.REMOTE_DESKTOP.name,
+                            "subtype": DeviceSubType.RDP.value,
+                            "protocol": DeviceProtocol.RDP.value,
                             "host": ip_str,
                             "port": 3389,
                         }
@@ -123,9 +121,9 @@ class RemoteDesktopManager(DeviceManager):
                         config = {
                             "id": device_id,
                             "name": f"VNC Device ({ip_str})",
-                            "type": DEVICE_TYPE_REMOTE_DESKTOP,
-                            "subtype": DEVICE_SUBTYPE_VNC,
-                            "protocol": DEVICE_PROTOCOL_VNC,
+                            "type": DeviceType.REMOTE_DESKTOP.name,
+                            "subtype": DeviceSubType.VNC.value,
+                            "protocol": DeviceProtocol.VNC.value,
                             "host": ip_str,
                             "port": 5900,
                         }
@@ -189,9 +187,9 @@ class RemoteDesktopManager(DeviceManager):
                 return None
 
             device_type = config.get("subtype", "").lower()
-            if device_type == DEVICE_SUBTYPE_RDP:
+            if device_type == DeviceSubType.RDP.value:
                 device = RDPDevice(device_id, config)
-            elif device_type == DEVICE_SUBTYPE_VNC:
+            elif device_type == DeviceSubType.VNC.value:
                 device = VNCDevice(device_id, config)
             else:
                 logger.error(f"Unknown device type: {device_type}")

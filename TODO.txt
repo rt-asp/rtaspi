@@ -13,4 +13,40 @@ stworz pliki przykladow w python  dla folderu examples/speech z przykładami z R
 
 utworz skrypt do uruchamiania wszystkich przykladow z folderu examples/ ktory bedzie tworzyl 2 pliki: logi poprawnie wykonanymi w correct/[nazwa pliku py z examples] i niepoprawnie error/[nazwa pliku py z examples] z bledami uruchamiania
 
-- sprawdz kolejno bledy w plikach w folderze ./error z uruchomienia skryptow z examples/ dopasuj skyrpty do aktualnego stanu biblioteki rtaspi, jesli pojawiaja sie dane typu string, ktore moglyby byc dana typu constant opobierane bezposrednio z biblitoeki jak w src/rtaspi/constants to utworz je w biblitoeece i uzyj w przykladzie
+- sprawdz kolejno bledy w plikach w folderze ./error z uruchomienia skryptow z examples/ dopasuj skyrpty do aktualnego stanu biblioteki rtaspi,
+- jesli pojawiaja sie dane typu string, ktore moglyby byc dana typu constant opobierane bezposrednio z biblitoeki jak w src/rtaspi/constants to utworz je w biblitoeece i uzyj w przykladzie, ale nie jako formę OutputType.DISPLAY.name.lower(), tylko krotszą jak np. OUTPUT_DISPLAY
+- Dodatkowo uprasczając kod w przykladach z folderu examples/ i sprawdzajac czy nie ma duplikatów w różnych przykładach oraz w bibliotece rtaspi, staraj się refaktoryzowac kod w bibliotece rtaspi zmniejszajac ilość kodu poprzez modularyzacje i reuzycie
+
+- check errors after running scripts in examples/
+
+- check errors in files in ./error directory from running scripts in examples/
+- match scripts to current state of rtaspi library
+- refactor string constants to use library constants, but not such: OutputType.DISPLAY.name.lower() but shorter: OUTPUT_DISPLAY
+- simplify code in examples by removing duplicates and modularizing in library
+
+
+
+
+- Start by executing run_examples.py to validate current functionality
+- Check errors in files in ./error directory from running scripts in examples/ to identify recurring issues and their root causes
+- Match scripts to the current state of the rtaspi library, ensuring API compatibility and updating function parameters as needed
+- Refactor string constants to use library constants, but prefer shorter forms like OUTPUT_DISPLAY instead of verbose expressions like OutputType.DISPLAY.name.lower()
+- Create a flexible constants system that allows users to override default values through environment variables (.env file)
+- Implement a ConfigurableEnum class that checks for environment variables in the format RTASPI_{ENUM_CLASS}_{ENUM_ITEM}
+- Provide convenient constant shortcuts (e.g., DEVICE_REMOTE_DESKTOP) that use the configurable enum system
+- Simplify code in examples by removing duplicates and modularizing in library to improve readability and maintainability
+- Use enums instead of string constants for better type safety, logical grouping, and code organization
+- Ensure consistent use of enum values (preferably .value over .name) in configuration dictionaries
+- Maintain compatibility with the hierarchical configuration system described in README.md
+- Extend the configuration system to respect the priority order: env vars → project config → user config → global config → defaults
+- Provide clear documentation for any significant changes or design decisions with examples of how to use the new configurable constants system
+
+The goal is to improve code quality, reduce redundancy, make the project more maintainable, and provide flexibility for users to customize constants through environment variables while maintaining the benefits of enumeration types.
+
+
+- uzyj integracji Model Context Protocol (MCP) dla LLM, plugin cline bedzie w stanie utworzyc sobie sam to repozytorium i sklonowac i zaktuaziowac na github ? czy potrzebna jest integracja z pypi przez Model Context Protocol (MCP) ?
+
+
+
+python examples/basic/device_discovery.py
+

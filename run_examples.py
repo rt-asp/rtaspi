@@ -3,10 +3,19 @@ import os
 import sys
 import subprocess
 import importlib
+import yaml
 from pathlib import Path
 
+def clean_directories():
+    """Remove all files from correct and error directories."""
+    import shutil
+    for directory in ['correct', 'error']:
+        if os.path.exists(directory):
+            shutil.rmtree(directory)
+
 def setup_directories():
-    """Create correct and error directories if they don't exist."""
+    """Create and clean correct and error directories."""
+    clean_directories()
     Path('correct').mkdir(exist_ok=True)
     Path('error').mkdir(exist_ok=True)
 
@@ -44,9 +53,88 @@ def find_python_files(directory):
 def run_example(python_file):
     """Run a Python file and capture its output."""
     try:
+        # Prepare command and arguments
+        cmd = [sys.executable, python_file]
+        
+        # Add specific arguments for certain examples
+        base_name = os.path.basename(python_file)
+        if base_name == "microphone_recording.py":
+            cmd.extend(["--output", "recording.wav"])
+        elif base_name == "face_detection.py":
+            # Create a temporary pipeline config file
+            config = {
+                "input": {
+                    "source": "0",
+                    "resolution": "1280x720",
+                    "fps": 30
+                },
+                "processing": [{
+                    "type": "face_detection",
+                    "confidence": 0.5
+                }],
+                "output": [{
+                    "type": "rtsp",
+                    "port": 8554
+                }]
+            }
+            config_path = "pipeline_config.yaml"
+            with open(config_path, 'w') as f:
+                yaml.dump(config, f)
+            cmd.extend(["--config", config_path])
+        elif base_name == "audio_processing.py":
+            # Create a temporary audio config file
+            config = {
+                "input": {
+                    "device": "0",
+                    "rate": 44100,
+                    "channels": 2
+                },
+                "filters": [{
+                    "name": "noise_reduction",
+                    "strength": 0.5
+                }, {
+                    "name": "equalizer",
+                    "bands": [0.8, 1.0, 1.2]
+                }],
+                "analysis": [{
+                    "type": "feature_extraction",
+                    "window": 1024
+                }, {
+                    "type": "classification",
+                    "model": "default"
+                }]
+            }
+            config_path = "audio_config.yaml"
+            with open(config_path, 'w') as f:
+                yaml.dump(config, f)
+            cmd.extend(["--config", config_path])
+        elif base_name == "https_server.py":
+            # Create a temporary server config file
+            config = {
+                "server": {
+                    "host": "localhost",
+                    "port": 8443,
+                    "ssl": {
+                        "cert": "cert.pem",
+                        "key": "key.pem"
+                    },
+                    "cors": {
+                        "origins": ["*"],
+                        "methods": ["*"]
+                    }
+                },
+                "auth": {
+                    "secret": "your-secret-key"
+                }
+            }
+            config_path = "server_config.yaml"
+            with open(config_path, 'w') as f:
+                yaml.dump(config, f)
+            cmd.extend(["--config", config_path])
+        
         # Run the Python file and capture output/errors
         result = subprocess.run(
-            [sys.executable, python_file],
+            cmd,
             capture_output=True,
             text=True,
             timeout=30  # Set timeout to 30 seconds
@@ -98,8 +186,8 @@ def main():
         if not install_rtaspi():
             print("Failed to install rtaspi package. Examples may not work correctly.")
     
-    # Find all Python files in examples/
-    python_files = find_python_files('examples')
+    # Find all Python files in examples/basic by default
+    python_files = find_python_files('examples/basic')
     
     # Statistics
     total = len(python_files)

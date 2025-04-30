@@ -1,0 +1,10 @@
+input:
+  fps: 30
+  resolution: 1280x720
+  source: '0'
+output:
+- port: 8554
+  type: rtsp
+processing:
+- confidence: 0.5
+  type: face_detection

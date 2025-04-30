@@ -11,6 +11,18 @@ Zaawansowany przykład systemu monitoringu z:
 from rtaspi.core.rtaspi import RTASPI
 from rtaspi.processing.video.filters import VideoFilter
 from rtaspi.constants import FilterType
+from rtaspi.constants.devices import DEVICE_TYPE_CAMERA, CAPABILITY_VIDEO
+from rtaspi.constants.outputs import OutputType
+from rtaspi.constants.protocols import ProtocolType
+from rtaspi.constants.resolutions import Resolution
+from rtaspi.constants.filters import (
+    FILTER_BRIGHTNESS,
+    FILTER_CONTRAST,
+    FILTER_SHARPEN,
+    FILTER_MOTION_DETECTION,
+    FILTER_FACE_DETECTION
+)
+from rtaspi.core.defaults import DEFAULT_CONFIG
 import time
 import os
 
@@ -19,7 +31,7 @@ def main():
     app = RTASPI()
 
     # Pobierz pierwszą dostępną kamerę
-    video_devices = app.devices.list(type="video")
+    video_devices = app.devices.list(type=DEVICE_TYPE_CAMERA)
     if not video_devices:
         print("Nie znaleziono kamery. Podłącz kamerę i uruchom ponownie.")
         return
@@ -33,20 +45,32 @@ def main():
 
     # Konfiguracja zaawansowanego pipeline'u
     pipeline_config = {
-        "input": {"device_id": camera['id']},
+        "input": {
+            "device_id": camera['id'],
+            "resolution": Resolution.HD.value
+        },
         "stages": [
             # Poprawa jakości obrazu
             {
-                "type": "image_enhancement",
-                "params": {
-                    "brightness": 1.1,
-                    "contrast": 1.2,
-                    "sharpness": 1.1
-                }
+                "type": FilterType.COLOR_BALANCE.name.lower(),
+                "filters": [
+                    {
+                        "type": FILTER_BRIGHTNESS,
+                        "value": 1.1
+                    },
+                    {
+                        "type": FILTER_CONTRAST,
+                        "value": 1.2
+                    },
+                    {
+                        "type": FILTER_SHARPEN,
+                        "value": 1.1
+                    }
+                ]
             },
             # Detekcja ruchu
             {
-                "type": "motion_detector",
+                "type": FILTER_MOTION_DETECTION,
                 "params": {
                     "sensitivity": 0.6,
                     "min_area": 500,
@@ -55,7 +79,7 @@ def main():
             },
             # Detekcja obiektów
             {
-                "type": "object_detector",
+                "type": FILTER_FACE_DETECTION,
                 "model": "tiny_yolo",
                 "classes": ["person", "car", "animal"],
                 "confidence": 0.5
@@ -64,7 +88,7 @@ def main():
         "output": [
             # Nagrywanie z detekcją ruchu
             {
-                "type": "record",
+                "type": OutputType.MP4_FILE.name.lower(),
                 "when_motion": True,
                 "pre_buffer": 3,
                 "post_buffer": 5,
@@ -73,7 +97,7 @@ def main():
             },
             # Powiadomienia email
             {
-                "type": "email",
+                "type": OutputType.EVENT_HTTP.name.lower(),
                 "when_motion": True,
                 "to": "twoj.email@example.com",
                 "subject": "Wykryto ruch!",
@@ -89,7 +113,7 @@ def main():
             },
             # Podgląd przez przeglądarkę
             {
-                "type": "web",
+                "type": OutputType.DISPLAY.name.lower(),
                 "path": "/monitor",
                 "with_controls": True,  # Dodaj kontrolki do podglądu
                 "overlay": {
@@ -99,8 +123,9 @@ def main():
             },
             # Strumień RTSP
             {
-                "type": "rtsp",
-                "path": "/live/camera"
+                "type": OutputType.RTSP.name.lower(),
+                "path": "/live/camera",
+                "protocol": ProtocolType.RTSP.name.lower()
             }
         ]
     }
@@ -111,8 +136,8 @@ def main():
     print(f"\nUruchomiono zaawansowany system monitoringu!")
     print(f"ID pipeline'u: {pipeline_id}")
     print(f"\nDostęp do systemu:")
-    print(f"- Podgląd WWW: http://localhost:8081/monitor")
-    print(f"- Strumień RTSP: rtsp://localhost:8554/live/camera")
+    print(f"- Podgląd WWW: {ProtocolType.HTTP.name.lower()}://{DEFAULT_CONFIG['web']['host']}:{DEFAULT_CONFIG['web']['port']}/monitor")
+    print(f"- Strumień RTSP: {ProtocolType.RTSP.name.lower()}://{DEFAULT_CONFIG['web']['host']}:{DEFAULT_CONFIG['streaming']['rtsp']['port_start']}/live/camera")
     print(f"- Nagrania: {recordings_dir}")
     print("\nFunkcje systemu:")
     print("- Detekcja ruchu z automatycznym nagrywaniem")

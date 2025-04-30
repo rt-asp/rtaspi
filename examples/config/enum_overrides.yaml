@@ -1,0 +1,53 @@
+# Example configuration showing how to override enum values
+
+# Enum value overrides
+enums:
+  # Device type overrides
+  DeviceType:
+    USB_CAMERA: "usb_cam"  # Override auto() value with custom string
+    IP_CAMERA: "ip_cam"
+    CSI_CAMERA: "csi_cam"
+    
+  # Protocol type overrides
+  ProtocolType:
+    RTSP: "rtsp-stream"    # Override default "rtsp" value
+    WEBRTC: "webrtc-peer"  # Override default "webrtc" value
+    MQTT: "mqtt-broker"    # Override default "mqtt" value
+    SSH: "ssh-secure"      # Override default "ssh" value
+    
+  # Device protocol overrides
+  DeviceProtocol:
+    RTSP: "rtsp_stream"    # Override default "rtsp" value
+    WEBRTC: "webrtc_peer"  # Override default "webrtc" value
+    
+  # Device state overrides
+  DeviceState:
+    ONLINE: "active"       # Override default "online" value
+    OFFLINE: "inactive"    # Override default "offline" value
+    
+  # Device capability overrides
+  DeviceCapability:
+    VIDEO: "video_stream"  # Override default "video" value
+    AUDIO: "audio_stream" # Override default "audio" value
+
+# The same overrides can be done using environment variables:
+# export RTASPI_DEVICETYPE_USB_CAMERA=usb_cam
+# export RTASPI_PROTOCOLTYPE_RTSP=rtsp-stream
+# export RTASPI_DEVICEPROTOCOL_RTSP=rtsp_stream
+# export RTASPI_DEVICESTATE_ONLINE=active
+# export RTASPI_DEVICECAPABILITY_VIDEO=video_stream
+
+# Usage example in code:
+# from rtaspi.constants.devices import DeviceType, DeviceProtocol
+# from rtaspi.constants.protocols import ProtocolType
+# from rtaspi.core.config import ConfigManager
+#
+# config_manager = ConfigManager()
+# 
+# # Get value using the hierarchical system
+# camera_type = DeviceType.USB_CAMERA.get_value(config_manager)  # Returns "usb_cam" if configured
+# protocol = ProtocolType.RTSP.get_value(config_manager)        # Returns "rtsp-stream" if configured
+#
+# # Get constant-style name
+# type_constant = DeviceType.USB_CAMERA.CONSTANT_NAME  # Returns "USB_CAMERA"
+# protocol_constant = ProtocolType.RTSP.CONSTANT_NAME  # Returns "RTSP"
