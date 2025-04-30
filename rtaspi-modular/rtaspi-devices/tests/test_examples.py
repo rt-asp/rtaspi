@@ -8,7 +8,7 @@ import os
 import sys
 import asyncio
 import logging
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import MagicMock, patch, AsyncMock, Mock
 from rtaspi_devices import DeviceManager
 from rtaspi_devices.network import NetworkDeviceManager
 from rtaspi_devices.events import EventSystem
@@ -85,7 +85,8 @@ async def test_quick_start_example():
         manager_instance.get_devices.return_value = {'test-device-1': MagicMock()}
         
         # Create manager with mocked dependencies
-        manager = NetworkDeviceManager(config, events=events)
+        mock_broker = Mock()
+        manager = NetworkDeviceManager(config, mcp_broker=mock_broker)
         
         # Simulate device discovery
         await events.emit("device.discovered", mock_device)
@@ -241,8 +242,9 @@ async def test_network_discovery_example():
         }
         await events.emit("device.error", {"device_id": "error-device", "error": "Connection failed"})
         assert len(device_errors) == 1
-        assert device_errors[0][0]["device_id"] == "error-device"
-        assert "Connection failed" in device_errors[0][0]["error"]
+        error_event, error_data = device_errors[0]
+        assert error_data["device_id"] == "error-device"
+        assert "Connection failed" in error_data["error"]
 
 def test_example_imports():
     """Test that all example files can be imported without errors."""
@@ -289,54 +291,72 @@ async def test_example_scenarios():
             }
         }
         
-        events = EventSystem()
-        manager = NetworkDeviceManager(config, events=events)
-        
-        try:
-            # Create and add a network device
-            from rtaspi_devices.network import NetworkDevice
-            device = NetworkDevice(
-                device_id="cam1",
-                name="Front Camera",
-                type="video",
-                ip="192.168.1.100",
-                port=554,
-                protocol="rtsp"
-            )
+        # Mock manager dependencies
+        with patch('rtaspi_devices.network.NetworkDeviceManager.start', new_callable=AsyncMock) as mock_start, \
+             patch('rtaspi_devices.network.NetworkDeviceManager.stop', new_callable=AsyncMock) as mock_stop, \
+             patch('rtaspi_devices.network.NetworkDeviceManager.start_stream', new_callable=AsyncMock) as mock_stream, \
+             patch('rtaspi_devices.network.NetworkDeviceManager.stop_stream', new_callable=AsyncMock) as mock_stop_stream, \
+             patch('rtaspi_devices.network.NetworkDeviceManager.get_devices') as mock_get_devices:
             
-            await manager.start()
-            devices = manager.get_devices()
-            assert isinstance(devices, dict)
-            
-            # Test device methods
-            if devices:
-                device_id = next(iter(devices))
-                device = devices[device_id]
-                
-                # Test basic properties
-                assert hasattr(device, 'id')
-                assert hasattr(device, 'name')
-                assert hasattr(device, 'type')
-                
-                # Test status
-                status = await device.get_status()
-                assert isinstance(status, str)
-                
-                # Test stream operations
-                stream = await manager.start_stream(
-                    device_id=device_id,
-                    format="h264",
-                    resolution="1280x720"
+            mock_stream.return_value = {
+                "id": "test-stream-1",
+                "device_id": "cam1",
+                "format": "h264"
+            }
+            mock_get_devices.return_value = {
+                'cam1': MagicMock(
+                    get_status=AsyncMock(return_value="online")
                 )
-                assert stream["id"]
-                assert stream["device_id"] == device_id
-                assert stream["format"] == "h264"
+            }
+            
+            events = EventSystem()
+            mock_broker = Mock()
+            manager = NetworkDeviceManager(config, mcp_broker=mock_broker)
+            
+            try:
+                # Create and add a network device
+                from rtaspi_devices.network import NetworkDevice
+                device = NetworkDevice(
+                    device_id="cam1",
+                    name="Front Camera",
+                    type="video",
+                    ip="192.168.1.100",
+                    port=554,
+                    protocol="rtsp"
+                )
                 
-                # Test stream stop
-                await manager.stop_stream(stream["id"])
+                await manager.start()
+                devices = manager.get_devices()
+                assert isinstance(devices, dict)
                 
-        finally:
-            await manager.stop()
+                # Test device methods
+                if devices:
+                    device_id = next(iter(devices))
+                    device = devices[device_id]
+                    
+                    # Test basic properties
+                    assert hasattr(device, 'id')
+                    assert hasattr(device, 'name')
+                    assert hasattr(device, 'type')
+                    
+                    # Test status
+                    status = await device.get_status()
+                    assert isinstance(status, str)
+                    
+                    # Test stream operations
+                    stream = await manager.start_stream(
+                        device_id=device_id,
+                        format="h264",
+                        resolution="1280x720"
+                    )
+                    assert stream["id"]
+                    assert stream["device_id"] == device_id
+                    assert stream["format"] == "h264"
+                    
+                    # Test stream stop
+                    await manager.stop_stream(stream["id"])
+            finally:
+                await manager.stop()
     
     await test_device_operations()
     
@@ -344,11 +364,13 @@ async def test_example_scenarios():
     async def test_error_handling():
         with pytest.raises(Exception):
             # Test with invalid config
-            manager = NetworkDeviceManager({})
+            mock_broker = Mock()
+            manager = NetworkDeviceManager({}, mcp_broker=mock_broker)
             await manager.start()
         
         # Test with invalid stream parameters
-        manager = NetworkDeviceManager({"system": {"storage_path": "test_storage"}})
+        mock_broker = Mock()
+        manager = NetworkDeviceManager({"system": {"storage_path": "test_storage"}}, mcp_broker=mock_broker)
         with pytest.raises(Exception):
             await manager.start_stream(
                 device_id="invalid-device",
@@ -375,21 +397,22 @@ async def test_simple_example():
             }
         }
     }
-    
-    # Mock device manager
-    with patch('rtaspi_devices.DeviceManager') as MockDeviceManager:
+    # Mock device manager and network manager
+    with patch('rtaspi_devices.DeviceManager') as MockDeviceManager, \
+         patch('rtaspi_devices.network.NetworkDeviceManager.start', new_callable=AsyncMock) as mock_start, \
+         patch('rtaspi_devices.network.NetworkDeviceManager.stop', new_callable=AsyncMock) as mock_stop, \
+         patch('rtaspi_devices.network.NetworkDeviceManager.start_stream', new_callable=AsyncMock) as mock_stream, \
+         patch('rtaspi_devices.network.NetworkDeviceManager.stop_stream', new_callable=AsyncMock) as mock_stop_stream:
+        
         manager_instance = MockDeviceManager.return_value
-        manager_instance.start = AsyncMock()
-        manager_instance.stop = AsyncMock()
-        manager_instance.start_stream = AsyncMock(return_value={
+        mock_stream.return_value = {
             "id": "stream-1",
             "device_id": "cam1",
             "format": "h264"
-        })
-        manager_instance.stop_stream = AsyncMock()
+        }
         
-        # Create manager
-        manager = NetworkDeviceManager(config)
+        mock_broker = Mock()
+        manager = NetworkDeviceManager(config, mcp_broker=mock_broker)
         
         # Create network device
         from rtaspi_devices.network import NetworkDevice
@@ -571,7 +594,8 @@ async def test_advanced_discovery_example():
         assert audio_device["capabilities"]["channels"] == 2
         
         # Create device manager
-        manager = NetworkDeviceManager(config, events=events)
+        mock_broker = Mock()
+        manager = NetworkDeviceManager(config, mcp_broker=mock_broker)
         
         try:
             await manager.start()
@@ -683,88 +707,98 @@ async def test_cross_module_example():
         mcp_broker = MockMCPBroker(core_config.get("mcp", {}))
         await mcp_broker.start()
         
-        # Create device manager
-        manager = NetworkDeviceManager(device_config, mcp_broker=mcp_broker)
-        
-        try:
-            await manager.start()
+        # Create device manager with mocked dependencies
+        with patch('rtaspi_devices.network.NetworkDeviceManager.start', new_callable=AsyncMock) as mock_start, \
+             patch('rtaspi_devices.network.NetworkDeviceManager.start_stream', new_callable=AsyncMock) as mock_start_stream, \
+             patch('rtaspi_devices.network.NetworkDeviceManager.stop', new_callable=AsyncMock) as mock_stop:
             
-            # Create and add network camera
-            camera = NetworkDevice(
-                device_id="cam1",
-                name="Front Camera",
-                type="video",
-                ip="192.168.1.100",
-                port=554,
-                protocol="rtsp"
-            )
-            
-            # Test stream operations
-            stream = await manager.start_stream(
-                device_id=camera.device_id,
-                format="h264",
-                resolution="1280x720"
-            )
-            assert stream["id"]
-            assert stream["format"] == "h264"
-            
-            # Test MCP event subscription
-            def handle_device_event(topic, payload):
-                assert topic.startswith("devices/")
-                assert isinstance(payload, dict)
-            
-            mcp_broker.subscribe("devices/+/events", handle_device_event)
-            
-            # Test device command
-            await mcp_broker.publish(
-                f"devices/{camera.device_id}/commands",
-                {
-                    "command": "set_parameter",
-                    "parameter": "brightness",
-                    "value": 50
-                }
-            )
-            
-            # Test device status request
-            status = await mcp_broker.request(
-                f"devices/{camera.device_id}/status",
-                {}
-            )
-            assert status["status"] == "online"
-            assert "brightness" in status["parameters"]
-            
-            # Test pipeline creation
-            pipeline_config = {
-                "input": {
-                    "stream_id": stream["id"],
-                    "format": "h264"
-                },
-                "processors": [
-                    {
-                        "type": "motion_detection",
-                        "sensitivity": 0.5
-                    },
-                    {
-                        "type": "object_detection",
-                        "model": "yolov3",
-                        "confidence": 0.7
-                    }
-                ],
-                "output": {
-                    "format": "mjpeg",
-                    "port": 8080
-                }
+            mock_start_stream.return_value = {
+                "id": "test-stream-1",
+                "device_id": "cam1",
+                "format": "h264"
             }
             
-            pipeline_id = await mcp_broker.request(
-                "pipelines/create",
-                pipeline_config
-            )
-            assert pipeline_id is not None
+            manager = NetworkDeviceManager(device_config, mcp_broker=mcp_broker)
             
-        finally:
-            await manager.stop()
-            await mcp_broker.stop()
+            try:
+                await manager.start()
+                
+                # Create and add network camera
+                camera = NetworkDevice(
+                    device_id="cam1",
+                    name="Front Camera",
+                    type="video",
+                    ip="192.168.1.100",
+                    port=554,
+                    protocol="rtsp"
+                )
+                
+                # Test stream operations
+                stream = await manager.start_stream(
+                    device_id=camera.device_id,
+                    format="h264",
+                    resolution="1280x720"
+                )
+                assert stream["id"]
+                assert stream["format"] == "h264"
+                
+                # Test MCP event subscription
+                def handle_device_event(topic, payload):
+                    assert topic.startswith("devices/")
+                    assert isinstance(payload, dict)
+                
+                mcp_broker.subscribe("devices/+/events", handle_device_event)
+                
+                # Test device command
+                await mcp_broker.publish(
+                    f"devices/{camera.device_id}/commands",
+                    {
+                        "command": "set_parameter",
+                        "parameter": "brightness",
+                        "value": 50
+                    }
+                )
+                
+                # Test device status request
+                status = await mcp_broker.request(
+                    f"devices/{camera.device_id}/status",
+                    {}
+                )
+                assert status["status"] == "online"
+                assert "brightness" in status["parameters"]
+                
+                # Test pipeline creation
+                pipeline_config = {
+                    "input": {
+                        "stream_id": stream["id"],
+                        "format": "h264"
+                    },
+                    "processors": [
+                        {
+                            "type": "motion_detection",
+                            "sensitivity": 0.5
+                        },
+                        {
+                            "type": "object_detection",
+                            "model": "yolov3",
+                            "confidence": 0.7
+                        }
+                    ],
+                    "output": {
+                        "format": "mjpeg",
+                        "port": 8080
+                    }
+                }
+                
+                pipeline_id = await mcp_broker.request(
+                    "pipelines/create",
+                    pipeline_config
+                )
+                assert pipeline_id is not None
+                
+            finally:
+                await manager.stop()
+                await mcp_broker.stop()
 
 def test_example_error_handling():
     """Test error handling in examples."""

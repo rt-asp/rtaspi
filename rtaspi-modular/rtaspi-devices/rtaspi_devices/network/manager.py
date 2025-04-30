@@ -371,6 +371,18 @@ class NetworkDeviceManager(DeviceManager):
             return super()._get_scan_interval()
         return self.scan_interval
 
+    @property
+    def scan_interval(self) -> Optional[int]:
+        """Get scan interval."""
+        return self.config.get("network_devices", {}).get("scan_interval")
+
+    @scan_interval.setter
+    def scan_interval(self, value: Optional[int]) -> None:
+        """Set scan interval."""
+        if "network_devices" not in self.config:
+            self.config["network_devices"] = {}
+        self.config["network_devices"]["scan_interval"] = value
+
     def _publish_devices_info(self) -> None:
         """Publish device information."""
         devices_info = {

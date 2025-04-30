@@ -56,6 +56,10 @@ def test_manager_initialization(manager, config, mcp_broker):
 
 def test_manager_start_stop(manager, mcp_broker):
     """Test manager start/stop."""
+    # Mock the mcp_client
+    manager.mcp_client = Mock()
+    manager.mcp_client.close = Mock()
+
     manager.start()
     assert manager.running is True
     mcp_broker.subscribe.assert_called_once()

@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.32] - 2025-04-30
+
+### Added
+- Changes in rtaspi-modular/.gitignore
+
 ## [0.1.31] - 2025-04-30
 
 ### Added
