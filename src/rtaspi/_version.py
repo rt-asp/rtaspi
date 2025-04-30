@@ -1,6 +1,6 @@
 """Version information for rtaspi package."""
 
-__version__ = version = "0.1.36"
+__version__ = version = "0.1.37"
 
 
 def get_version():

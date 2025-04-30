@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rtaspi-devices"
+version = "0.2.0"
+description = "Device management module for RTASPI"
+authors = [{name = "RTASPI Team"}]
+requires-python = ">=3.9"
+dependencies = [
+    "rtaspi-core",
+]
+
+[tool.setuptools]
+packages = ["rtaspi_devices"]

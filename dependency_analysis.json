@@ -1,0 +1,228 @@
+{
+  "module_dependencies": {
+    "initialization_flow": {
+      "description": "System startup sequence and component initialization",
+      "sequence": [
+        {
+          "stage": "core_init",
+          "components": ["ConfigManager", "LoggingManager", "MCPBroker"],
+          "dependencies": []
+        },
+        {
+          "stage": "device_init",
+          "components": ["DeviceManager", "DeviceAPI"],
+          "dependencies": ["core.MCPBroker", "core.ConfigManager"]
+        },
+        {
+          "stage": "stream_init",
+          "components": ["StreamManager", "StreamAPI"],
+          "dependencies": ["core.MCPBroker", "device_managers.DeviceManager"]
+        },
+        {
+          "stage": "processing_init",
+          "components": ["PipelineExecutor", "PipelineAPI"],
+          "dependencies": ["streaming.StreamManager"]
+        }
+      ]
+    },
+    "runtime_interactions": {
+      "core_to_devices": {
+        "type": "bidirectional",
+        "channels": [
+          {
+            "name": "device_discovery",
+            "direction": "core->devices",
+            "protocol": "mcp"
+          },
+          {
+            "name": "device_status",
+            "direction": "devices->core",
+            "protocol": "mcp"
+          }
+        ]
+      },
+      "devices_to_streaming": {
+        "type": "bidirectional",
+        "channels": [
+          {
+            "name": "stream_control",
+            "direction": "devices->streaming",
+            "protocol": "direct"
+          },
+          {
+            "name": "stream_status",
+            "direction": "streaming->devices",
+            "protocol": "direct"
+          }
+        ]
+      },
+      "streaming_to_processing": {
+        "type": "unidirectional",
+        "channels": [
+          {
+            "name": "media_pipeline",
+            "direction": "streaming->processing",
+            "protocol": "direct"
+          }
+        ]
+      },
+      "processing_to_automation": {
+        "type": "unidirectional",
+        "channels": [
+          {
+            "name": "analysis_results",
+            "direction": "processing->automation",
+            "protocol": "direct"
+          }
+        ]
+      }
+    }
+  },
+  "coupling_issues": [
+    {
+      "location": "devices_to_streaming",
+      "type": "tight_coupling",
+      "description": "Direct method calls between DeviceManager and StreamManager",
+      "impact": {
+        "scalability": "Limited horizontal scaling of streaming components",
+        "maintenance": "Changes in streaming affect device management",
+        "testing": "Difficult to test components in isolation"
+      },
+      "affected_files": [
+        "src/rtaspi/device_managers/stream_manager.py",
+        "src/rtaspi/streaming/rtsp.py",
+        "src/rtaspi/streaming/webrtc/pipeline.py"
+      ]
+    },
+    {
+      "location": "processing_pipeline",
+      "type": "synchronous_coupling",
+      "description": "Synchronous pipeline stage execution",
+      "impact": {
+        "performance": "Pipeline stages block on previous stage completion",
+        "resource_usage": "Inefficient resource utilization",
+        "scalability": "Cannot distribute processing across nodes"
+      },
+      "affected_files": [
+        "src/rtaspi/processing/pipeline_executor.py",
+        "src/rtaspi/processing/video/detection.py",
+        "src/rtaspi/processing/audio/speech.py"
+      ]
+    },
+    {
+      "location": "automation_rules",
+      "type": "state_coupling",
+      "description": "Direct state access between components",
+      "impact": {
+        "consistency": "Potential state synchronization issues",
+        "reliability": "Race conditions in state updates",
+        "modularity": "Components tightly bound to state structure"
+      },
+      "affected_files": [
+        "src/rtaspi/automation/rules.py",
+        "src/rtaspi/automation/triggers/device.py",
+        "src/rtaspi/automation/actions/stream.py"
+      ]
+    }
+  ],
+  "refactoring_suggestions": [
+    {
+      "area": "communication_layer",
+      "strategy": "message_broker",
+      "description": "Introduce message broker for inter-module communication",
+      "benefits": [
+        "Decoupled communication",
+        "Async operation support",
+        "Better scalability"
+      ],
+      "implementation": {
+        "broker": "RabbitMQ/Redis",
+        "patterns": ["pub/sub", "request/reply"],
+        "topics": [
+          "device.events",
+          "stream.control",
+          "pipeline.status"
+        ]
+      }
+    },
+    {
+      "area": "pipeline_processing",
+      "strategy": "async_pipeline",
+      "description": "Implement async pipeline processing with buffering",
+      "benefits": [
+        "Non-blocking operation",
+        "Better resource utilization",
+        "Horizontal scaling support"
+      ],
+      "implementation": {
+        "technology": "AsyncIO/Celery",
+        "patterns": ["producer/consumer", "worker pool"],
+        "components": [
+          "pipeline_coordinator",
+          "stage_workers",
+          "result_aggregator"
+        ]
+      }
+    },
+    {
+      "area": "state_management",
+      "strategy": "mediator_pattern",
+      "description": "Implement mediator for state coordination",
+      "benefits": [
+        "Centralized state management",
+        "Reduced direct coupling",
+        "Improved consistency"
+      ],
+      "implementation": {
+        "pattern": "Mediator",
+        "components": [
+          "state_mediator",
+          "state_observers",
+          "change_propagator"
+        ]
+      }
+    }
+  ],
+  "dependency_graph": {
+    "nodes": [
+      {"id": "core", "type": "module"},
+      {"id": "devices", "type": "module"},
+      {"id": "streaming", "type": "module"},
+      {"id": "processing", "type": "module"},
+      {"id": "automation", "type": "module"},
+      {"id": "web", "type": "module"}
+    ],
+    "edges": [
+      {
+        "from": "core",
+        "to": "devices",
+        "type": "initialization",
+        "weight": 3
+      },
+      {
+        "from": "devices",
+        "to": "streaming",
+        "type": "data_flow",
+        "weight": 5
+      },
+      {
+        "from": "streaming",
+        "to": "processing",
+        "type": "pipeline",
+        "weight": 4
+      },
+      {
+        "from": "processing",
+        "to": "automation",
+        "type": "events",
+        "weight": 2
+      },
+      {
+        "from": "web",
+        "to": "core",
+        "type": "control",
+        "weight": 1
+      }
+    ]
+  }
+}

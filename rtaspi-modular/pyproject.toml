@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rtaspi"
+version = "0.2.0"
+description = "Real-Time Annotation and Stream Processing Interface"
+authors = [{name = "RTASPI Team"}]
+requires-python = ">=3.9"
+
+[project.dependencies]
+rtaspi-core = {path = "./rtaspi-core", develop = true}
+rtaspi-devices = {path = "./rtaspi-devices", develop = true}
+rtaspi-streaming = {path = "./rtaspi-streaming", develop = true}
+rtaspi-processing = {path = "./rtaspi-processing", develop = true}
+rtaspi-web = {path = "./rtaspi-web", develop = true}
+rtaspi-cli = {path = "./rtaspi-cli", develop = true}
+rtaspi-integration = {path = "./rtaspi-integration", develop = true}
+
+[tool.setuptools]
+packages = ["rtaspi"]

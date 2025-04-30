@@ -2,6 +2,40 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.30] - 2025-04-30
+
+### Added
+- Changes in dependency_analysis.json
+- Changes in rtaspi-modular/README.md
+- Changes in rtaspi-modular/TODO.md
+- Changes in rtaspi-modular/TODO.txt
+- Changes in rtaspi-modular/pyproject.toml
+- Changes in rtaspi-modular/rtaspi-core/README.md
+- Changes in rtaspi-modular/rtaspi-core/pyproject.toml
+- Changes in rtaspi-modular/rtaspi-core/pytest.ini
+- Changes in rtaspi-modular/rtaspi-core/rtaspi_core/__init__.py
+- Changes in rtaspi-modular/rtaspi-core/rtaspi_core/config/__init__.py
+- Changes in rtaspi-modular/rtaspi-core/rtaspi_core/config/manager.py
+- Changes in rtaspi-modular/rtaspi-core/rtaspi_core/config/models.py
+- Changes in rtaspi-modular/rtaspi-core/tests/config/test_manager.py
+- Changes in rtaspi-modular/rtaspi-core/tests/config/test_models.py
+- Changes in rtaspi-modular/rtaspi-core/tests/conftest.py
+- Changes in rtaspi-modular/rtaspi-core/tox.ini
+- Changes in rtaspi-modular/rtaspi-devices/README.md
+- Changes in rtaspi-modular/rtaspi-devices/pyproject.toml
+- Changes in rtaspi-modular/rtaspi-devices/rtaspi_devices/__init__.py
+- Changes in rtaspi-modular/rtaspi-devices/rtaspi_devices/base/__init__.py
+- Changes in rtaspi-modular/rtaspi-devices/rtaspi_devices/base/device.py
+- Changes in rtaspi-modular/rtaspi-devices/rtaspi_devices/base/manager.py
+- Changes in rtaspi-modular/rtaspi-devices/rtaspi_devices/discovery/__init__.py
+- Changes in rtaspi-modular/rtaspi-devices/rtaspi_devices/discovery/base.py
+- Changes in rtaspi-modular/rtaspi-devices/rtaspi_devices/local/__init__.py
+- Changes in rtaspi-modular/rtaspi-devices/rtaspi_devices/local/manager.py
+- Changes in rtaspi-modular/rtaspi-devices/rtaspi_devices/protocols/__init__.py
+- Changes in rtaspi-modular/rtaspi-devices/rtaspi_devices/protocols/base.py
+- Changes in rtaspi-modular/setup.py
+- Changes in start.sh
+
 ## [0.1.29] - 2025-04-30
 
 ### Added
